@@ -6,6 +6,7 @@
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
   ROS_INFO("%f", msg->ranges[msg->ranges.size()/2]);
+  ROS_INFO("%ld", msg->ranges.size());
 }
 
 int main(int argc, char **argv)

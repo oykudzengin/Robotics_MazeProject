@@ -19,8 +19,8 @@ int main(int argc, char **argv)
 
   // Drive straight 
   ROS_INFO("diffDrive 10 10");
-  srv.request.left = 10;
-  srv.request.right = 10;
+  srv.request.left = 1;
+  srv.request.right = 1;
   diffDrive.call(srv);
 
   ros::Duration(2.0).sleep();
@@ -29,31 +29,6 @@ int main(int argc, char **argv)
   srv.request.left = 0;
   srv.request.right = 0;
   diffDrive.call(srv);
-
-  // // trun right 
-  // ROS_INFO("diffDrive 5");
-  // srv.request.left = 5;
-  // diffDrive.call(srv);
-
-  // ros::Duration(2.0).sleep();
-
-  // ROS_INFO("diffDrive 0 0");
-  // srv.request.left = 0;
-  // diffDrive.call(srv);
-
-
-  // // drive straight again
-  // ROS_INFO("diffDrive 10 10");
-  // srv.request.left = 10;
-  // srv.request.right = 10;
-  // diffDrive.call(srv);
-
-  // ros::Duration(2.0).sleep();
-  
-  // ROS_INFO("diffDrive 0 0");
-  // srv.request.left = 0;
-  // srv.request.right = 0;
-  // diffDrive.call(srv);
 
   ros::spin();
   return 0;
