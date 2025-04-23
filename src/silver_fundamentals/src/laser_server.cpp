@@ -9,8 +9,8 @@
 static struct laser_data
 {
     float ranges[726];
-    float min_angle;
-    float max_angle;
+    float angle_min;
+    float angle_max;
     float angle_increment;
 } laser_data;
 
@@ -24,13 +24,13 @@ bool complete_laser_data(silver_fundamentals::Laser::Request  &req,
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
     std::copy(msg->ranges.begin(), msg->ranges.end(), laser_data.ranges);
-    laser_data.min_angle = msg->min_angle;
-    laser_data.max_angle = msg->max_angle;
+    laser_data.angle_min = msg->angle_min;
+    laser_data.angle_max = msg->angle_max;
     laser_data.angle_increment = msg->angle_increment;
     //memcpy(scan_data, &(msg->ranges), sizeof(scan_data));
     count++;
     if (count % 10 == 0) {
-        ROS_INFO("%10f  %10f %10f 10f 10f 10f %ld", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[182],msg->min_angle, msg->max_angle, msg->angle_increment, msg->ranges.size());
+        ROS_INFO("%10f  %10f %10f 10f 10f 10f %ld", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[182],msg->angle_min, msg->angle_max, msg->angle_increment, msg->ranges.size());
         count = 0;
     }
 }
