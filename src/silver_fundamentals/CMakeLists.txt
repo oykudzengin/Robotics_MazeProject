@@ -3,7 +3,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(silver_fundamentals)
 # Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals std_msgs
+  message_generation)
 
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
@@ -33,8 +34,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #add_message_files(FILES
 #)
 #uncomment if you have defined services
-#add_service_files(FILES
-#)
+add_service_files(
+    FILES
+    Laser.srv
+)
 
 #common commands for building c++ executables and libraries
 #add_library(${PROJECT_NAME} src/example.cpp)
@@ -51,9 +54,9 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 ## Generate added messages and services with any dependencies listed here
-#generate_messages(
-#    DEPENDENCIES std_msgs create_fundamentals
-#)
+generate_messages(
+    DEPENDENCIES std_msgs create_fundamentals
+)
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
@@ -70,3 +73,8 @@ add_dependencies(example_laser create_fundamentals_generate_messages_cpp)
 add_executable(example_moving src/example_moving.cpp)
 target_link_libraries(example_moving ${catkin_LIBRARIES})
 add_dependencies(example_moving create_fundamentals_generate_messages_cpp)
+
+
+add_executable(laser_server src/laser_server.cpp)
+target_link_libraries(laser_server ${catkin_LIBRARIES})
+add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
