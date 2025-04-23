@@ -30,7 +30,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     //memcpy(scan_data, &(msg->ranges), sizeof(scan_data));
     count++;
     if (count % 10 == 0) {
-        ROS_INFO("%10f  %10f %10f 10f 10f 10f %ld", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[182],msg->angle_min, msg->angle_max, msg->angle_increment, msg->ranges.size());
+        ROS_INFO("%10f  %10f %10f %10f %10f %10f %ld", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[182],msg->angle_min, msg->angle_max, msg->angle_increment, msg->ranges.size());
         count = 0;
     }
 }
