@@ -1,0 +1,20 @@
+# Build and development directories
+build/
+devel/
+
+.catkin_workspace
+
+
+# Python cache
+__pycache__/
+*.pyc
+
+
+# Editor/IDE folders
+.vscode/
+.idea/
+
+
+# Backup/temporary files for vim or similar
+*~
+*.swp
