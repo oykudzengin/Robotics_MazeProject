@@ -5,6 +5,16 @@
 #include <cmath>
 #include <config.h>
 
+float drive_n_cm(float n, float speed) {
+  float time = n / (WHEEL_RADIUS * speed);
+  srv.request.left = speed;
+  srv.request.right = speed;
+
+  drive_client.call(srv);
+  ros::Duration(time).sleep();
+ }
+
+
 // Store the closest obstacle distance
 float min_distance = std::numeric_limits<float>::infinity();
 
@@ -30,16 +40,7 @@ int main(int argc, char** argv) {
   create_fundamentals::DiffDrive srv;
 
 
-  srv.request.left = 1;
-  srv.request.right = 1;
-  
-  drive_client.call(srv);
-  ros::Duration(11.1/5).sleep();
-
-  srv.request.left = 0;
-  srv.request.right = 0;
-  
-  drive_client.call(srv);
+  drive_n_cm(80, 10);
 
   // ros::Rate rate(10);  // 10 Hz loop
 
