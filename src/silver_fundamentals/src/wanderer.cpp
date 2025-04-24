@@ -32,6 +32,8 @@ int main(int argc, char** argv) {
     nh.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
   create_fundamentals::DiffDrive srv;
 
+  float speed = 10.0;
+  float n = 80.0;
   float time = n / (WHEEL_RADIUS * speed);
   srv.request.left = speed;
   srv.request.right = speed;
