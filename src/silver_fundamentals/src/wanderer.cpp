@@ -7,10 +7,10 @@
 
 float drive_n_cm(ros::ServiceClient* drive_client, create_fundamentals::DiffDrive *srv, float n, float speed) {
   float time = n / (WHEEL_RADIUS * speed);
-  *srv.request.left = speed;
-  *srv.request.right = speed;
+  srv->request.left = speed;
+  srv->request.right = speed;
 
-  *drive_client.call(srv);
+  drive_client->call(srv);
   ros::Duration(time).sleep();
 }
 
