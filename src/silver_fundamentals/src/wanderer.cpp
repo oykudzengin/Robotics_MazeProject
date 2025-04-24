@@ -5,6 +5,11 @@
 #include <cmath>
 #include <config.h>
 
+static ros::ServiceClient drive_client =
+    nh.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+static create_fundamentals::DiffDrive srv;
+
+
 float drive_n_cm(float n, float speed) {
   float time = n / (WHEEL_RADIUS * speed);
   srv.request.left = speed;
@@ -26,6 +31,9 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   min_distance = center_distance;
 }
 
+
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "wanderer");
   ros::NodeHandle nh;
@@ -35,9 +43,7 @@ int main(int argc, char** argv) {
     "/scan_filtered", 100, laserCallback);
 
   // Service client for diff_drive
-  ros::ServiceClient drive_client =
-    nh.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
-  create_fundamentals::DiffDrive srv;
+
 
 
   drive_n_cm(80, 10);
