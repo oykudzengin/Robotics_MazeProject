@@ -33,8 +33,8 @@ int main(int argc, char** argv) {
   create_fundamentals::DiffDrive srv;
 
   float speed = 10.0;
-  float n = 196.0;
-  float time = n / (WHEEL_RADIUS * speed);
+  float n = (float) atof(argv[2]);
+  float time = n / ( (float)(atof(argv[1])) * speed);
   ROS_INFO("Time is %f s", time);
   srv.request.left = speed;
   srv.request.right = speed;
