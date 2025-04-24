@@ -41,6 +41,11 @@ int main(int argc, char** argv) {
   drive_client.call(srv);
   ros::Duration(time).sleep();
 
+  srv.request.left = 0;
+  srv.request.right = 0;
+  drive_client.call(srv);
+
+
   // ros::Rate rate(10);  // 10 Hz loop
 
   // while (ros::ok()) {
