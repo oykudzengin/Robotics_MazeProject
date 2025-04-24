@@ -35,6 +35,7 @@ int main(int argc, char** argv) {
   float speed = 10.0;
   float n = 80.0;
   float time = n / (WHEEL_RADIUS * speed);
+  ROS_INFO("Time is %f s", time);
   srv.request.left = speed;
   srv.request.right = speed;
 
