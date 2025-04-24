@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include "sensor_msgs/LaserScan.h"
 #include "create_fundamentals/DiffDrive.h"
+#include <cmath>
 
 // Store the closest obstacle distance
 float min_distance = std::numeric_limits<float>::infinity();
@@ -27,32 +28,60 @@ int main(int argc, char** argv) {
     nh.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
   create_fundamentals::DiffDrive srv;
 
-  ros::Rate rate(10);  // 10 Hz loop
 
-  while (ros::ok()) {
-    ros::spinOnce();
+  srv.request.left = 1;
+  srv.request.right = 1;
+  
+  drive_client.call(srv);
+  ros::Duration(11.1/5).sleep();
 
-    // Basic obstacle avoidance: if too close, turn; else drive forward
-    ROS_INFO("%f", min_distance);
-    if (min_distance < 0.25 || min_distance == std::numeric_limits<float>::infinity()) {  // threshold in meters
-    //   ROS_INFO("%s", "turning ");
-    //   srv.request.left  =  5.0;  // turn in place
-    //   srv.request.right = -5.0;
-    //   ros::Duration(0.5).sleep();
-      srv.request.left  =  0;  // turn in place
-      srv.request.right = 0;
-    } else {
-        ROS_INFO("%s", "driving ");
-      srv.request.left  = 10.0;   // move straight
-      srv.request.right = 10.0;
-    }
+  srv.request.left = 0;
+  srv.request.right = 0;
+  
+  drive_client.call(srv);
 
-    if (!drive_client.call(srv)) {
-      ROS_ERROR("Failed to call diff_drive service");
-    }
+  // ros::Rate rate(10);  // 10 Hz loop
 
-    rate.sleep();
-  }
+  // while (ros::ok()) {
+  //   ros::spinOnce();
+
+  //   srv.request.left = 2;
+  //   srv.request.right = 2;
+    
+  //   drive_client.call(srv);
+  //   ros::Duration(11,42).sleep();
+
+  //   srv.request.left = 0;
+  //   srv.request.right = 0;
+    
+  //   drive_client.call(srv);
+
+  //   return 0;
+
+
+
+  //   // // Basic obstacle avoidance: if too close, turn; else drive forward
+  //   // ROS_INFO("%f", min_distance);
+  //   // if (min_distance < 0.25 || min_distance == std::numeric_limits<float>::infinity()) {  // threshold in meters
+  //   // //   ROS_INFO("%s", "turning ");
+  //   // //   srv.request.left  =  5.0;  // turn in place
+  //   // //   srv.request.right = -5.0;
+  //   // //   ros::Duration(0.5).sleep();
+  //   //   srv.request.left  =  0;  // turn in place
+  //   //   srv.request.right = 0;
+
+  //   // } else {
+  //   //     ROS_INFO("%s", "driving ");
+  //   //   srv.request.left  = 10.0;   // move straight
+  //   //   srv.request.right = 10.0;
+  //   // }
+
+  //   // if (!drive_client.call(srv)) {
+  //   //   ROS_ERROR("Failed to call diff_drive service");
+  //   // }
+
+  //   rate.sleep();
+  // }
 
   return 0;
 }
