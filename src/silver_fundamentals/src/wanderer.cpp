@@ -39,8 +39,6 @@ int main(int argc, char** argv) {
   drive_client.call(srv);
   ros::Duration(time).sleep();
 
-  drive_n_cm(80, 10);
-
   // ros::Rate rate(10);  // 10 Hz loop
 
   // while (ros::ok()) {
