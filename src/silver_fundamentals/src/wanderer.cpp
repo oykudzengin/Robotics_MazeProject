@@ -3,6 +3,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "create_fundamentals/DiffDrive.h"
 #include <cmath>
+#include <config.h>
 
 // Store the closest obstacle distance
 float min_distance = std::numeric_limits<float>::infinity();
