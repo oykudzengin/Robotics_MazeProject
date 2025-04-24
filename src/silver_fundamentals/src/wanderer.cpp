@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
   float n = (float) atof(argv[2]);
   float time = n / ( (float)(atof(argv[1])) * speed);
   ROS_INFO("Time is %f s", time);
-  srv.request.left = speed;
+  srv.request.left = -speed;
   srv.request.right = speed;
 
   drive_client.call(srv);
