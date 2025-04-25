@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include "sensor_msgs/LaserScan.h"
 #include "create_fundamentals/DiffDrive.h"
+#include "silver_fundamentals/Laser.h"
 #include <cmath>
 #include <sstream>
 #include <config.h>
