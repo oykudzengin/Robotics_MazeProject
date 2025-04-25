@@ -32,7 +32,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
         int count = 0;
         for (int i = 0; i < 726; i++)
         {
-            if (laser_data.ranges[i] < laser_data.range_max && laser_data.ranges[i] > laser_data.range_min) count ++;
+            if (!(laser_data.ranges[i] > laser_data.range_max && laser_data.ranges[i] < laser_data.range_min)) count ++;
         }
         ROS_INFO("%10f %10f %10f %10f %10f %d", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[0],msg->range_min, msg->range_max, count);
         count = 0;
