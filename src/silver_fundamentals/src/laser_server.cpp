@@ -29,7 +29,7 @@ bool laser_angle_range(silver_fundamentals::Laser::Request  &req, silver_fundame
     int max_index = static_cast<int>(std::round(
         std::min(max_angle + LASER_ANGLE_RANGE / 2.0, 240.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
 
-    res.values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, LASER_ARAY_SIZE));
+    res.values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, static_cast<int>(LASER_ARAY_SIZE)));
     res.size = max_index - min_index + 1;
     return true;
  }
