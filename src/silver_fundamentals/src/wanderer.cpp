@@ -45,21 +45,21 @@ int main(int argc, char** argv) {
   // Service client for diff_drive
   ros::ServiceClient drive_client =
     nh.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
-  create_fundamentals::DiffDrive srv;
+  create_fundamentals::DiffDrive srv_drive;
 
   float speed = 10.0;
   float n = (float) atof(argv[2]);
   float time = n / ( (float)(atof(argv[1])) * speed);
   ROS_INFO("Time is %f s", time);
-  srv.request.left = -speed;
-  srv.request.right = speed;
+  srv_drive.request.left = -speed;
+  srv_drive.request.right = speed;
 
-  drive_client.call(srv);
+  drive_client.call(srv_drive);
   ros::Duration(time).sleep();
 
-  srv.request.left = 0;
-  srv.request.right = 0;
-  drive_client.call(srv);
+  srv_drive.request.left = 0;
+  srv_drive.request.right = 0;
+  drive_client.call(srv_drive);
 
 
   // ros::Rate rate(10);  // 10 Hz loop
