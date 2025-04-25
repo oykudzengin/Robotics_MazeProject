@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <bits/streambuf_iterator.h>
+#include <config.h>
 
 #define LASER_ARAY_SIZE 682.0
 #define LASER_ANGLE_RANGE 240.0
@@ -28,16 +29,16 @@ bool laser_angle_range(silver_fundamentals::Laser::Request  &req, silver_fundame
     int max_index = static_cast<int>(std::round(
         std::min(max_angle + LASER_ANGLE_RANGE / 2, 240.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
 
-    res.values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, LASER_ARAY_SIZE));
-    res.size = max_index - min_index + 1;
+    res->values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, LASER_ARAY_SIZE));
+    res->size = max_index - min_index + 1;
     return true;
  }
 
 void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
 {
     std::copy(msg->ranges.begin()+44, msg->ranges.end(), laser_data.ranges.begin());
-    laser_data.range_min = msg->angle_min;
-    laser_data.range_max = msg->angle_max;
+    //laser_data.range_min = msg->angle_min;
+    //laser_data.range_max = msg->angle_max;
 
 
     count++;
