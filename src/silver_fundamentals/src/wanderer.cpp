@@ -31,8 +31,8 @@ int main(int argc, char** argv) {
   ros::ServiceClient client = nh.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
   silver_fundamentals::Laser srv;
 
-  srv.request.start = 210;
-  srv.request.end = 240;
+  srv.request.start = 90;
+  srv.request.end = 120;
   if (client.call(srv)) {
     std::stringstream ss;
     for (const double range : srv.response.values)
