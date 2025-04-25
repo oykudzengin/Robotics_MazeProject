@@ -1,2 +1,5 @@
+float64 start
+float64 end
 ---
-float64 value
+float64[] values
+int size
