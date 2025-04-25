@@ -61,7 +61,7 @@ generate_messages(
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
     DEPENDS python-serial
-    CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals
+    CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -81,3 +81,6 @@ add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
 add_executable(laser_server src/laser_server.cpp)
 target_link_libraries(laser_server ${catkin_LIBRARIES})
 add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
+
+add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
+add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
