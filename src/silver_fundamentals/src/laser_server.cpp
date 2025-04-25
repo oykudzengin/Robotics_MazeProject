@@ -28,6 +28,7 @@ bool laser_angle_range(silver_fundamentals::Laser::Request  &req, silver_fundame
         std::max(min_angle + LASER_ANGLE_RANGE / 2.0, 0.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
     int max_index = static_cast<int>(std::round(
         std::min(max_angle + LASER_ANGLE_RANGE / 2.0, 240.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
+    ROS_INFO("Creating array between %d and %d", min_index, max_index);
 
     res.values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, static_cast<int>(LASER_ARAY_SIZE)));
     res.size = max_index - min_index + 1;
@@ -39,7 +40,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     std::copy(msg->ranges.begin()+44, msg->ranges.end(), laser_data.ranges.begin());
 
     count++;
-    if (count % 10 == 0) {
+    if (count % 100 == 0) {
         std::stringstream ss;
         for (const double range : laser_data.ranges)
         {
