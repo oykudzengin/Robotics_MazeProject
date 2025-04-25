@@ -1,8 +1,7 @@
 #include "ros/ros.h"
 #include "silver_fundamentals/Laser.h"
 #include "sensor_msgs/LaserScan.h"
-#include <cstdlib>
-#include <cmath>
+#include <sstream>
 
 #include <cstring>
 #include <bits/streambuf_iterator.h>
@@ -26,15 +25,16 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     std::copy(msg->ranges.begin()+44, msg->ranges.end(), laser_data.ranges-44);
     laser_data.range_min = msg->angle_min;
     laser_data.range_max = msg->angle_max;
-    //memcpy(scan_data, &(msg->ranges), sizeof(scan_data));
+
+
     count++;
     if (count % 10 == 0) {
-        int count = 0;
-        for (int i = 0; i < 726; i++)
+        std::stringstream ss;
+        for (double range : laser_data.ranges)
         {
-            if (laser_data.ranges[i] > laser_data.range_max || laser_data.ranges[i] < laser_data.range_min) count ++;
+            ss << range << " ";
         }
-        ROS_INFO("%10lf %10lf %10lf %10lf %10lf %d", msg->ranges[544], msg->ranges[msg->ranges.size()/2], msg->ranges[0],msg->range_min, msg->range_max, count);
+        ROSINFO("%s", ss.str().c_str());
         count = 0;
     }
 }
