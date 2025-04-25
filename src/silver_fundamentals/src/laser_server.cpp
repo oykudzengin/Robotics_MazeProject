@@ -47,7 +47,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
         {
             ss << range << " ";
         }
-        ROSINFO("%s", ss.str().c_str());
+        ROS_INFO("%s", ss.str().c_str());
         count = 0;
     }
 }
