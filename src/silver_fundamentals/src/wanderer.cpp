@@ -3,6 +3,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "create_fundamentals/DiffDrive.h"
 #include <cmath>
+#include <sstream>
 #include <config.h>
 
 
@@ -24,8 +25,21 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
 
   // Subscribe to the laser scan topic
-  ros::Subscriber laser_sub = nh.subscribe<sensor_msgs::LaserScan>(
-    "/scan_filtered", 100, laserCallback);
+  //ros::Subscriber laser_sub = nh.subscribe<sensor_msgs::LaserScan>("/scan_filtered", 100, laserCallback);
+
+  ros::ServiceClient client = nh.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
+  silver_fundamentals::Laser srv;
+
+  srv.request.start = 0;
+  srv.request.end = 0;
+  if (client.call(srv)) {
+    std::stringstream ss;
+    for (const double range : srv.response.values)
+    {
+      ss << range << " ";
+    }
+    ROS_INFO("Wanderer success, %d values: %s ", srv.response.size, ss.str().c_str());
+  }
 
   // Service client for diff_drive
   ros::ServiceClient drive_client =
