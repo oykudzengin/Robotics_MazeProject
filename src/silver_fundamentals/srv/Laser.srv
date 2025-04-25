@@ -1,3 +1,2 @@
 ---
-float32[] scan_array
-int32 size
+float32 value
