@@ -14,7 +14,7 @@
 #define ANGLE_MAX (ANGLE_MIN + ANGLE_SPAN)
 #define ANGLE_STEP (0.006135923322290182*180/PI)
 
-inline constexpr double threshold_at_angle(unsigned int angle) {
+inline constexpr double threshold_at_angle(double angle) {
   return (angle >= -SIDE_ANGLE && angle <= SIDE_ANGLE)? FRONT_THRESHOLD + (SIDE_THRESHOLD - FRONT_THRESHOLD)*(angle/SIDE_ANGLE)*(angle/SIDE_ANGLE) : 0.0f;
 }
 
