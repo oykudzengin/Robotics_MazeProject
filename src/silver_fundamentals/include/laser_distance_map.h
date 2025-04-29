@@ -4,9 +4,9 @@
 #include <cmath>
 #include <config.h>
 
-#define FRONT_THRESHOLD 0.5f
+#define FRONT_THRESHOLD 0.22f
 #define SIDE_THRESHOLD 0.5f
-#define SIDE_ANGLE 90
+#define SIDE_ANGLE 120
 
 #define N_LIDAR 682
 #define ANGLE_SPAN (4.178563637658954*180/PI)
