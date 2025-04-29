@@ -31,16 +31,21 @@ int main(int argc, char** argv) {
   ros::ServiceClient client = nh.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
   silver_fundamentals::Laser srv;
 
+  ros::Rate rate(1);
   srv.request.start = 90;
   srv.request.end = 120;
-  if (client.call(srv)) {
-    std::stringstream ss;
-    for (const double range : srv.response.values)
-    {
-      ss << range << " ";
+  while (ros::ok()) {
+    if (client.call(srv)) {
+      std::stringstream ss;
+      for (const double range : srv.response.values)
+      {
+        ss << range << " ";
+      }
+      ROS_INFO("Wanderer success, %d values: %s ", srv.response.size, ss.str().c_str());
     }
-    ROS_INFO("Wanderer success, %d values: %s ", srv.response.size, ss.str().c_str());
+    rate.sleep();
   }
+
 
   // Service client for diff_drive
   ros::ServiceClient drive_client =
