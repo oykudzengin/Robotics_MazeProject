@@ -29,7 +29,7 @@ int minimum_discarding(std::vector<double> *ranges)
     {
         if (ranges->at(i) < laser_data.ranges.at(i))
         {
-            ranges->at(i) = std::numeric_limits<double>::quiet_NaN();
+            ranges->at(i) = std::numeric_limits<double>::signaling_NaN();
             count++;
         }
     }
