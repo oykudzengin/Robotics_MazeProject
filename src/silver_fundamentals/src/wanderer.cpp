@@ -50,7 +50,7 @@ int main(int argc, char** argv) {
   ros::ServiceClient client = nh.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
   silver_fundamentals::Laser srv;
   std::stringstream ss;
-  for (const double range : threshold_table) {
+  for (const double range : threshold_table)
   {
     ss << range << " ";
   }
