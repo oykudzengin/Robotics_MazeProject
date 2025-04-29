@@ -49,12 +49,12 @@ int main(int argc, char** argv) {
 
   ros::ServiceClient client = nh.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
   silver_fundamentals::Laser srv;
-
+  std::stringstream ss;
   for (const double range : threshold_table) {
   {
     ss << range << " ";
   }
-  ROS_INFO("Threshold values, %d values: %s ", theshold_table.size(), ss.str().c_str());
+  ROS_INFO("Threshold values, %d values: %s ", threshold_table.size(), ss.str().c_str());
 }
 
   ros::Rate rate(1);
