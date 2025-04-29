@@ -7,7 +7,8 @@
 #include <sstream>
 #include <config.h>
 
-
+#define FRONT_VISION_SIZE 60
+#define SIDE_VISION_SIZE
 
 
 // Store the closest obstacle distance
@@ -20,6 +21,23 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
   float center_distance = msg->ranges[center_index];
   min_distance = center_distance;
 }
+
+
+void wander() {
+  ros::NodeHandle n;
+
+  ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
+  silver_fundamentals::Laser laser_srv;
+
+  ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+  create_fundamentals::DiffDrive drive_srv;
+
+  ros::Rate rate(10);
+
+
+
+}
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "wanderer");
