@@ -55,7 +55,6 @@ int main(int argc, char** argv) {
     ss << range << " ";
   }
   ROS_INFO("Threshold values, %ld values: %s ", threshold_table.size(), ss.str().c_str());
-}
 
   ros::Rate rate(1);
   srv.request.start = 90;
