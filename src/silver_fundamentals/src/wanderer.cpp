@@ -32,10 +32,9 @@ int main(int argc, char** argv) {
   silver_fundamentals::Laser srv;
 
   ros::Rate rate(1);
-
+  srv.request.start = 90;
+  srv.request.end = 120;
   while (ros::ok()) {
-    srv.request.start = 90;
-    srv.request.end = 120;
     if (client.call(srv)) {
       std::stringstream ss;
       for (const double range : srv.response.values)
