@@ -17,9 +17,25 @@ static struct laser_data
     double angle_range = 4.178563637658954*180/PI;
     double angle_min = -2.086213869974017*180/PI;
     double angle_increment = 0.006135923322290182*180/PI;
+    double range_min = 0.019999999552965164;
 } laser_data;
 
 static int count = 0;
+
+int minimum_discarding(std::vector<double> *ranges)
+{
+    int count = 0;
+    for (int i = 0; i < static_cast<int>(ranges->size()); i++)
+    {
+        if (ranges->at(i) < laser_data.ranges[i])
+        {
+            ranges->at(i) = std::numeric_limits<double>::quiet_NaN();
+            count++;
+        }
+    }
+    return count;
+}
+
 
 bool laser_angle_range(silver_fundamentals::Laser::Request  &req, silver_fundamentals::Laser::Response &res) {
     double min_angle = req.start;
@@ -30,7 +46,7 @@ bool laser_angle_range(silver_fundamentals::Laser::Request  &req, silver_fundame
         std::min(max_angle + LASER_ANGLE_RANGE / 2.0, 240.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
     ROS_INFO("Creating array between %d and %d", min_index, max_index);
 
-    res.values = std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, static_cast<int>(LASER_ARAY_SIZE)));
+    res.values = minimum_discarding(std::vector<double>(laser_data.ranges.begin() + min_index, laser_data.ranges.begin() + std::min(max_index+1, static_cast<int>(LASER_ARAY_SIZE))));
     res.size = max_index - min_index + 1;
     return true;
  }
