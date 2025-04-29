@@ -6,7 +6,7 @@
 #include <cmath>
 #include <sstream>
 #include <config.h>
-#include <laser_distance_map.h>
+#include <laser_distance_map>
 
 #define FRONT_VISION_SIZE 60
 #define SIDE_VISION_SIZE
