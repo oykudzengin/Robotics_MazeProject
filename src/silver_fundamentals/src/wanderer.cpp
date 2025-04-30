@@ -23,6 +23,9 @@ direction compute_turning_direction(std::vector<double> *ranges) {
   int ranges_size = ranges->size();
   int threshold_table_size = threshold_table.size();
   int starting_offset = (threshold_table_size-ranges_size)/2;
+
+  ROS_INFO("ranges size is %d, threshold table size is %d, offset is %d", ranges_size, threshold_table_size, starting_offset);
+
   for (int i = 0; i < ranges_size; i++) {
     if (ranges->at(i) < threshold_table.at(i+starting_offset)) {
       return left;
