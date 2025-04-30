@@ -55,7 +55,7 @@ void wander() {
     laser_srv.request.end = 90;
 
    	if (laser_client.call(laser_srv)) {
-      switch(laser_srv.response.values) {
+      switch(compute_turning_direction(&laser_srv.response.values)) {
         case none: ROS_INFO("Do not turn"); break;
         case left: ROS_INFO("Turn   left"); break;
         case right: ROS_INFO("Turn  right"); break;
