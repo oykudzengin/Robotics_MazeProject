@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(silver_fundamentals)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals std_msgs
-  message_generation)
+  message_generation geometry_msgs)
 
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
@@ -81,6 +81,10 @@ add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
 add_executable(laser_server src/laser_server.cpp)
 target_link_libraries(laser_server ${catkin_LIBRARIES})
 add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
+
+add_executable(square_no_sensors src/square_no_sensors.cpp)
+target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
+
 
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
