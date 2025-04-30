@@ -66,14 +66,17 @@ void wander() {
         case none: {
           drive_srv.request.left = speed;
           drive_srv.request.right = speed;
+          break;
         }
         case left: {
           drive_srv.request.left = -4;
           drive_srv.request.right = 4;
+          break;
          }
         case right: {
           drive_srv.request.left = 4;
           drive_srv.request.right = -4;
+          break;
         }
       }
     }
