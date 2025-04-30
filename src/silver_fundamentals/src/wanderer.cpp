@@ -47,7 +47,7 @@ void wander() {
   create_fundamentals::DiffDrive drive_srv;
 
   ros::Rate rate(10);
-  ros::Rate turning_update_rate(20);
+  ros::Rate turning_update_rate(100);
   double speed = 10.0;
 
 
@@ -63,12 +63,12 @@ void wander() {
           drive_srv.request.right = speed;
         }
         case left: {
-          drive_srv.request.left = -speed;
-          drive_srv.request.right = speed;
+          drive_srv.request.left = -4;
+          drive_srv.request.right = 4;
          }
         case right: {
-          drive_srv.request.left = speed;
-          drive_srv.request.right = -speed;
+          drive_srv.request.left = 4;
+          drive_srv.request.right = -4;
         }
       }
     }
