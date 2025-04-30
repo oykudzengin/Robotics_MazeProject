@@ -5,24 +5,33 @@
 #include "silver_fundamentals/Laser.h"
 #include <cmath>
 #include <sstream>
+#include <vector>
 #include <config.h>
 #include <laser_distance_map.h>
 
-#define FRONT_VISION_SIZE 60
-#define SIDE_VISION_SIZE
-
 
 // Store the closest obstacle distance
-float min_distance = std::numeric_limits<float>::infinity();
+// float min_distance = std::numeric_limits<float>::infinity();
 
-// Callback to update min_distance from laser scan
-void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg) {
-  // Use the laser scan's center ray for straight-ahead distance
-  size_t center_index = msg->ranges.size() / 2;
-  float center_distance = msg->ranges[center_index];
-  min_distance = center_distance;
+enum direction {
+  none,
+  left,
+  right,
+};
+
+direction compute_turning_direction(std::vector<double> *ranges) {
+  int ranges_size = ranges->size();
+  int threshold_table_size = threshold_table.size();
+  int starting_offset = (threshold_table_size-ranges_size)/2;
+  for (int i = 0; i < ranges_size; i++) {
+    if (ranges->at(i) < threshold_table.at(i+starting_offset)) {
+      return left;
+    } else if (ranges->at(ranges_size-1-i) < threshold_table.at(threshold_table_size-starting_offset-1-i)) {
+      return right;
+    }
+  }
+  return none;
 }
-
 
 void wander() {
   ros::NodeHandle n;
@@ -33,15 +42,37 @@ void wander() {
   ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
   create_fundamentals::DiffDrive drive_srv;
 
-  ros::Rate rate(10);
+  ros::Rate rate(2);
+  double speed = 10.0;
 
+
+  while (ros::ok()) {
+  	//drive_srv.request.left = speed;
+    //drive_srv.request.right = speed;
+          
+    //drive_client.call(drive_srv);
+    laser_srv.request.start = -90;
+    laser_srv.request.end = 90;
+
+   	if (laser_client.call(laser_srv)) {
+      switch(laser_srv.response.values) {
+        case none: ROS_INFO("Do not turn"); break;
+        case left: ROS_INFO("Turn   left"); break;
+        case right: ROS_INFO("Turn  right"); break;
+      }
+   	}
+   	rate.sleep();
+	}
 
 
 }
 
-
 int main(int argc, char** argv) {
   ros::init(argc, argv, "wanderer");
+
+
+  wander();
+
   ros::NodeHandle nh;
 
   // Subscribe to the laser scan topic
