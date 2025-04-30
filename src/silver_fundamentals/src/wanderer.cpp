@@ -33,6 +33,10 @@ direction compute_turning_direction(std::vector<double> *ranges) {
   return none;
 }
 
+bool threshold_is_clear(std::vector<double> *ranges) {
+  return compute_turning_direction(ranges) == none;
+}
+
 void wander() {
   ros::NodeHandle n;
 
@@ -42,18 +46,47 @@ void wander() {
   ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
   create_fundamentals::DiffDrive drive_srv;
 
-  ros::Rate rate(2);
+  ros::Rate rate(10);
+  ros::Rate turning_update_rate(20);
   double speed = 10.0;
 
 
   while (ros::ok()) {
-  	//drive_srv.request.left = speed;
-    //drive_srv.request.right = speed;
-          
-    //drive_client.call(drive_srv);
+
     laser_srv.request.start = -90;
     laser_srv.request.end = 90;
 
+    if (laser_client.call(laser_srv)) {
+      switch(compute_turning_direction(&laser_srv.response.values)) {
+        case none: {
+          drive_srv.request.left = speed;
+          drive_srv.request.right = speed;
+        }
+        case left: {
+          drive_srv.request.left = -speed;
+          drive_srv.request.right = speed;
+         }
+        case right: {
+          drive_srv.request.left = speed;
+          drive_srv.request.right = -speed;
+        }
+      }
+    }
+    drive_client.call(drive_srv);
+    while (laser_client.call(laser_srv) && !threshold_is_clear(&laser_srv.response.values)) {
+      turning_update_rate.sleep();
+    }
+
+    drive_srv.request.left = speed;
+    drive_srv.request.right = speed;
+
+    drive_client.call(drive_srv);
+
+    rate.sleep();
+  }
+}
+
+/*
    	if (laser_client.call(laser_srv)) {
       switch(compute_turning_direction(&laser_srv.response.values)) {
         case none: ROS_INFO("Do not turn"); break;
@@ -61,11 +94,10 @@ void wander() {
         case right: ROS_INFO("Turn  right"); break;
       }
    	}
-   	rate.sleep();
-	}
+   	rate.sleep();*/
 
 
-}
+
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "wanderer");
