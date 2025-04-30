@@ -24,7 +24,7 @@ direction compute_turning_direction(std::vector<double> *ranges) {
   int threshold_table_size = threshold_table.size();
   int starting_offset = (threshold_table_size-ranges_size)/2;
 
-  ROS_INFO("ranges size is %d, threshold table size is %d, offset is %d", ranges_size, threshold_table_size, starting_offset);
+  //ROS_INFO("ranges size is %d, threshold table size is %d, offset is %d", ranges_size, threshold_table_size, starting_offset);
 
   for (int i = 0; i < ranges_size; i++) {
     if (ranges->at(i) < threshold_table.at(i+starting_offset)) {
@@ -58,8 +58,8 @@ void wander() {
 
   while (ros::ok()) {
 
-    laser_srv.request.start = -90;
-    laser_srv.request.end = 90;
+    laser_srv.request.start = -120;
+    laser_srv.request.end = 120;
 
     if (laser_client.call(laser_srv)) {
       switch(compute_turning_direction(&laser_srv.response.values)) {
@@ -79,7 +79,7 @@ void wander() {
     }
     drive_client.call(drive_srv);
     while (laser_client.call(laser_srv) && !threshold_is_clear(&laser_srv.response.values)) {
-      turning_update_rate.sleep();
+      //turning_update_rate.sleep();
     }
 
     drive_srv.request.left = speed;
