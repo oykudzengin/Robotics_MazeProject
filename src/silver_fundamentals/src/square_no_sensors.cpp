@@ -20,8 +20,20 @@ int main(int argc, char **argv)
 
   double forward_speed = 10.0;
   double forward_time = 3.125; // seconds, adjust as needed
-  double turn_speed = 1.0;
-  double turn_time = 5.82; // seconds, adjust as needed
+  double turn_speed = 2.0;
+  double turn_time = 3.28; // seconds, adjust as needed
+
+  //test for the rotation
+  // srv.request.left = turn_speed;
+  // srv.request.right = -turn_speed;
+  // diffDrive.call(srv);
+  // ros::Duration(turn_time).sleep();
+
+  // // Stop again
+  // srv.request.left = 0;
+  // srv.request.right = 0;
+  // diffDrive.call(srv);
+  // ros::Duration(0.5).sleep();
 
   for (int i = 0; i < 4; ++i)
   {
@@ -40,8 +52,8 @@ int main(int argc, char **argv)
 
     // Turn 90 degrees
     ROS_INFO("Turning...");
-    srv.request.left = -turn_speed;
-    srv.request.right = turn_speed;
+    srv.request.left = turn_speed;
+    srv.request.right = -turn_speed;
     diffDrive.call(srv);
     ros::Duration(turn_time).sleep();
 
