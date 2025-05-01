@@ -18,10 +18,10 @@ int main(int argc, char **argv)
   
   create_fundamentals::DiffDrive srv;
 
-  double forward_speed = 1.0;
-  double forward_time = 2.0; // seconds, adjust as needed
+  double forward_speed = 10.0;
+  double forward_time = 3.125; // seconds, adjust as needed
   double turn_speed = 1.0;
-  double turn_time = 1.5; // seconds, adjust as needed
+  double turn_time = 1.571; // seconds, adjust as needed
 
   for (int i = 0; i < 4; ++i)
   {
