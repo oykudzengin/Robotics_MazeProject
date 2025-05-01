@@ -40,6 +40,7 @@ add_service_files(
         FILES
         Laser.srv
         DriveData.srv
+        ResetEncoders.srv
 )
 
 #common commands for building c++ executables and libraries
