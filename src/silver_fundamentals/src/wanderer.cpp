@@ -13,11 +13,7 @@
 // Store the closest obstacle distance
 // float min_distance = std::numeric_limits<float>::infinity();
 
-enum direction {
-  none,
-  left,
-  right,
-};
+
 
 direction compute_turning_direction(std::vector<double> *ranges) {
   int ranges_size = ranges->size();

@@ -5,6 +5,7 @@
 #include <silver_fundamentals/DriveData.h>
 #include <create_fundamentals/DiffDrive.h>
 #include <create_fundamentals/ResetEncoders.h>
+#include <config.h>
 
 class FeedbackDrive {
     public:
@@ -12,6 +13,7 @@ class FeedbackDrive {
         ~FeedbackDrive() = default;
 
         void drive_n_cm(double n);
+        void turn_n_degrees(double n, direction d);
 
     private:
         double wheel_radius;

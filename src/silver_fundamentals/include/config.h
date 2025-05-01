@@ -5,4 +5,11 @@
 #define WHEEL_RADIUS 3.2 //cm
 #define WHEEL_BASE 26.5 //cm
 
+
+enum direction {
+    none,
+    left,
+    right,
+  };
+
 #endif //CONFIG_H
