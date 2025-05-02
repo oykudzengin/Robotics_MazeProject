@@ -6,8 +6,8 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     speed = s;
 
     drive_data_client = n.serviceClient<silver_fundamentals::DiveData>("encoder_data");
-    drive_client = n.serviceClient<create_fundamentals::Laser>("diff_drive");
-    reset_encoders_client = n.serviceClient<silver_fundamentals::Laser>("reset_encoders");
+    drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+    reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("reset_encoders");
 
 }
 
