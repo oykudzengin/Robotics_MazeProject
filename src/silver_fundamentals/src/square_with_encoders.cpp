@@ -5,8 +5,5 @@
 int main(int argc, char **argv) {
     ros::init(argc, argv, "square_with_encoders");
     FeedbackDrive driver = FeedbackDrive(3.2, 25.0, 10.0);
-    for (int i = 0; i < 4; i++) {
-        driver.drive_n_cm(100);
-        driver.turn_n_degrees(90, right);
-    }
+    driver.turn_n_degrees(90, right);
 }
