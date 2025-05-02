@@ -61,6 +61,3 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     drive_client.call(drive_srv);
 }
 
-int main(int argc, char **argv) {
-    return 0;
-}
