@@ -4,6 +4,11 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     wheel_radius = wr;
     wheel_base = wb;
     speed = s;
+
+    drive_data_client = n.serviceClient<silver_fundamentals::DiveData>("encoder_data");
+    drive_client = n.serviceClient<create_fundamentals::Laser>("diff_drive");
+    reset_encoders_client = n.serviceClient<silver_fundamentals::Laser>("reset_encoders");
+
 }
 
 
