@@ -4,16 +4,24 @@
 
 static float left_encoder;
 static float right_encoder;
+static int i;
 
 void driveCallback(const create_fundamentals::SensorPacket::ConstPtr& msg)
 {
   left_encoder = msg->encoderLeft;
   right_encoder = msg->encoderRight;
+  i++;
+  if (i % 100 == 0) {
+      i = 0;
+      ROS_INFO("Encoder Left: %f, Encoder Right: %f", left_encoder, right_encoder);
+  }
+
 }
 
 
 
 bool get_encoder_data(silver_fundamentals::DriveData::Request  &req, silver_fundamentals::DriveData::Response &res) {
+    ROS_INFO("Received request");
     res.left_encoder = left_encoder;
     res.right_encoder = right_encoder;
     return true;
