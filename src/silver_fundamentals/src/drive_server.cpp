@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include <create_fundamentals/SensorPacket.h>
+#include <silver_fundamentals/ResetEncoders.h>
 #include "silver_fundamentals/DriveData.h"
 #include "create_fundamentals/ResetEncoders.h"
 
