@@ -4,7 +4,7 @@
 #include <ros/ros.h>
 #include "silver_fundamentals/DriveData.h"
 #include "create_fundamentals/DiffDrive.h"
-#include "create_fundamentals/ResetEncoders.h"
+#include "silver_fundamentals/ResetEncoders.h"
 #include <config.h>
 
 class FeedbackDrive {
@@ -29,7 +29,7 @@ class FeedbackDrive {
         create_fundamentals::DiffDrive drive_srv;
 
         ros::ServiceClient reset_encoders_client;
-        create_fundamentals::ResetEncoders reset_encoders_srv;
+        silver_fundamentals::ResetEncoders reset_encoders_srv;
 
         ros::Rate rate{100};
 };
