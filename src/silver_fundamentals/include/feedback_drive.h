@@ -9,7 +9,7 @@
 
 class FeedbackDrive {
     public:
-        FeedbackDrive();
+        FeedbackDrive(double, double, double);
         ~FeedbackDrive() = default;
 
         void drive_n_cm(double n);
