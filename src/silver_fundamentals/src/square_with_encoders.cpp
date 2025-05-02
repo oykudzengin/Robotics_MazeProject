@@ -2,6 +2,8 @@
 #include <feedback_drive.h>
 #include <string.h>
 
+// wheel diameter 3.25
+// wheelbase 26.203
 
 int main(int argc, char **argv) {
     double wheel_radius = std::atof(argv[1]);

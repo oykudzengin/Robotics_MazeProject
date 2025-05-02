@@ -32,7 +32,7 @@ class FeedbackDrive {
         ros::ServiceClient reset_encoders_client;
         silver_fundamentals::ResetEncoders reset_encoders_srv;
 
-        ros::Rate rate{100};
+        ros::Rate rate{1000};
 };
 
 
