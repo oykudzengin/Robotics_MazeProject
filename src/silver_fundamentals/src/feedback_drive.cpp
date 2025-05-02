@@ -8,6 +8,7 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
 
 
 void FeedbackDrive::drive_n_cm(double n) {
+    ROS_INFO("Drive n CM %f", n);
     drive_srv.request.left = speed;
     drive_srv.request.right = speed;
     double distance_in_rad = n/wheel_radius;
@@ -20,6 +21,7 @@ void FeedbackDrive::drive_n_cm(double n) {
 
         rate.sleep();
     }
+    ROS_INFO("Drive done");
 
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
