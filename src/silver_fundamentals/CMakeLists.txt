@@ -31,10 +31,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-add_message_files(
-        FILES
-        SensorPacket.msg
-)
+# add_message_files(
+#         FILES
+# )
 #uncomment if you have defined services
 add_service_files(
         FILES
