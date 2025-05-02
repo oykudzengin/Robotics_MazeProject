@@ -58,7 +58,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
             break;
         }
     }
-    double distance_in_rad = (n*WHEEL_BASE*PI)/360.0;
+    double distance_in_rad = (n*wheel_base*PI)/(360.0*wheel_radius);
 
     if (reset_encoders_client.call(reset_encoders_srv));
     drive_client.call(drive_srv);
