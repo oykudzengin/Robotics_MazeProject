@@ -11,9 +11,9 @@ int main(int argc, char **argv) {
     // larger wheelradius -> going less far
     FeedbackDrive driver = FeedbackDrive(wheel_radius, wheel_base, 10.0);
     driver.reset_encoders();
-    for (int i = 0; i < 20; i++) {
-        //driver.drive_n_cm(100);
-        driver.turn_n_degrees(90.0, right);
+    for (int i = 0; i < 5; i++) {
+        driver.drive_n_cm(100);
+        //driver.turn_n_degrees(90.0, right);
     }
 
 }
