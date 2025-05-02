@@ -26,14 +26,13 @@ void driveCallback(const create_fundamentals::SensorPacket::ConstPtr& msg)
 
 
 bool get_encoder_data(silver_fundamentals::DriveData::Request  &req, silver_fundamentals::DriveData::Response &res) {
-    ROS_INFO("Received request");
     res.left_encoder = left_encoder;
     res.right_encoder = right_encoder;
     return true;
 }
 
 bool reset_encoders(silver_fundamentals::ResetEncoders::Request &req, silver_fundamentals::ResetEncoders::Response &res) {
-
+    ROS_INFO("Resetting Encoders");
     reset_encoders_client.call(reset_encoders_srv);
     left_encoder = 0.0;
     right_encoder = 0.0;
