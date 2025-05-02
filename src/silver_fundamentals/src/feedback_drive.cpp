@@ -88,7 +88,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     drive_client.call(drive_srv);
 }
 
-FeedbackDrive::reset_encoders() {
+FeedbackDrive::reset_encoders(void) {
     reset_encoders_client.call(reset_encoders_srv);
 }
 
