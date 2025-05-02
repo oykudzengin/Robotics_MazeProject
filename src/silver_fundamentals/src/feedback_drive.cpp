@@ -19,6 +19,7 @@ void FeedbackDrive::drive_n_cm(double n) {
     double distance_in_rad = n/wheel_radius;
 
     reset_encoders_client.call(reset_encoders_srv);
+    drive_client.call(drive_srv);
     ROS_INFO("%d, %d", ros::ok(), drive_data_client.call(drive_data_srv));
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
         double current_rad_distance = (drive_data_srv.response.left_encoder + drive_data_srv.response.right_encoder)/2.0;
