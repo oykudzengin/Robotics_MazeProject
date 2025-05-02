@@ -11,7 +11,7 @@ void driveCallback(const create_fundamentals::SensorPacket::ConstPtr& msg)
   left_encoder = msg->encoderLeft;
   right_encoder = msg->encoderRight;
   i++;
-  if (i % 100 == 0) {
+  if (i % 10 == 0) {
       i = 0;
       ROS_INFO("Encoder Left: %f, Encoder Right: %f", left_encoder, right_encoder);
   }
