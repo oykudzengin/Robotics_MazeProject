@@ -1,4 +1,5 @@
 #include <feedback_drive.h>
+#include <cmath>
 
 FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     wheel_radius = wr;
@@ -62,7 +63,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     reset_encoders_client.call(reset_encoders_srv);
     drive_client.call(drive_srv);
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
-        double current_rad_distance = (drive_data_srv.response.left_encoder + drive_data_srv.response.right_encoder)/2.0;
+        double current_rad_distance = (std::abs(drive_data_srv.response.left_encoder) + std::abs(drive_data_srv.response.right_encoder))/2.0;
         if (current_rad_distance > distance_in_rad)
             break;
 
