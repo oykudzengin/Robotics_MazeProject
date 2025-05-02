@@ -47,7 +47,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "drive_server");
     ros::NodeHandle n;
 
-    reset_encoders_client = n.serviceClient<create_fundamentals::ResetEncoders>("reset_encoders");
+    reset_encoders_client = n.serviceClient<create_fundamentals::ResetEncoders>("/create_fundamentals/reset_encoders");
 
     ros::ServiceServer service = n.advertiseService("encoder_data", get_encoder_data);
     ros::ServiceServer service1 = n.advertiseService("reset_encoders", reset_encoders);
