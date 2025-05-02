@@ -82,9 +82,19 @@ add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
 target_link_libraries(wanderer ${catkin_LIBRARIES})
 add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
 
+add_executable(square_with_encoders src/feedback_drive.cpp)
+target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
+add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp)
+
 add_executable(laser_server src/laser_server.cpp)
 target_link_libraries(laser_server ${catkin_LIBRARIES})
 add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
 
+add_executable(drive_server src/drive_server.cpp)
+target_link_libraries(drive_server ${catkin_LIBRARIES})
+add_dependencies(drive_server create_fundamentals_generate_messages_cpp)
+
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
+add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
+add_dependencies(square_with_encoders silver_fundamentals_generate_messages_cpp)
