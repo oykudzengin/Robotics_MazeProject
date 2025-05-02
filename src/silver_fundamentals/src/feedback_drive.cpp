@@ -8,7 +8,7 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
 
     drive_data_client = n.serviceClient<silver_fundamentals::DriveData>("encoder_data");
     drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
-    reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("reset_encoders");
+    reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("wrap_reset_encoders");
 
 }
 
