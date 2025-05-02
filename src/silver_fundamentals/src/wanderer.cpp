@@ -1,6 +1,5 @@
 #include "ros/ros.h"
 #include <cstdlib>
-#include "sensor_msgs/LaserScan.h"
 #include "create_fundamentals/DiffDrive.h"
 #include "silver_fundamentals/Laser.h"
 #include <cmath>
@@ -13,11 +12,7 @@
 // Store the closest obstacle distance
 // float min_distance = std::numeric_limits<float>::infinity();
 
-enum direction {
-  none,
-  left,
-  right,
-};
+
 
 direction compute_turning_direction(std::vector<double> *ranges) {
   int ranges_size = ranges->size();

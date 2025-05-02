@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(silver_fundamentals)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals std_msgs
-  message_generation geometry_msgs)
+        message_generation)
 
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
@@ -31,12 +31,15 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #uncomment if you have defined messages
-#add_message_files(FILES
-#)
+# add_message_files(
+#         FILES
+# )
 #uncomment if you have defined services
 add_service_files(
-    FILES
-    Laser.srv
+        FILES
+        Laser.srv
+        DriveData.srv
+        ResetEncoders.srv
 )
 
 #common commands for building c++ executables and libraries
@@ -55,13 +58,13 @@ add_service_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-    DEPENDENCIES std_msgs create_fundamentals
+        DEPENDENCIES std_msgs create_fundamentals
 )
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
-    DEPENDS python-serial
-    CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime
+        DEPENDS python-serial
+        CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -78,9 +81,17 @@ add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
 target_link_libraries(wanderer ${catkin_LIBRARIES})
 add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
 
+add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp)
+target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
+add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp)
+
 add_executable(laser_server src/laser_server.cpp)
 target_link_libraries(laser_server ${catkin_LIBRARIES})
 add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
+
+add_executable(drive_server src/drive_server.cpp)
+target_link_libraries(drive_server ${catkin_LIBRARIES})
+add_dependencies(drive_server create_fundamentals_generate_messages_cpp)
 
 add_executable(square_no_sensors src/square_no_sensors.cpp)
 target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
@@ -89,3 +100,5 @@ add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
 
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
+add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
+add_dependencies(square_with_encoders silver_fundamentals_generate_messages_cpp)
