@@ -1,3 +1,4 @@
+#include "ros/ros.h"
 #include <create_fundamentals/SensorPacket.h>
 
 static float left_encoder;
