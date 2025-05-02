@@ -8,8 +8,8 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
 
 
 void FeedbackDrive::drive_n_cm(double n) {
-    drive_srv.left = speed;
-    drive_srv.right = speed;
+    drive_srv.request.left = speed;
+    drive_srv.request.right = speed;
     double distance_in_rad = n/wheel_radius;
 
     reset_encoders_client.call(reset_encoders_srv);
@@ -21,8 +21,8 @@ void FeedbackDrive::drive_n_cm(double n) {
         rate.sleep();
     }
 
-    drive_srv.left = 0;
-    drive_srv.right = 0;
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
     drive_client.call(drive_srv);
 }
 
@@ -56,7 +56,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
         rate.sleep();
     }
 
-    drive_srv.left = 0;
-    drive_srv.right = 0;
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
     drive_client.call(drive_srv);
 }
