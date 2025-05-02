@@ -33,7 +33,7 @@ bool get_encoder_data(silver_fundamentals::DriveData::Request  &req, silver_fund
 
 bool reset_encoders(silver_fundamentals::ResetEncoders::Request &req, silver_fundamentals::ResetEncoders::Response &res) {
     ROS_INFO("Resetting Encoders");
-    reset_encoders_client.call(reset_encoders_srv);
+    while (!reset_encoders_client.call(reset_encoders_srv));
     left_encoder = 0.0;
     right_encoder = 0.0;
     res.success = true;

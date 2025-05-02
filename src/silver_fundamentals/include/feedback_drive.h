@@ -14,6 +14,7 @@ class FeedbackDrive {
 
         void drive_n_cm(double n);
         void turn_n_degrees(double n, direction d);
+        bool reset_encoders();
 
     private:
         double wheel_radius;

@@ -19,11 +19,18 @@ void FeedbackDrive::drive_n_cm(double n) {
     drive_srv.request.right = speed;
     double distance_in_rad = n/wheel_radius;
 
-    while (!reset_encoders_client.call(reset_encoders_srv));
+    // reset_encoders_client.call(reset_encoders_srv);
+    drive_data_client.call(drive_data_srv);
+    double base_line_left = drive_data_srv.response.left_encoder;
+    double base_line_right = drive_data_srv.response.right_encoder;
+
+
     drive_client.call(drive_srv);
     ROS_INFO("%d, %d", ros::ok(), drive_data_client.call(drive_data_srv));
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
-        double current_rad_distance = (drive_data_srv.response.left_encoder + drive_data_srv.response.right_encoder)/2.0;
+        double left_delta = drive_data_srv.response.left_encoder - base_line_left;
+        double right_delta = drive_data_srv.response.right_encoder - base_line_right;
+        double current_rad_distance = (left_delta + right_delta)/2.0;
         if (current_rad_distance > distance_in_rad)
             break;
 
@@ -60,10 +67,16 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     }
     double distance_in_rad = (n*wheel_base*PI)/(360.0*wheel_radius);
 
-    while (!reset_encoders_client.call(reset_encoders_srv));
+    //reset_encoders_client.call(reset_encoders_srv);
+    drive_data_client.call(drive_data_srv);
+    double base_line_left = drive_data_srv.response.left_encoder;
+    double base_line_right = drive_data_srv.response.right_encoder;
+
     drive_client.call(drive_srv);
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
-        double current_rad_distance = (std::abs(drive_data_srv.response.left_encoder) + std::abs(drive_data_srv.response.right_encoder))/2.0;
+        double left_delta = drive_data_srv.response.left_encoder - base_line_left;
+        double right_delta = drive_data_srv.response.right_encoder - base_line_right;
+        double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta))/2.0;
         if (current_rad_distance > distance_in_rad)
             break;
 
@@ -73,5 +86,9 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
+}
+
+FeedbackDrive::reset_encoders() {
+    reset_encoders_client.call(reset_encoders_srv);
 }
 
