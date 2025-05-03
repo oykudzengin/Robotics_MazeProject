@@ -98,11 +98,12 @@ void FeedbackDrive::reset_encoders(void) {
 void FeedbackDrive::distance_to_wall(double should_distance) {
     ros::NodeHandle n;
     double real_distance;
+    double offset = 0.01 * should_distance;
 
     ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
     silver_fundamentals::Laser laser_srv;
 
-    ros::Rate rate(10);
+    ros::Rate rate(100);
     do {
         // get real distance
         laser_srv.request.start = 0;
@@ -112,20 +113,27 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             real_distance = laser_srv.response.values[0];
         }
 
-        if (real_distance > should_distance) {
+        if (real_distance - should_distance < offset && should_distance - real_distance < offset) {
+            // in between
+            // at distance stop
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            break;
+        } else if (real_distance > should_distance ) {
             // drive at wal (forward)
-            drive_srv.request.left = 2;
-            drive_srv.request.right = 2;
+            drive_srv.request.left = 1;
+            drive_srv.request.right = 1;
             drive_client.call(drive_srv);
 
         } else if (real_distance < should_distance) {
             // drive backwards (from wall)
-            drive_srv.request.left = -2;
-            drive_srv.request.right = -2;
+            drive_srv.request.left = -1;
+            drive_srv.request.right = -1;
             drive_client.call(drive_srv);
 
         } else {
-            // at distance stop
+            // stop for nan.
             drive_srv.request.left = 0;
             drive_srv.request.right = 0;
             drive_client.call(drive_srv);
@@ -135,7 +143,6 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
 
 
     } while(ros::ok() && real_distance != should_distance);
-
 
 
 }
