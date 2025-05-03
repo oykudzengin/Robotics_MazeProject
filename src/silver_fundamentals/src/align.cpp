@@ -1,5 +1,6 @@
 #include "ros/ros.h"
 #include "silver_fundamentals/LaserCartesian.h"
+#include "silver_fundamentals/Laser.h"
 #include <config.h>
 #include <random>
 #include <sstream>
@@ -122,10 +123,10 @@ int align() {
         while (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser cartesian service");
         }
-        std::vector<double> pts = laser_cart_srv.response.values;
+        std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // get ransac angle
-        angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+        angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
 
         // TODO: better values then 150?
         if (values_used > 150)
@@ -182,11 +183,11 @@ int align() {
         while (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser cartesian service");
         }
-        std::vector<double> pts = laser_cart_srv.response.values;
+        std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // to ransac until wall in front is found
         do {
-            angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+            angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
 
         if (values_used <= 100) {
@@ -216,11 +217,11 @@ int align() {
         while (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser cartesian service");
         }
-        std::vector<double> pts = laser_cart_srv.response.values;
+        std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // to ransac until wall in front is found
         do {
-            angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+            angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
 
         if (values_used <= 100) {
@@ -303,9 +304,8 @@ int main(int argc, char **argv) {
         }
 
         int amount;
-        int amount1;
-        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount, &amount1);
-        ROS_INFO("Wall direction: %f %d %d", wall_direction, amount, amount1);
+        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount);
+        ROS_INFO("Wall direction: %f %d", wall_direction, amount);
     }
 
     return 0;
