@@ -8,7 +8,7 @@
 
 
 
-double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max_iterations) {
+double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max_iterations, int* amount) {
     if (pts.size() < 2)
         return std::numeric_limits<double>::infinity();
 
@@ -74,6 +74,8 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
     double angle_rad = std::atan2(y0, x0);
     double angle_deg = angle_rad * 180.0 / M_PI;
 
+    *amount = best_count;
+
     return angle_deg;
 }
 
@@ -128,8 +130,9 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 100000);
-        ROS_INFO("Wall direction: %f", wall_direction);
+        int amount;
+        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 50000, &amount);
+        ROS_INFO("Wall direction: %f %d", wall_direction, amount);
     }
 
 
