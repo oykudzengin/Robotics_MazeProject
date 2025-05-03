@@ -97,7 +97,11 @@ add_executable(square_no_sensors src/square_no_sensors.cpp)
 target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
 
+add_executable(test_distance_to_wall src/feedback_drive.cpp src/test_distance_to_wall.cpp)
+target_link_libraries(test_distance_to_wall ${catkin_LIBRARIES})
+add_dependencies(test_distance_to_wall create_fundamentals_generate_messages_cpp)
 
+add_dependencies(test_distance_to_wall silver_fundamentals_generate_messages_cpp)
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)

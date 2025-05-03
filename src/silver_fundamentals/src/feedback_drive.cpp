@@ -96,7 +96,7 @@ void FeedbackDrive::reset_encoders(void) {
 }
 
 
-void FeedbackDrive::distance_to_wall(int should_distance) {
+void FeedbackDrive::distance_to_wall(double should_distance) {
     ros::NodeHandle n;
     double real_distance;
 
@@ -136,10 +136,6 @@ void FeedbackDrive::distance_to_wall(int should_distance) {
 
 
     } while(ros::ok() && real_distance != should_distance);
-
-
-
-
 
 
 }

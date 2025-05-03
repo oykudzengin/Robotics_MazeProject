@@ -15,7 +15,7 @@ class FeedbackDrive {
         void drive_n_cm(double n);
         void turn_n_degrees(double n, direction d);
         void reset_encoders(void);
-        void distance_to_wall(int should_distance);
+        void distance_to_wall(double should_distance);
 
     private:
         double wheel_radius;
