@@ -5,12 +5,28 @@
 #include <sstream>
 #include <string>
 #include <geometry_msgs/Point.h>
+#include <feedback_drive.h>
 
+double minIgnoringNaN(const std::vector<double> &v) {
+    double best = std::numeric_limits<double>::infinity();
+    bool gotOne = false;
 
+    for (double x: v) {
+        if (std::isnan(x)) continue;
+        gotOne = true;
+        best = std::min(best, x);
+    }
+    return gotOne
+               ? best
+               : std::numeric_limits<double>::quiet_NaN();
+}
 
-double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max_iterations, int* amount, int *amount1) {
-    if (pts.size() < 2)
+double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount) {
+    if (pts.size() < 2) {
+        *amount = 0;
         return std::numeric_limits<double>::infinity();
+    }
+
 
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<unsigned int> uni(0, pts.size() - 1);
@@ -34,23 +50,15 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
 
         double norm = std::hypot(dx, dy);
 
-        /*
-        if (norm < 0.1) {
-            iter--;
-            continue;
-        }
-        */
-
         double a = dy / norm;
         double b = dx / norm;
-        double c = dx*P.y - dy*P.x;
+        double c = dx * P.y - dy * P.x;
 
 
         unsigned int inliners = 0;
 
-
-        for (const auto &pt : pts) {
-            const double dist_to_line = std::fabs(a*pt.x + b*pt.y + c);
+        for (const auto &pt: pts) {
+            const double dist_to_line = std::fabs(a * pt.x + b * pt.y + c);
             if (dist_to_line <= max_offset)
                 inliners++;
         }
@@ -61,11 +69,18 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
             best_b = b;
             best_c = c;
         }
-
     }
 
-    if (best_count < 2)
+    if (best_count < 2) {
+        *amount = 0;
         std::numeric_limits<double>::infinity();
+    }
+
+
+    pts.erase(std::remove_if(pts.begin(), pts.end(), [&](const geometry_msgs::Point &pt) {
+        return std::fabs(best_a * pt.x + best_b * pt.y + best_c) <= max_offset;
+    }), pts.end());
+
 
     // compute line angle
     double x0 = -best_a * best_c;
@@ -75,17 +90,165 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
     double angle_deg = angle_rad * 180.0 / M_PI;
 
     *amount = best_count;
-    *amount1 = pts.size();
-
-    return angle_deg;
+    return -angle_deg;
 }
 
 
-int main(int argc, char** argv) {
+int align() {
+    ros::NodeHandle n;
+
+    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
+        "laserAngleRangeCartesian");
+    silver_fundamentals::LaserCartesian laser_cart_srv;
+
+    ros::ServiceClient laser_pol_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
+    silver_fundamentals::Laser laser_pol_srv;
+
+    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
+
+    ros::Rate rate(10);
+
+    laser_cart_srv.request.start = -120;
+    laser_cart_srv.request.end = 120;
+
+    int values_used = 0;
+
+    double angle_to_closest_wall;
+
+
+    int tries = 0;
+    while (true) {
+        // get laser data
+        while (!laser_cart_client.call(laser_cart_srv)) {
+            ROS_ERROR("Failed to call laser cartesian service");
+        }
+        std::vector<double> pts = laser_cart_srv.response.values;
+
+        // get ransac angle
+        angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+
+        // TODO: better values then 150?
+        if (values_used > 150)
+            break;
+
+        driver.turn_n_degrees(90.0, right);
+        if (tries % 4 == 0) {
+            /* TODO: some wandering*/
+        }
+        tries++;
+    }
+
+    // turn to wall
+    driver.turn_n_degrees(std::abs(angle_to_closest_wall), angle_to_closest_wall > 0 ? left : right);
+
+    // drive to wall
+    /* TODO: drive to wall 40cm */
+
+    // check for wall right and left
+    laser_pol_srv.request.start = -120;
+    laser_pol_srv.request.end = -90;
+    while (!laser_pol_client.call(laser_pol_srv)) {
+        ROS_ERROR("Failed to call laser polar service");
+    }
+    bool something_to_the_right = !std::isnan(minIgnoringNaN(laser_pol_srv.response.values));
+
+    laser_pol_srv.request.start = 90;
+    laser_pol_srv.request.end = 120;
+    while (!laser_pol_client.call(laser_pol_srv)) {
+        ROS_ERROR("Failed to call laser polar service");
+    }
+    bool something_to_the_left = !std::isnan(minIgnoringNaN(laser_pol_srv.response.values));
+
+
+    direction align_direction = none;
+    double align_angle = std::numeric_limits<double>::infinity();
+
+    if (something_to_the_right) {
+
+        // turn to wall
+        driver.turn_n_degrees(90.0, right);
+
+        // setup laser_call
+        laser_cart_srv.request.start = -90;
+        laser_cart_srv.request.end = 90;
+
+        values_used = 0;
+
+        // get laser data
+        while (!laser_cart_client.call(laser_cart_srv)) {
+            ROS_ERROR("Failed to call laser cartesian service");
+        }
+        std::vector<double> pts = laser_cart_srv.response.values;
+
+        // to ransac until wall in front is found
+        do {
+            angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
+
+        if (values_used <= 100) {
+            // turning right might be fine but ransac found nothing
+            align_direction = right;
+        } else {
+            // ransac found stuff;
+            align_angle = std::abs(angle_to_closest_wall);
+            align_direction = right;
+        }
+    }
+    if (align_angle == std::numeric_limits<double>::infinity() && something_to_the_left) {
+
+        // turn depending on if turned right before
+        if (something_to_the_right)
+            driver.turn_n_degrees(180.0, right);
+        else
+            driver.turn_n_degrees(90.0, left);
+
+        // setup laser_call
+        laser_cart_srv.request.start = -90;
+        laser_cart_srv.request.end = 90;
+
+        values_used = 0;
+
+        // get laser data
+        while (!laser_cart_client.call(laser_cart_srv)) {
+            ROS_ERROR("Failed to call laser cartesian service");
+        }
+        std::vector<double> pts = laser_cart_srv.response.values;
+
+        // to ransac until wall in front is found
+        do {
+            angle_to_closest_wall = ransac(&pts, 0.08, 5000, &values_used);
+        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
+
+        if (values_used <= 100) {
+            align_direction = left;
+        } else {
+            align_angle = std::abs(angle_to_closest_wall);
+            align_direction = left;
+        }
+    }
+    if (align_angle == std::numeric_limits<double>::infinity()) {
+        align_angle = 90.0;
+    }
+    if (align_direction == none) {
+        align_direction = left;
+    }
+
+    driver.turn_n_degrees(align_angle, align_direction);
+
+    /* TODO: drive to 40cm next to wall*/
+    // DONE :)
+
+    return 0;
+
+}
+
+
+int main(int argc, char **argv) {
     ros::init(argc, argv, "align");
     ros::NodeHandle n;
 
-    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
+    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
+        "laserAngleRangeCartesian");
     silver_fundamentals::LaserCartesian laser_cart_srv;
 
     ros::Rate rate(10);
@@ -137,9 +300,6 @@ int main(int argc, char** argv) {
         double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount, &amount1);
         ROS_INFO("Wall direction: %f %d %d", wall_direction, amount, amount1);
     }
-
-
-
 
     return 0;
 }
