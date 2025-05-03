@@ -8,7 +8,7 @@
 
 
 
-double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max_iterations, int* amount) {
+double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max_iterations, int* amount, int *amount1) {
     if (pts.size() < 2)
         return std::numeric_limits<double>::infinity();
 
@@ -75,6 +75,7 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
     double angle_deg = angle_rad * 180.0 / M_PI;
 
     *amount = best_count;
+    *amount1 = pts.size();
 
     return angle_deg;
 }
