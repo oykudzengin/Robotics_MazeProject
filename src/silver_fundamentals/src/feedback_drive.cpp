@@ -148,21 +148,24 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             real_distance_side_r = laser_srv.response.values[0];
         }
 
-        // Skip iteration if any laser reading is NaN
-        if (std::isnan(real_distance) || std::isnan(real_distance_side_l) || std::isnan(real_distance_side_r)) {
-            ROS_WARN("distance_to_wall: NaN reading detected, skipping iteration");
-            rate.sleep();
-            continue;
-        }
 
         ROS_INFO("should_side: %f , real_side_l:%f , real_side_r: %f, alpha: %d, real_distance_front: %f", should_distance_side, real_distance_side_l, real_distance_side_r, alpha, real_distance);
 
+        // Define conditions that ignore NaNs by treating NaN sensors as automatically satisfied
+        bool front_ok = std::isnan(real_distance) || std::fabs(real_distance - should_distance) < offset;
+        bool right_ok = std::isnan(real_distance_side_r) || std::fabs(real_distance_side_r - should_distance_side) < side_offset;
+        bool left_ok = std::isnan(real_distance_side_l) || std::fabs(real_distance_side_l - should_distance_side) < side_offset;
 
-        // if ((real_distance - should_distance < offset && should_distance - real_distance < offset) && (real_distance_side_r - should_distance_side < side_offset && should_distance_side - real_distance_side_r < side_offset) && (real_distance_side_l - should_distance_side < side_offset && should_distance_side - real_distance_side_l < side_offset))
+        bool front_far = std::isnan(real_distance) || real_distance > should_distance;
+        bool right_far = std::isnan(real_distance_side_r) || real_distance_side_r > should_distance_side;
+        bool left_far = std::isnan(real_distance_side_l) || real_distance_side_l > should_distance_side;
 
-        
-        
-        if ((real_distance - should_distance < offset && should_distance - real_distance < offset) && (real_distance_side_r - should_distance_side < side_offset && should_distance_side - real_distance_side_r < side_offset) && (real_distance_side_l - should_distance_side < side_offset && should_distance_side - real_distance_side_l < side_offset)) {
+        bool front_close = std::isnan(real_distance) || real_distance < should_distance;
+        bool right_close = std::isnan(real_distance_side_r) || real_distance_side_r < should_distance_side;
+        bool left_close = std::isnan(real_distance_side_l) || real_distance_side_l < should_distance_side;
+
+
+        if (front_ok && right_ok && left_ok) {
             ROS_INFO("hit value");
             // ROS_INFO("In thrshold: %d", );
             // in between
@@ -171,7 +174,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             drive_srv.request.right = 0;
             drive_client.call(drive_srv);
             break;
-        } else if (real_distance > should_distance && real_distance_side_r > should_distance_side && real_distance_side_l > should_distance_side) {
+        } else if (front_far && right_far && left_far) {
             ROS_INFO("drive at wall");
             // ROS_INFO("drive forward: %d");
             // drive at wal (forward)
@@ -179,7 +182,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             drive_srv.request.right = 1;
             drive_client.call(drive_srv);
 
-        } else if (real_distance < should_distance && real_distance_side_r < should_distance_side && real_distance_side_l < should_distance_side) {
+        } else if (front_close && right_close && left_close) {
             // drive backwards (from wall)
             ROS_INFO("drive back");
             // ROS_INFO("drive backwards: %d");
@@ -202,4 +205,3 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
 
 
 }
-
