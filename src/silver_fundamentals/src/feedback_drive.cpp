@@ -105,18 +105,19 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     double side_offset;
     
 
-    ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
+    ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRangeCartesian");
     silver_fundamentals::Laser laser_srv;
 
     ros::Rate rate(100);
 
     // should a 
-    double a = 20; // robot radius + x
+    double a = 0.185; // robot radius + x
     // should b 
     double b = 0.4;
 
 
-    double alpha = atan(b/a);
+    
+    int alpha = static_cast<int>(std::round(atan(b/a) * (180.0 / M_PI)));  // M_PI is defined in cmath
 
     double should_distance_side = sqrt(pow(a, 2) + pow(b, 2));
     side_offset = 0.01 * should_distance_side;
@@ -132,25 +133,38 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
         }
 
         // get real distance 
-        laser_srv.request.start = alpha;
-        laser_srv.request.end = alpha;
-
-        if (laser_client.call(laser_srv)) {
-            real_distance_side_r = laser_srv.response.values[0];
-        }
-
-        // get real distance 
-        laser_srv.request.start = -alpha;
-        laser_srv.request.end = -alpha;
+        laser_srv.request.start = 90 - alpha;
+        laser_srv.request.end = 90 - alpha;
 
         if (laser_client.call(laser_srv)) {
             real_distance_side_l = laser_srv.response.values[0];
         }
 
-        ROS_INFO("should_side: %f , real_side_l:%f , real_side_r: %f, alpha: %f", should_distance_side, real_distance_side_l, real_distance_side_r, alpha);
+        // get real distance 
+        laser_srv.request.start = -(90 - alpha);
+        laser_srv.request.end = -(90 - alpha);
+
+        if (laser_client.call(laser_srv)) {
+            real_distance_side_r = laser_srv.response.values[0];
+        }
+
+        // Skip iteration if any laser reading is NaN
+        if (std::isnan(real_distance) || std::isnan(real_distance_side_l) || std::isnan(real_distance_side_r)) {
+            ROS_WARN("distance_to_wall: NaN reading detected, skipping iteration");
+            rate.sleep();
+            continue;
+        }
+
+        ROS_INFO("should_side: %f , real_side_l:%f , real_side_r: %f, alpha: %d, real_distance_front: %f", should_distance_side, real_distance_side_l, real_distance_side_r, alpha, real_distance);
+
+
+        // if ((real_distance - should_distance < offset && should_distance - real_distance < offset) && (real_distance_side_r - should_distance_side < side_offset && should_distance_side - real_distance_side_r < side_offset) && (real_distance_side_l - should_distance_side < side_offset && should_distance_side - real_distance_side_l < side_offset))
 
         
+        
         if ((real_distance - should_distance < offset && should_distance - real_distance < offset) && (real_distance_side_r - should_distance_side < side_offset && should_distance_side - real_distance_side_r < side_offset) && (real_distance_side_l - should_distance_side < side_offset && should_distance_side - real_distance_side_l < side_offset)) {
+            ROS_INFO("hit value");
+            // ROS_INFO("In thrshold: %d", );
             // in between
             // at distance stop
             drive_srv.request.left = 0;
@@ -158,6 +172,8 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             drive_client.call(drive_srv);
             break;
         } else if (real_distance > should_distance && real_distance_side_r > should_distance_side && real_distance_side_l > should_distance_side) {
+            ROS_INFO("drive at wall");
+            // ROS_INFO("drive forward: %d");
             // drive at wal (forward)
             drive_srv.request.left = 1;
             drive_srv.request.right = 1;
@@ -165,12 +181,15 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
 
         } else if (real_distance < should_distance && real_distance_side_r < should_distance_side && real_distance_side_l < should_distance_side) {
             // drive backwards (from wall)
+            ROS_INFO("drive back");
+            // ROS_INFO("drive backwards: %d");
             drive_srv.request.left = -1;
             drive_srv.request.right = -1;
             drive_client.call(drive_srv);
 
         } else {
             // stop for nan.
+            ROS_INFO("nan");
             drive_srv.request.left = 0;
             drive_srv.request.right = 0;
             drive_client.call(drive_srv);
