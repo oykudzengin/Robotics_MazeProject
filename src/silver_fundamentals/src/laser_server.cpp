@@ -71,10 +71,12 @@ bool laser_angle_range_cartesian(silver_fundamentals::LaserCartesian::Request& r
     */
     std::vector<geometry_msgs::Point> cart_points;
     cart_points.reserve(std::min(max_index + 1, static_cast<int>(laser_data.ranges.size())) - min_index);
+    ROS_INFO("min index is %d, max_index is %d", min_index, max_index);
 
     for (int i = min_index; i <= max_index && i < static_cast<int>(laser_data.ranges.size()); i++) {
         double dist = laser_data.ranges[i];
         if (std::isnan(dist) || dist < laser_data.range_min) {
+            ROS_ERROR(" %d Laser cartesian angle out of range", i);
             continue;
         }
         double angle = laser_data.angle_min + i*laser_data.angle_increment;
