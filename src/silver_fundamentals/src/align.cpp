@@ -145,7 +145,7 @@ int align() {
 
     // drive to wall
     /* TODO: drive to wall 40cm */
-    driver.distance_to_wall(0.4);
+    driver.distance_to_wall(0.25);
     ROS_INFO("aligned to first wall");
 
     // check for wall right and left
@@ -173,6 +173,8 @@ int align() {
 
         // turn to wall
         driver.turn_n_degrees(90.0, right);
+        rate.sleep();
+        rate.sleep();
 
         // setup laser_call
         laser_cart_srv.request.start = -90;
@@ -207,6 +209,9 @@ int align() {
             driver.turn_n_degrees(180.0, right);
         else
             driver.turn_n_degrees(90.0, left);
+
+        rate.sleep();
+        rate.sleep();
 
         // setup laser_call
         laser_cart_srv.request.start = -90;
@@ -244,7 +249,7 @@ int align() {
     driver.turn_n_degrees(align_angle, align_direction);
 
     /* TODO: drive to 40cm next to wall*/
-    driver.distance_to_wall(0.4);
+    driver.distance_to_wall(0.25);
     // DONE :)
 
     return 0;
