@@ -137,12 +137,14 @@ int align() {
         }
         tries++;
     }
+    ROS_INFO("Angle: %f first wall", angle_to_closest_wall);
 
     // turn to wall
     driver.turn_n_degrees(std::abs(angle_to_closest_wall), angle_to_closest_wall > 0 ? left : right);
 
     // drive to wall
     /* TODO: drive to wall 40cm */
+    driver.distance_to_wall(0.4);
 
     // check for wall right and left
     laser_pol_srv.request.start = -120;
@@ -158,6 +160,8 @@ int align() {
         ROS_ERROR("Failed to call laser polar service");
     }
     bool something_to_the_left = !std::isnan(minIgnoringNaN(laser_pol_srv.response.values));
+
+    ROS_INFO("Left is %d, Right is %d", something_to_the_left, something_to_the_right);
 
 
     direction align_direction = none;
@@ -233,9 +237,12 @@ int align() {
         align_direction = left;
     }
 
+    ROS_INFO("Turning %f now", align_angle);
+
     driver.turn_n_degrees(align_angle, align_direction);
 
     /* TODO: drive to 40cm next to wall*/
+    driver.distance_to_wall(0.4);
     // DONE :)
 
     return 0;
