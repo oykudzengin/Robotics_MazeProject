@@ -253,6 +253,10 @@ int align() {
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "align");
+
+    align();
+    return 0;
+
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
