@@ -91,6 +91,7 @@ int main(int argc, char** argv) {
     ros::Rate rate(10);
 
     double max_offset = std::atof(argv[1]);
+    double iter = std::atof(argv[2]);
 
     /*
     while (ros::ok()) {
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
 
         int amount;
         int amount1;
-        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 50000, &amount, &amount1);
+        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount, &amount1);
         ROS_INFO("Wall direction: %f %d %d", wall_direction, amount, amount1);
     }
 
