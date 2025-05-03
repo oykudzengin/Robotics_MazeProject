@@ -146,6 +146,7 @@ int align() {
     // drive to wall
     /* TODO: drive to wall 40cm */
     driver.distance_to_wall(0.4);
+    ROS_INFO("aligned to first wall");
 
     // check for wall right and left
     laser_pol_srv.request.start = -120;
