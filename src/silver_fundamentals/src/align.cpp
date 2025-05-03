@@ -5,6 +5,7 @@
 #include <string>
 
 int main() {
+    ros::init(argc, argv, "align");
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
