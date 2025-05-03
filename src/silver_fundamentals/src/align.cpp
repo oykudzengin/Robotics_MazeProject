@@ -35,10 +35,12 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
 
         double norm = std::hypot(dx, dy);
 
+        /*
         if (norm < 0.1) {
             iter--;
             continue;
         }
+        */
 
         double a = dy / norm;
         double b = dx / norm;
@@ -88,6 +90,8 @@ int main(int argc, char** argv) {
 
     ros::Rate rate(10);
 
+    double max_offset = std::atof(argv[1]);
+
     /*
     while (ros::ok()) {
         laser_cart_srv.request.start = -120;
@@ -127,7 +131,7 @@ int main(int argc, char** argv) {
             continue;
         }
 
-        double wall_direction = ransac(laser_cart_srv.response.values, 0.05, 10000);
+        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 100000);
         ROS_INFO("Wall direction: %f", wall_direction);
     }
 
