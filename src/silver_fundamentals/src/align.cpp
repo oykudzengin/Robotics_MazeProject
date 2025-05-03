@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 
-int main() {
+int mainint argc, char** argv() {
     ros::init(argc, argv, "align");
     ros::NodeHandle n;
 
