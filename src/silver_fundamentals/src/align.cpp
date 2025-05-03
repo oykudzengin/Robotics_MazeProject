@@ -107,7 +107,7 @@ int align() {
 
     auto driver = FeedbackDrive(3.25, 26.203, 2.0);
 
-    ros::Rate rate(10);
+    ros::Rate rate(1);
 
     laser_cart_srv.request.start = -120;
     laser_cart_srv.request.end = 120;
