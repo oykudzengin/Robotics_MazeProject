@@ -132,8 +132,9 @@ int main(int argc, char** argv) {
         }
 
         int amount;
-        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 50000, &amount);
-        ROS_INFO("Wall direction: %f %d", wall_direction, amount);
+        int amount1;
+        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, 50000, &amount, &amount1);
+        ROS_INFO("Wall direction: %f %d %d", wall_direction, amount, amount1);
     }
 
 
