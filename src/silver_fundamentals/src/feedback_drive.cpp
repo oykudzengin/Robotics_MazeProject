@@ -1,5 +1,8 @@
 #include <feedback_drive.h>
 #include <cmath>
+#include "silver_fundamentals/Laser.h"
+#include <laser_distance_map.h>
+#include "ros/ros.h"
 
 FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     wheel_radius = wr;
@@ -90,5 +93,54 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
 
 void FeedbackDrive::reset_encoders(void) {
     reset_encoders_client.call(reset_encoders_srv);
+}
+
+
+void FeedbackDrive::distance_to_wall(int should_distance) {
+    ros::NodeHandle n;
+    double real_distance;
+
+    ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
+    silver_fundamentals::Laser laser_srv;
+
+    ros::Rate rate(10);
+    do {
+        // get real distance 
+        laser_srv.request.start = 0;
+        laser_srv.request.end = 0;
+
+        if (laser_client.call(laser_srv)) {
+            real_distance = laser_srv.response.values[0];
+        }
+
+        if (real_distance > should_distance) {
+            // drive at wal (forward)
+            drive_srv.request.left = 5;
+            drive_srv.request.right = 5;
+            drive_client.call(drive_srv);
+
+        } else if (real_distance < should_distance) {
+            // drive backwards (from wall)
+            drive_srv.request.left = -5;
+            drive_srv.request.right = -5;
+            drive_client.call(drive_srv);
+
+        } else {
+            // at distance stop
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            break;
+        }
+
+
+
+    } while(ros::ok() && real_distance != should_distance);
+
+
+
+
+
+
 }
 
