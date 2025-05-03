@@ -17,7 +17,6 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
 
     unsigned int best_count = 0;
     double best_a = 0, best_b = 0, best_c = 0;
-    geometry_msgs::Point best_pt;
 
     for (int iter = 0; iter < max_iterations; iter++) {
         const unsigned int i = uni(rng);
@@ -49,18 +48,11 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
 
         unsigned int inliners = 0;
 
-        geometry_msgs::Point best_current_pt;
-        double best_current_dist = std::numeric_limits<double>::infinity();
 
         for (const auto &pt : pts) {
             const double dist_to_line = std::fabs(a*pt.x + b*pt.y + c);
             if (dist_to_line <= max_offset)
                 inliners++;
-                const double dist_to_origin = std::hypot(pt.x, pt.y);
-                if (dist_to_origin < best_current_dist) {
-                    best_current_dist = dist_to_origin;
-                    best_current_pt   = pt;
-                }
         }
 
         if (inliners > best_count) {
@@ -68,16 +60,21 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
             best_a = a;
             best_b = b;
             best_c = c;
-            best_pt = best_current_pt;
         }
-    }
 
+    }
 
     if (best_count < 2)
         std::numeric_limits<double>::infinity();
 
+    // compute line angle
+    double x0 = -best_a * best_c;
+    double y0 = -best_b * best_c;
 
-    return best_pt.z;
+    double angle_rad = std::atan2(y0, x0);
+    double angle_deg = angle_rad * 180.0 / M_PI;
+
+    return angle_deg;
 }
 
 
