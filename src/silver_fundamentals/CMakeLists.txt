@@ -98,8 +98,12 @@ add_executable(square_no_sensors src/square_no_sensors.cpp)
 target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
 
+add_executable(align src/align.cpp)
+target_link_libraries(align ${catkin_LIBRARIES})
+add_dependencies(align create_fundamentals_generate_messages_cpp)
 
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(square_with_encoders silver_fundamentals_generate_messages_cpp)
+add_dependencies(align silver_fundamentals_generate_messages_cpp)

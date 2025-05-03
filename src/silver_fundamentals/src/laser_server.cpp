@@ -115,6 +115,7 @@ int main(int argc, char** argv)
     ros::NodeHandle n;
 
     ros::ServiceServer service = n.advertiseService("laserAngleRange", laser_angle_range);
+    ros::ServiceServer service2 = n.advertiseService("laserAngleRangeCart", laser_angle_range_cartesian);
     ros::Subscriber sub = n.subscribe("scan_filtered", 1, laserCallback);
 
     ROS_INFO("Ready to serve");
