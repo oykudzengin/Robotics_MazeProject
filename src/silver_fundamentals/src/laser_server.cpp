@@ -8,6 +8,7 @@
 #include "ros/ros.h"
 #include "sensor_msgs/LaserScan.h"
 #include "silver_fundamentals/Laser.h"
+#include "silver_fundamentals/LaserCartesian.h"
 
 #define LASER_ARAY_SIZE 682.0
 #define LASER_ANGLE_RANGE 240.0
