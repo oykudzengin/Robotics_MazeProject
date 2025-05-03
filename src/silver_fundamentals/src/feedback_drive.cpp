@@ -152,17 +152,17 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
         ROS_INFO("should_side: %f , real_side_l:%f , real_side_r: %f, alpha: %d, real_distance_front: %f", should_distance_side, real_distance_side_l, real_distance_side_r, alpha, real_distance);
 
         // Define conditions that ignore NaNs by treating NaN sensors as automatically satisfied
-        bool front_ok = std::isnan(real_distance) || std::fabs(real_distance - should_distance) < offset;
-        bool right_ok = std::isnan(real_distance_side_r) || std::fabs(real_distance_side_r - should_distance_side) < side_offset;
-        bool left_ok = std::isnan(real_distance_side_l) || std::fabs(real_distance_side_l - should_distance_side) < side_offset;
+        bool front_ok = (std::isnan(real_distance) || real_distance == 0.0) || std::fabs(real_distance - should_distance) < offset;
+        bool right_ok = (std::isnan(real_distance_side_r) || real_distance_side_r == 0.0) || std::fabs(real_distance_side_r - should_distance_side) < side_offset;
+        bool left_ok = (std::isnan(real_distance_side_l) || real_distance_side_l == 0.0) || std::fabs(real_distance_side_l - should_distance_side) < side_offset;
 
-        bool front_far = std::isnan(real_distance) || real_distance > should_distance;
-        bool right_far = std::isnan(real_distance_side_r) || real_distance_side_r > should_distance_side;
-        bool left_far = std::isnan(real_distance_side_l) || real_distance_side_l > should_distance_side;
+        bool front_far = (std::isnan(real_distance) || real_distance == 0.0) || real_distance > should_distance;
+        bool right_far = (std::isnan(real_distance_side_r) || real_distance_side_r == 0.0) || real_distance_side_r > should_distance_side;
+        bool left_far = (std::isnan(real_distance_side_l) || real_distance_side_l == 0.0) || real_distance_side_l > should_distance_side;
 
-        bool front_close = std::isnan(real_distance) || real_distance < should_distance;
-        bool right_close = std::isnan(real_distance_side_r) || real_distance_side_r < should_distance_side;
-        bool left_close = std::isnan(real_distance_side_l) || real_distance_side_l < should_distance_side;
+        bool front_close = (std::isnan(real_distance) || real_distance == 0.0) || real_distance < should_distance;
+        bool right_close = (std::isnan(real_distance_side_r) || real_distance_side_r == 0.0) || real_distance_side_r < should_distance_side;
+        bool left_close = (std::isnan(real_distance_side_l) || real_distance_side_l == 0.0) || real_distance_side_l < should_distance_side;
 
 
         if (front_ok && right_ok && left_ok) {
