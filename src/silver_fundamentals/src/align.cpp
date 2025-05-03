@@ -9,15 +9,18 @@ int main(int argc, char** argv) {
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
+    silver_fundamentals::LaserCartesian laser_cart_srv;
 
     ros::Rate rate(10);
 
     while (ros::ok()) {
-        silver_fundamentals::LaserCartesian laser_cart_srv;
         laser_cart_srv.request.start = -120;
         laser_cart_srv.request.end = 120;
 
-        laser_cart_client.call(laser_cart_srv);
+        if (!laser_cart_client.call(laser_cart_srv)) {
+            ROS_ERROR("Failed to call laser_cart_client.call()");
+            continue;
+        }
 
         // print out the points
         const auto& pts = laser_cart_srv.response.values;
