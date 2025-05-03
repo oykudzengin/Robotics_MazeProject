@@ -38,6 +38,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 add_service_files(
         FILES
         Laser.srv
+        LaserCartesian.srv
         DriveData.srv
         ResetEncoders.srv
 )
