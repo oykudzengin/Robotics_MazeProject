@@ -53,7 +53,7 @@ double ransac(std::vector<geometry_msgs::Point>& pts, double max_offset, int max
         double best_current_dist = std::numeric_limits<double>::infinity();
 
         for (const auto &pt : pts) {
-            const double dist_to_line = std::abs(a*pt.x + b*pt.y + c);
+            const double dist_to_line = std::fabs(a*pt.x + b*pt.y + c);
             if (dist_to_line <= max_offset)
                 inliners++;
                 const double dist_to_origin = std::hypot(pt.x, pt.y);
