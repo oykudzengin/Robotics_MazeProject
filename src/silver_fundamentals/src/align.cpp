@@ -270,6 +270,7 @@ int align() {
 
     /* TODO: drive to 40cm next to wall*/
     driver.distance_to_wall(0.26);
+    ROS_INFO("DOE??????");
     // DONE :)
 
     return 0;
