@@ -138,8 +138,8 @@ int align() {
         if (values_used > 200)
             break;
 
-        driver.turn_n_degrees(90.0, right);
-        if (tries % 4 == 0) {
+        driver.turn_n_degrees(60.0, right);
+        if (tries % 6 == 0) {
             /* TODO: some wandering*/
         }
         tries++;
