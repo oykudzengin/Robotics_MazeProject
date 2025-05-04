@@ -17,10 +17,14 @@ class FeedbackDrive {
         void reset_encoders(void);
         void distance_to_wall(double should_distance);
 
+
     private:
         double wheel_radius;
         double wheel_base;
         double speed;
+
+
+        std::array<double, LIDAR_POINTS> hitbox;
 
         ros::NodeHandle n;
 
@@ -34,6 +38,9 @@ class FeedbackDrive {
         silver_fundamentals::ResetEncoders reset_encoders_srv;
 
         ros::Rate rate{1000};
+
+        void compute_hitbox(double width, double distance);
+        bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle);
 };
 
 

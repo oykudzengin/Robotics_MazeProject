@@ -3,6 +3,34 @@
 #include "silver_fundamentals/Laser.h"
 #include <laser_distance_map.h>
 #include "ros/ros.h"
+#include <vector>
+#include <sstream>
+
+#define ROBOT_RADIUS 13.3
+
+
+inline double threshold_for_angle(double theta,
+                                  double half_width,
+                                  double half_length) {
+    const double cx = std::cos(theta);
+    const double sy = std::sin(theta);
+    const double eps = 1e-8;  // guard against division by zero
+
+    // distance to x-slab (|x| = half_length)
+    double dx = (std::fabs(cx) > eps)
+              ? half_length / std::fabs(cx)
+              : std::numeric_limits<double>::infinity();
+
+    // distance to y-slab (|y| = half_width)
+    double dy = (std::fabs(sy) > eps)
+              ? half_width  / std::fabs(sy)
+              : std::numeric_limits<double>::infinity();
+    double d = std::min(dx, dy);
+    return std::isfinite(d) ? d : 0.0;
+}
+#include "silver_fundamentals/Laser.h"
+#include <laser_distance_map.h>
+#include "ros/ros.h"
 
 FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     wheel_radius = wr;
@@ -99,50 +127,107 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     ros::NodeHandle n;
     double real_distance;
     double offset = 0.01 * should_distance;
+    double speed = 2.0;
 
     ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
     silver_fundamentals::Laser laser_srv;
 
+    ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+    create_fundamentals::DiffDrive drive_srv;
+
+
     ros::Rate rate(100);
-    do {
-        // get real distance
-        laser_srv.request.start = 0;
-        laser_srv.request.end = 0;
 
-        if (laser_client.call(laser_srv)) {
-            real_distance = laser_srv.response.values[0];
+
+    compute_hitbox(ROBOT_RADIUS, should_distance);
+
+
+    laser_srv.request.start = -90.0;
+    laser_srv.request.end = 90.0;
+
+    while(!laser_client.call(laser_srv)) {
+        ROS_ERROR("Failed to call laser polar service");
+    }
+    std::vector<double> ranges = laser_srv.response.values;
+
+    if (window_intersects_box(ranges, -90.0, 90.0)) {
+        ROS_INFO("Drive backward!");
+        // drive back until window_intersect says drive forward
+        drive_srv.request.left = -speed;
+        drive_srv.request.right = -speed;
+        while(ros::ok() && window_intersects_box(ranges, -90.0, 90.0)) {
+            drive_client.call(drive_srv);
+            //rate.sleep();
+            laser_srv.request.start = -90;
+            laser_srv.request.end = 90;
+
+            while(!laser_client.call(laser_srv)) {
+                ROS_ERROR("Failed to call laser polar service");
+            }
+            ranges = laser_srv.response.values;
         }
+        // Stop because window_intersect now says drive forward
+        ROS_INFO("Stop Driving backward!");
+        drive_srv.request.left = 0;
+        drive_srv.request.right = 0;
+        drive_client.call(drive_srv);
+    } else {
+        ROS_INFO("Drive forward!");
+        // drive forward until window_intersect says drive backwards
+        drive_srv.request.left = speed;
+        drive_srv.request.right = speed;
+        while(ros::ok() && !window_intersects_box(ranges, -90.0, 90.0)) {
+            drive_client.call(drive_srv);
+            //rate.sleep();
+            laser_srv.request.start = -90;
+            laser_srv.request.end = 90;
 
-        if (real_distance - should_distance < offset && should_distance - real_distance < offset) {
-            // in between
-            // at distance stop
-            drive_srv.request.left = 0;
-            drive_srv.request.right = 0;
-            drive_client.call(drive_srv);
-            break;
-        } else if (real_distance > should_distance ) {
-            // drive at wal (forward)
-            drive_srv.request.left = 3;
-            drive_srv.request.right = 3;
-            drive_client.call(drive_srv);
-
-        } else if (real_distance < should_distance) {
-            // drive backwards (from wall)
-            drive_srv.request.left = -3;
-            drive_srv.request.right = -3;
-            drive_client.call(drive_srv);
-
-        } else {
-            // stop for nan.
-            drive_srv.request.left = 0;
-            drive_srv.request.right = 0;
-            drive_client.call(drive_srv);
-            break;
+            while(!laser_client.call(laser_srv)) {
+                ROS_ERROR("Failed to call laser polar service");
+            }
+            ranges = laser_srv.response.values;
         }
+        // Stop because window_intersect now says drive backward
+        ROS_INFO("Stop Driving forward!");
+        drive_srv.request.left = 0;
+        drive_srv.request.right = 0;
+        drive_client.call(drive_srv);
+    }
+}
 
 
 
-    } while(ros::ok() && real_distance != should_distance);
+void FeedbackDrive::compute_hitbox(double width, double distance) {
+    width /= 100.0;
+    distance /= 100.0;
 
+    for (unsigned int i = 0; i < LIDAR_POINTS; ++i) {
+        double angle_deg = ANGLE_MIN + i * ANGLE_STEP;
+        double angle_rad = angle_deg * PI / 180.0;
+        // ROS_INFO("arngel rad: %f", angle_rad);
+        // ROS_INFO("arngel deg: %f", angle_deg);
+        hitbox[i] = threshold_for_angle(angle_rad, width, distance);
+    }
+}
+
+bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle, const double max_angle) {
+    if (min_angle >= max_angle) return false;
+
+    int idx_start = static_cast<int>(
+        std::round(std::max(min_angle + ANGLE_SPAN / 2.0, 0.0) * ((double) LIDAR_POINTS) / ANGLE_SPAN));
+    int idx_end = static_cast<int>(
+        std::round(std::min(max_angle + ANGLE_SPAN / 2.0, 240.0) * ((double) LIDAR_POINTS) / ANGLE_SPAN));
+
+
+    for (int i = idx_start; i <= idx_end; ++i) {
+        const double r = ranges[i-idx_start];
+        const double thr = hitbox[i];
+        if (r <= thr) {
+            return true;
+        }
+    }
+
+    return false;
 
 }
+
