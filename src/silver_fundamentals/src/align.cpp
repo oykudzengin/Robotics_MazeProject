@@ -97,7 +97,7 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 
 int align() {
     int ransac_iterations = 7000;
-    double ransac_distance = 0.87;
+    double ransac_distance = 0.8;
     int ransac_threshold_points = 120;
     double ransac_min_angle = -80.0;
     double ransac_max_angle = 80.0;
@@ -136,7 +136,7 @@ int align() {
         angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
 
         // TODO: better values then 150?
-        if (values_used > 120)
+        if (values_used > 130)
             break;
 
         driver.turn_n_degrees(30, right);
