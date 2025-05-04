@@ -208,7 +208,7 @@ int align() {
         } else {
             // ransac found stuff;
             align_angle = std::abs(angle_to_closest_wall);
-            align_direction = right;
+            align_direction = angle_to_closest_wall<0?right:left;
         }
     }
     if (align_angle == std::numeric_limits<double>::infinity() && something_to_the_left) {
@@ -246,11 +246,16 @@ int align() {
             align_direction = left;
         } else {
             align_angle = std::abs(angle_to_closest_wall);
-            align_direction = left;
+            align_direction = angle_to_closest_wall<0?right:left;
         }
     }
     if (align_angle == std::numeric_limits<double>::infinity()) {
-        align_angle = 90.0;
+        if (!something_to_the_left && !something_to_the_right) {
+            align_angle = 90.0;
+        } else {
+            align_angle = 0.0;
+        }
+
     }
     if (align_direction == none) {
         align_direction = left;
