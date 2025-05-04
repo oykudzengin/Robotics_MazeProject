@@ -135,7 +135,7 @@ int align() {
         angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
 
         // TODO: better values then 150?
-        if (values_used > 200)
+        if (values_used > 150)
             break;
 
         driver.turn_n_degrees(60.0, right);
