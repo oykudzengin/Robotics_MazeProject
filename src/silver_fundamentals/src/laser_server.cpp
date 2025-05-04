@@ -59,6 +59,7 @@ bool laser_angle_range(silver_fundamentals::Laser::Request& req, silver_fundamen
 bool laser_angle_range_cartesian(silver_fundamentals::LaserCartesian::Request& req, silver_fundamentals::LaserCartesian::Response& res) {
     double min_angle = req.start;
     double max_angle = req.end;
+    double max_dist = req.max_dist/100.0;
     int min_index = static_cast<int>(
         std::round(std::max(min_angle + LASER_ANGLE_RANGE / 2.0, 0.0) * LASER_ARAY_SIZE / LASER_ANGLE_RANGE));
     int max_index = static_cast<int>(
@@ -75,7 +76,7 @@ bool laser_angle_range_cartesian(silver_fundamentals::LaserCartesian::Request& r
 
     for (int i = min_index; i <= max_index && i < static_cast<int>(laser_data.ranges.size()); i++) {
         double dist = laser_data.ranges[i];
-        if (std::isnan(dist) || dist < laser_data.range_min) {
+        if (std::isnan(dist) || dist > max_dist || dist < laser_data.range_min) {
             ROS_ERROR(" %d Laser cartesian angle out of range", i);
             continue;
         }
