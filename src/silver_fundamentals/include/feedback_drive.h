@@ -23,6 +23,9 @@ class FeedbackDrive {
         double wheel_base;
         double speed;
 
+        int prev_flag_hit = 0;
+
+
         std::array<double, LIDAR_POINTS> hitbox;
 
         ros::NodeHandle n;

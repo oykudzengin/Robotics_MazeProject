@@ -131,16 +131,16 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     create_fundamentals::DiffDrive drive_srv;
 
 
-    ros::Rate rate(100);
+    ros::Rate rate(1);
 
 
     compute_hitbox(17.0, should_distance);
 
-    std::ostringstream oss;
-    for (int i = 0; i < hitbox.size(); i++) {
-        oss << "HitBOX[" << i << "]: " << hitbox[i] << " ";
-    }
-    ROS_INFO("%s", oss.str().c_str());
+    // std::ostringstream oss;
+    // for (int i = 0; i < hitbox.size(); i++) {
+    //     oss << "HitBOX[" << i << "]: " << hitbox[i] << " ";
+    // }
+    // ROS_INFO("%s", oss.str().c_str());
 
 
     laser_srv.request.start = -90;
@@ -150,51 +150,67 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
         ROS_ERROR("Failed to call laser polar service");
     }
     std::vector<double> ranges = laser_srv.response.values;
-    
-    if (window_intersects_box(ranges, -90.0, 90.0)) {
-        ROS_INFO("Drive backward!");
-        // drive back until window_intersect says drive forward
-        drive_srv.request.left = -speed;
-        drive_srv.request.right = -speed;
-        while(window_intersects_box(ranges, -90.0, 90.0)) {
-            drive_client.call(drive_srv);
-            rate.sleep();
-            laser_srv.request.start = -90;
-            laser_srv.request.end = 90;
-        
-            while(!laser_client.call(laser_srv)) {
-                ROS_ERROR("Failed to call laser polar service");
-            }
-            ranges = laser_srv.response.values;
+
+    while(ros::ok()) {
+        if (window_intersects_box(ranges, -90.0, 90.0)) {
+            ROS_INFO("Drive back");
+        } else {
+            ROS_INFO("Drive forward");
         }
-        // Stop because window_intersect now says drive forward
-        ROS_INFO("Stop Driving backward!");
-        drive_srv.request.left = 0;
-        drive_srv.request.right = 0;
-        drive_client.call(drive_srv);
-    } else {
-        ROS_INFO("Drive forward!");
-        // drive forward until window_intersect says drive backwards
-        drive_srv.request.left = speed;
-        drive_srv.request.right = speed;
-        while(!window_intersects_box(ranges, -90.0, 90.0)) {
-            drive_client.call(drive_srv);
-            rate.sleep();
-            laser_srv.request.start = -90;
-            laser_srv.request.end = 90;
-        
-            while(!laser_client.call(laser_srv)) {
-                ROS_ERROR("Failed to call laser polar service");
-            }
-            ranges = laser_srv.response.values;
+        laser_srv.request.start = -90;
+        laser_srv.request.end = 90;
+        while(!laser_client.call(laser_srv)) {
+            ROS_ERROR("Failed to call laser polar service");
         }
-        // Stop because window_intersect now says drive backward
-        ROS_INFO("Stop Driving forward!");
-        drive_srv.request.left = 0;
-        drive_srv.request.right = 0;
-        drive_client.call(drive_srv);
+        ranges = laser_srv.response.values;
     }
-    ROS_INFO("At distance!");
+    
+    // if (window_intersects_box(ranges, -90.0, 90.0)) {
+    //     ROS_INFO("Drive backward!");
+    //     // drive back until window_intersect says drive forward
+    //     drive_srv.request.left = -speed;
+    //     drive_srv.request.right = -speed;
+    //     while(ros::ok() && window_intersects_box(ranges, -90.0, 90.0)) {
+    //         // ROS_INFO("Window retunred: %d", window_intersects_box(ranges, -90.0, 90.0));
+    //         drive_client.call(drive_srv);
+    //         //rate.sleep();
+    //         laser_srv.request.start = -90;
+    //         laser_srv.request.end = 90;
+        
+    //         while(!laser_client.call(laser_srv)) {
+    //             ROS_ERROR("Failed to call laser polar service");
+    //         }
+    //         ranges = laser_srv.response.values;
+    //         // ROS_INFO("Range 0: %f", ranges[45]);
+    //     }
+    //     // Stop because window_intersect now says drive forward
+    //     ROS_INFO("Stop Driving backward!");
+    //     drive_srv.request.left = 0;
+    //     drive_srv.request.right = 0;
+    //     drive_client.call(drive_srv);
+    // } else {
+    //     ROS_INFO("Drive forward!");
+    //     // drive forward until window_intersect says drive backwards
+    //     drive_srv.request.left = speed;
+    //     drive_srv.request.right = speed;
+    //     while(ros::ok() && !window_intersects_box(ranges, -90.0, 90.0)) {
+    //         drive_client.call(drive_srv);
+    //         //rate.sleep();
+    //         laser_srv.request.start = -90;
+    //         laser_srv.request.end = 90;
+        
+    //         while(!laser_client.call(laser_srv)) {
+    //             ROS_ERROR("Failed to call laser polar service");
+    //         }
+    //         ranges = laser_srv.response.values;
+    //     }
+    //     // Stop because window_intersect now says drive backward
+    //     ROS_INFO("Stop Driving forward!");
+    //     drive_srv.request.left = 0;
+    //     drive_srv.request.right = 0;
+    //     drive_client.call(drive_srv);
+    // }
+    // ROS_INFO("At distance!");
 }
 
 
@@ -206,6 +222,8 @@ void FeedbackDrive::compute_hitbox(double width, double distance) {
     for (unsigned int i = 0; i < LIDAR_POINTS; ++i) {
         double angle_deg = ANGLE_MIN + i * ANGLE_STEP;
         double angle_rad = angle_deg * PI / 180.0;
+        // ROS_INFO("arngel rad: %f", angle_rad);
+        // ROS_INFO("arngel deg: %f", angle_deg);
         hitbox[i] = threshold_for_angle(angle_rad, width, distance);
     }
 }
@@ -219,13 +237,32 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
     int idx_end = static_cast<int>(
         std::round(std::min(max_angle + ANGLE_SPAN / 2.0, 240.0) * ((double) LIDAR_POINTS) / ANGLE_SPAN));
 
+    int flag_hit = 0;
+    int flag_no_hit = 0;
+
     for (int i = idx_start; i <= idx_end; ++i) {
         const double r = ranges[i];
         const double thr = hitbox[i];
+        // ROS_INFO("index: %drange: %f, thr: %f",i, r, thr);
         if (r > 0.0 && r <= thr) {
-            return true;
+            ROS_INFO("HIT Index: %d, range: %f, threshpold: %f", i, r, thr);
+            // drve backwards
+            //return true;
+            flag_hit++;
+        } else {
+            flag_no_hit++;
         }
     }
-    return false;
+    
+    prev_flag_hit = flag_hit;
+    // foreward 
+    ROS_INFO("FLAG_hit: %d, flag_no hit: %d", flag_hit, flag_no_hit);
+
+    if (flag_hit > 50) {
+        return true;
+    } else {
+        return false;
+    }
+    
 }
 

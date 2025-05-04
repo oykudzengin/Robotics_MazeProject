@@ -14,6 +14,6 @@ int main(int argc, char **argv) {
     // larger wheelradius -> going further
     FeedbackDrive driver = FeedbackDrive(26.203, 3.25, 10.0);
     //driver.reset_encoders();
-    driver.distance_to_wall(0.4);
+    driver.distance_to_wall(40);
 
 }
