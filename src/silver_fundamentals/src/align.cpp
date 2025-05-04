@@ -142,7 +142,7 @@ int align() {
 
         driver.turn_n_degrees(30, right);
         if (tries % 12 == 0) {
-            /* TODO: some wandering*/
+            driver.distance_to_wall(35);
         }
         tries++;
 
@@ -154,7 +154,7 @@ int align() {
 
     // drive to wall
     /* TODO: drive to wall 40cm */
-    driver.distance_to_wall(0.26);
+    driver.distance_to_wall(26);
     ROS_INFO("aligned to first wall");
 
     // check for wall right and left
@@ -269,7 +269,7 @@ int align() {
     driver.turn_n_degrees(align_angle, align_direction);
 
     /* TODO: drive to 40cm next to wall*/
-    driver.distance_to_wall(0.26);
+    driver.distance_to_wall(26);
     ROS_INFO("DONE??????");
     // DONE :)
 
