@@ -198,7 +198,7 @@ int align() {
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > ransac_threshold_points);
 
-        if (values_used <= 100) {
+        if (values_used <= ransac_threshold_points) {
             // turning right might be fine but ransac found nothing
             align_direction = right;
         } else {
@@ -237,7 +237,7 @@ int align() {
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > ransac_threshold_points);
 
-        if (values_used <= 100) {
+        if (values_used <= ransac_threshold_points) {
             align_direction = left;
         } else {
             align_angle = std::abs(angle_to_closest_wall);
