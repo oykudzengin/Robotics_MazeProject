@@ -99,6 +99,8 @@ int align() {
     int ransac_iterations = 5000;
     double ransac_distance = 0.08;
     int ransac_threshold_points = 200;
+    double ransac_min_angle = -80.0;
+    double ransac_max_angle = 80.0;
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
@@ -112,8 +114,8 @@ int align() {
 
     ros::Rate rate(1);
 
-    laser_cart_srv.request.start = -120;
-    laser_cart_srv.request.end = 120;
+    laser_cart_srv.request.start = ransac_min_angle;
+    laser_cart_srv.request.end = ransac_max_angle;
 
     int values_used = 0;
 
@@ -179,8 +181,8 @@ int align() {
         rate.sleep();
 
         // setup laser_call
-        laser_cart_srv.request.start = -90;
-        laser_cart_srv.request.end = 90;
+        laser_cart_srv.request.start = ransac_min_angle;
+        laser_cart_srv.request.end = ransac_max_angle;
 
         values_used = 0;
 
@@ -217,8 +219,8 @@ int align() {
         rate.sleep();
 
         // setup laser_call
-        laser_cart_srv.request.start = -90;
-        laser_cart_srv.request.end = 90;
+        laser_cart_srv.request.start = ransac_min_angle;
+        laser_cart_srv.request.end = ransac_max_angle;
 
         values_used = 0;
 
