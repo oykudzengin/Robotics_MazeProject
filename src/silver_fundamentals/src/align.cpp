@@ -267,8 +267,8 @@ int align() {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "align");
 
-    //align();
-    //return 0;
+    align();
+    return 0;
 
     ros::NodeHandle n;
 
