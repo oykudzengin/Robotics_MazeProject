@@ -277,8 +277,8 @@ int align() {
 int main(int argc, char **argv) {
     ros::init(argc, argv, "align");
 
-    align();
-    return 0;
+    //align();
+    //return 0;
 
     ros::NodeHandle n;
 
@@ -291,11 +291,12 @@ int main(int argc, char **argv) {
     double max_offset = std::atof(argv[1]);
     double iter = std::atof(argv[2]);
 
+    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
 
     while (ros::ok()) {
         laser_cart_srv.request.start = -120;
         laser_cart_srv.request.end = 120;
-        laser_cart_srv.request.max_dist = 80.0;
+        laser_cart_srv.request.max_dist = 100.0;
 
         if (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser_cart_client.call()");
@@ -305,6 +306,10 @@ int main(int argc, char **argv) {
         int amount;
         double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount);
         ROS_INFO("Wall direction: %f %d", wall_direction, amount);
+
+        driver.turn_n_degrees(std::abs(wall_direction), wall_direction <0?right:left);
+        return 0;
+
     }
 
     return 0;
