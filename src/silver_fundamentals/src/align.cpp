@@ -98,9 +98,9 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 int align() {
     int ransac_iterations = 5000;
     double ransac_distance = 0.08;
-    int ransac_threshold_points = 150;
-    double ransac_min_angle = -120.0;
-    double ransac_max_angle = 120.0;
+    int ransac_threshold_points = 120;
+    double ransac_min_angle = -90.0;
+    double ransac_max_angle = 90.0;
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
@@ -114,9 +114,9 @@ int align() {
 
     ros::Rate rate(1);
 
-    laser_cart_srv.request.start = -120;
-    laser_cart_srv.request.end = 120;
-    laser_cart_srv.request.max_dist = 80.0;
+    laser_cart_srv.request.start = -90.0;
+    laser_cart_srv.request.end = 90.0;
+    laser_cart_srv.request.max_dist = 90.0;
 
     int values_used = 0;
 
@@ -185,7 +185,7 @@ int align() {
         // setup laser_call
         laser_cart_srv.request.start = ransac_min_angle;
         laser_cart_srv.request.end = ransac_max_angle;
-        laser_cart_srv.request.max_dist = 80.0;
+        laser_cart_srv.request.max_dist = 90.0;
 
         values_used = 0;
 
@@ -225,7 +225,7 @@ int align() {
         // setup laser_call
         laser_cart_srv.request.start = ransac_min_angle;
         laser_cart_srv.request.end = ransac_max_angle;
-        laser_cart_srv.request.max_dist = 80.0;
+        laser_cart_srv.request.max_dist = 90.0;
 
         values_used = 0;
 
@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
     while (ros::ok()) {
         laser_cart_srv.request.start = -120;
         laser_cart_srv.request.end = 120;
-        laser_cart_srv.request.max_dist = 80.0;
+        laser_cart_srv.request.max_dist = 90.0;
 
         if (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser_cart_client.call()");
