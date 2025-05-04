@@ -103,8 +103,7 @@ int align() {
     double ransac_max_angle = 90.0;
     ros::NodeHandle n;
 
-    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
-        "laserAngleRangeCartesian");
+    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
     silver_fundamentals::LaserCartesian laser_cart_srv;
 
     ros::ServiceClient laser_pol_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
