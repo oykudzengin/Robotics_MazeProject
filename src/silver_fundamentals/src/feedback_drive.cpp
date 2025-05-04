@@ -57,14 +57,14 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
         }
         case left: {
             ROS_INFO("direction is left");
-            drive_srv.request.left = -4;
-            drive_srv.request.right = 4;
+            drive_srv.request.left = -3;
+            drive_srv.request.right = 3;
             break;
         }
         case right: {
             ROS_INFO("direction is right");
-            drive_srv.request.left = 4;
-            drive_srv.request.right = -4;
+            drive_srv.request.left = 3;
+            drive_srv.request.right = -3;
             break;
         }
     }
@@ -122,14 +122,14 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             break;
         } else if (real_distance > should_distance ) {
             // drive at wal (forward)
-            drive_srv.request.left = 1;
-            drive_srv.request.right = 1;
+            drive_srv.request.left = 3;
+            drive_srv.request.right = 3;
             drive_client.call(drive_srv);
 
         } else if (real_distance < should_distance) {
             // drive backwards (from wall)
-            drive_srv.request.left = -1;
-            drive_srv.request.right = -1;
+            drive_srv.request.left = -3;
+            drive_srv.request.right = -3;
             drive_client.call(drive_srv);
 
         } else {
