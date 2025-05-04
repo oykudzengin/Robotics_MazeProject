@@ -114,9 +114,9 @@ int align() {
 
     ros::Rate rate(1);
 
-    laser_cart_srv.request.start = -90.0;
-    laser_cart_srv.request.end = 90.0;
-    laser_cart_srv.request.max_dist = 90.0;
+    laser_cart_srv.request.start = -60.0;
+    laser_cart_srv.request.end = 60.0;
+    laser_cart_srv.request.max_dist = 95.0;
 
     int values_used = 0;
 
