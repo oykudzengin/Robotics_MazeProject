@@ -126,9 +126,25 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     silver_fundamentals::Laser laser_srv;
 
     ros::Rate rate(100);
+    do {
+        // get real distance 
+        laser_srv.request.start = 0;
+        laser_srv.request.end = 0;
 
     compute_hitbox(17.0, should_distance);
 
+        if (real_distance - should_distance < offset && should_distance - real_distance < offset) {
+            // in between
+            // at distance stop
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            break;
+        } else if (real_distance > should_distance ) {
+            // drive at wal (forward)
+            drive_srv.request.left = 1;
+            drive_srv.request.right = 1;
+            drive_client.call(drive_srv);
 
     if (window_intersects_box()) {
         // drive  back until does not
