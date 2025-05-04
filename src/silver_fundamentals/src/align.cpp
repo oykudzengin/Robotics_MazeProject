@@ -96,6 +96,9 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 
 
 int align() {
+    int ransac_iterations = 5000;
+    double ransac_distance = 0.08;
+    int ransac_threshold_points = 200;
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
@@ -126,10 +129,10 @@ int align() {
         std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // get ransac angle
-        angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
+        angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
 
         // TODO: better values then 150?
-        if (values_used > 150)
+        if (values_used > 250)
             break;
 
         driver.turn_n_degrees(90.0, right);
@@ -191,9 +194,9 @@ int align() {
         // to ransac until wall in front is found
         ROS_INFO("RANSAC right wall");
         do {
-            angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
+            angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
-        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
+        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > ransac_threshold_points);
 
         if (values_used <= 100) {
             // turning right might be fine but ransac found nothing
@@ -230,9 +233,9 @@ int align() {
         // to ransac until wall in front is found
         ROS_INFO("RANSAC left wall");
         do {
-            angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
+            angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
-        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
+        } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > ransac_threshold_points);
 
         if (values_used <= 100) {
             align_direction = left;
