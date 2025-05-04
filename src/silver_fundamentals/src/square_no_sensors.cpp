@@ -18,6 +18,11 @@ int main(int argc, char **argv)
   
   create_fundamentals::DiffDrive srv;
 
+  int amount = 1;
+  if (argc >= 2) {
+    amount = std::atoi(argv[1]);
+  }
+
   double forward_speed = 10.0;
   double forward_time = 3.125; // seconds, adjust as needed
   double turn_speed = 2.0;
@@ -35,7 +40,7 @@ int main(int argc, char **argv)
   // diffDrive.call(srv);
   // ros::Duration(0.5).sleep();
 
-  for (int i = 0; i < 4; ++i)
+  for (int i = 0; i < 4*amount; ++i)
   {
     // Move forward
     ROS_INFO("Moving forward...");
@@ -66,6 +71,6 @@ int main(int argc, char **argv)
 
   ROS_INFO("Finished square path.");
 
-  ros::spin();
+  //ros::spin();
   return 0;
 }
