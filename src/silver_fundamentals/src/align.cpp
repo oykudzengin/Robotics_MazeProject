@@ -140,10 +140,11 @@ int align() {
             break;
 
         driver.turn_n_degrees(30, right);
+        tries++;
         if (tries % 12 == 0) {
             driver.distance_to_wall(35);
         }
-        tries++;
+
 
     }
     ROS_INFO("Angle: %f first wall", angle_to_closest_wall);
