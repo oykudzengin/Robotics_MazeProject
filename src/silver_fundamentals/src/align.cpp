@@ -98,7 +98,7 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 int align() {
     int ransac_iterations = 5000;
     double ransac_distance = 0.08;
-    int ransac_threshold_points = 120;
+    int ransac_threshold_points = 100;
     double ransac_min_angle = -90.0;
     double ransac_max_angle = 90.0;
     ros::NodeHandle n;
@@ -115,7 +115,7 @@ int align() {
 
     laser_cart_srv.request.start = -60.0;
     laser_cart_srv.request.end = 60.0;
-    laser_cart_srv.request.max_dist = 95.0;
+    laser_cart_srv.request.max_dist = 85.0;
 
     int values_used = 0;
 
@@ -203,7 +203,7 @@ int align() {
         do {
             angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
-        } while (std::abs(angle_to_closest_wall) > 30.0 && values_used > ransac_threshold_points);
+        } while (std::abs(angle_to_closest_wall) > 25.0 && values_used > ransac_threshold_points);
 
         if (values_used <= ransac_threshold_points) {
             // turning right might be fine but ransac found nothing
@@ -243,7 +243,7 @@ int align() {
         do {
             angle_to_closest_wall = ransac(pts, ransac_distance, ransac_iterations, &values_used);
             ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
-        } while (std::abs(angle_to_closest_wall) > 30.0 && values_used > ransac_threshold_points);
+        } while (std::abs(angle_to_closest_wall) > 25.0 && values_used > ransac_threshold_points);
 
         if (values_used <= ransac_threshold_points) {
             align_direction = left;
