@@ -3,6 +3,7 @@
 #include "silver_fundamentals/Laser.h"
 #include <laser_distance_map.h>
 #include "ros/ros.h"
+#include <vector>
 
 
 inline double threshold_for_angle(double theta,
@@ -121,39 +122,82 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     ros::NodeHandle n;
     double real_distance;
     double offset = 0.01 * should_distance;
+    double speed = 4.0;
 
     ros::ServiceClient laser_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
     silver_fundamentals::Laser laser_srv;
 
+    ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+    create_fundamentals::DiffDrive drive_srv;
+
+
     ros::Rate rate(100);
-    do {
-        // get real distance 
-        laser_srv.request.start = 0;
-        laser_srv.request.end = 0;
+
 
     compute_hitbox(17.0, should_distance);
 
-        if (real_distance - should_distance < offset && should_distance - real_distance < offset) {
-            // in between
-            // at distance stop
-            drive_srv.request.left = 0;
-            drive_srv.request.right = 0;
-            drive_client.call(drive_srv);
-            break;
-        } else if (real_distance > should_distance ) {
-            // drive at wal (forward)
-            drive_srv.request.left = 1;
-            drive_srv.request.right = 1;
-            drive_client.call(drive_srv);
-
-    if (window_intersects_box()) {
-        // drive  back until does not
-    } else {
-        // drive forward until it does
+    std::ostringstream oss;
+    for (int i = 0; i < hitbox.size(); i++) {
+        oss << "HitBOX[" << i << "]: " << hitbox[i] << " ";
     }
+    ROS_INFO("%s", oss.str().c_str());
 
 
+    laser_srv.request.start = -90;
+    laser_srv.request.end = 90;
+
+    while(!laser_client.call(laser_srv)) {
+        ROS_ERROR("Failed to call laser polar service");
+    }
+    std::vector<double> ranges = laser_srv.response.values;
+    
+    if (window_intersects_box(ranges, -90.0, 90.0)) {
+        ROS_INFO("Drive backward!");
+        // drive back until window_intersect says drive forward
+        drive_srv.request.left = -speed;
+        drive_srv.request.right = -speed;
+        while(window_intersects_box(ranges, -90.0, 90.0)) {
+            drive_client.call(drive_srv);
+            rate.sleep();
+            laser_srv.request.start = -90;
+            laser_srv.request.end = 90;
+        
+            while(!laser_client.call(laser_srv)) {
+                ROS_ERROR("Failed to call laser polar service");
+            }
+            ranges = laser_srv.response.values;
+        }
+        // Stop because window_intersect now says drive forward
+        ROS_INFO("Stop Driving backward!");
+        drive_srv.request.left = 0;
+        drive_srv.request.right = 0;
+        drive_client.call(drive_srv);
+    } else {
+        ROS_INFO("Drive forward!");
+        // drive forward until window_intersect says drive backwards
+        drive_srv.request.left = speed;
+        drive_srv.request.right = speed;
+        while(!window_intersects_box(ranges, -90.0, 90.0)) {
+            drive_client.call(drive_srv);
+            rate.sleep();
+            laser_srv.request.start = -90;
+            laser_srv.request.end = 90;
+        
+            while(!laser_client.call(laser_srv)) {
+                ROS_ERROR("Failed to call laser polar service");
+            }
+            ranges = laser_srv.response.values;
+        }
+        // Stop because window_intersect now says drive backward
+        ROS_INFO("Stop Driving forward!");
+        drive_srv.request.left = 0;
+        drive_srv.request.right = 0;
+        drive_client.call(drive_srv);
+    }
+    ROS_INFO("At distance!");
 }
+
+
 
 void FeedbackDrive::compute_hitbox(double width, double distance) {
     width /= 100.0;
@@ -167,7 +211,8 @@ void FeedbackDrive::compute_hitbox(double width, double distance) {
 }
 
 bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle, const double max_angle) {
-    if (min_angle < max_angle) return false;
+    // if (min_angle < max_angle) return false;
+    if (min_angle >= max_angle) return false;
 
     int idx_start = static_cast<int>(
         std::round(std::max(min_angle + ANGLE_SPAN / 2.0, 0.0) * ((double) LIDAR_POINTS) / ANGLE_SPAN));
