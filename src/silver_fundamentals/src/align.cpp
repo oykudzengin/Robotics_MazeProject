@@ -145,7 +145,7 @@ int align() {
 
     // drive to wall
     /* TODO: drive to wall 40cm */
-    driver.distance_to_wall(0.25);
+    driver.distance_to_wall(0.26);
     ROS_INFO("aligned to first wall");
 
     // check for wall right and left
@@ -189,8 +189,10 @@ int align() {
         std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // to ransac until wall in front is found
+        ROS_INFO("RANSAC right wall");
         do {
             angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
+            ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
 
         if (values_used <= 100) {
@@ -226,8 +228,10 @@ int align() {
         std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
 
         // to ransac until wall in front is found
+        ROS_INFO("RANSAC left wall");
         do {
             angle_to_closest_wall = ransac(pts, 0.08, 5000, &values_used);
+            ROS_INFO("Found angle of %f with %d points.", angle_to_closest_wall, values_used);
         } while (std::abs(angle_to_closest_wall) > 45.0 && values_used > 100);
 
         if (values_used <= 100) {
@@ -249,7 +253,7 @@ int align() {
     driver.turn_n_degrees(align_angle, align_direction);
 
     /* TODO: drive to 40cm next to wall*/
-    driver.distance_to_wall(0.25);
+    driver.distance_to_wall(0.26);
     // DONE :)
 
     return 0;
