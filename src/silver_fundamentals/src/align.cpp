@@ -188,7 +188,7 @@ int align() {
         // setup laser_call
         laser_cart_srv.request.start = ransac_min_angle;
         laser_cart_srv.request.end = ransac_max_angle;
-        laser_cart_srv.request.max_dist = 95.0;
+        laser_cart_srv.request.max_dist = 90.0;
 
         values_used = 0;
 
@@ -228,7 +228,7 @@ int align() {
         // setup laser_call
         laser_cart_srv.request.start = ransac_min_angle;
         laser_cart_srv.request.end = ransac_max_angle;
-        laser_cart_srv.request.max_dist = 95.0;
+        laser_cart_srv.request.max_dist = 90.0;
 
         values_used = 0;
 
