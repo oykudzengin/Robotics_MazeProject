@@ -177,7 +177,6 @@ int align() {
         // turn to wall
         driver.turn_n_degrees(90.0, right);
         rate.sleep();
-        rate.sleep();
 
         // setup laser_call
         laser_cart_srv.request.start = -90;
@@ -215,7 +214,6 @@ int align() {
         else
             driver.turn_n_degrees(90.0, left);
 
-        rate.sleep();
         rate.sleep();
 
         // setup laser_call
