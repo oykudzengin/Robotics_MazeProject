@@ -8,11 +8,7 @@
 #define SIDE_THRESHOLD 0.27f
 #define SIDE_ANGLE 120
 
-#define N_LIDAR 682
-#define ANGLE_SPAN (4.178563637658954*180/PI)
-#define ANGLE_MIN (-2.086213869974017*180/PI)
-#define ANGLE_MAX (ANGLE_MIN + ANGLE_SPAN)
-#define ANGLE_STEP (0.006135923322290182*180/PI)
+
 
 inline constexpr double threshold_at_angle(double angle) {
   return (angle >= -SIDE_ANGLE && angle <= SIDE_ANGLE)? FRONT_THRESHOLD + (SIDE_THRESHOLD - FRONT_THRESHOLD)*(angle/SIDE_ANGLE)*(angle/SIDE_ANGLE) : 0.0f;
@@ -22,6 +18,6 @@ constexpr double threshold_at_index(unsigned int index) {
   return threshold_at_angle(ANGLE_MIN + index*ANGLE_STEP);
 }
 
-extern const std::array<double, N_LIDAR> threshold_table;
+extern const std::array<double, LIDAR_POINTS> threshold_table;
 
 #endif
