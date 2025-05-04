@@ -125,6 +125,8 @@ int align() {
 
     int tries = 0;
     while (true) {
+        rate.sleep();
+        rate.sleep();
         // get laser data
         while (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser cartesian service");
@@ -138,11 +140,12 @@ int align() {
         if (values_used > 150)
             break;
 
-        driver.turn_n_degrees(45.0, right);
-        if (tries % 8 == 0) {
+        driver.turn_n_degrees(30, right);
+        if (tries % 12 == 0) {
             /* TODO: some wandering*/
         }
         tries++;
+
     }
     ROS_INFO("Angle: %f first wall", angle_to_closest_wall);
 
