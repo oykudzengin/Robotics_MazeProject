@@ -302,7 +302,7 @@ int main(int argc, char **argv) {
         }
 
         int amount;
-        double wall_direction = ransac(laser_cart_srv.response.values, 0.08, 5000, &amount);
+        double wall_direction = ransac(laser_cart_srv.response.values, 0.08, 15000, &amount);
         ROS_INFO("Wall direction: %f %d", wall_direction, amount);
 
         driver.turn_n_degrees(std::abs(wall_direction), wall_direction <0?right:left);
