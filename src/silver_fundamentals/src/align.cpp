@@ -288,8 +288,6 @@ int main(int argc, char **argv) {
 
     ros::Rate rate(10);
 
-    double max_offset = std::atof(argv[1]);
-    double iter = std::atof(argv[2]);
 
     auto driver = FeedbackDrive(3.25, 26.203, 2.0);
 
@@ -304,7 +302,7 @@ int main(int argc, char **argv) {
         }
 
         int amount;
-        double wall_direction = ransac(laser_cart_srv.response.values, max_offset, iter, &amount);
+        double wall_direction = ransac(laser_cart_srv.response.values, 0.08, 5000, &amount);
         ROS_INFO("Wall direction: %f %d", wall_direction, amount);
 
         driver.turn_n_degrees(std::abs(wall_direction), wall_direction <0?right:left);
