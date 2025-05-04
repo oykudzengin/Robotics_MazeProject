@@ -57,14 +57,14 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
         }
         case left: {
             ROS_INFO("direction is left");
-            drive_srv.request.left = -3;
-            drive_srv.request.right = 3;
+            drive_srv.request.left = -2;
+            drive_srv.request.right = 2;
             break;
         }
         case right: {
             ROS_INFO("direction is right");
-            drive_srv.request.left = 3;
-            drive_srv.request.right = -3;
+            drive_srv.request.left = 2;
+            drive_srv.request.right = -2;
             break;
         }
     }
