@@ -97,10 +97,10 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 
 int align() {
     int ransac_iterations = 7000;
-    double ransac_distance = 0.07;
+    double ransac_distance = 0.06;
     int ransac_threshold_points = 130;
-    double ransac_min_angle = -90.0;
-    double ransac_max_angle = 90.0;
+    double ransac_min_angle = -80.0;
+    double ransac_max_angle = 80.0;
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
