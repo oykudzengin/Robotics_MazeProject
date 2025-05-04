@@ -61,6 +61,7 @@ void FeedbackDrive::drive_n_cm(double n) {
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
         double left_delta = drive_data_srv.response.left_encoder - base_line_left;
         double right_delta = drive_data_srv.response.right_encoder - base_line_right;
+        ROS_INFO("%f %f", left_delta, right_delta);
         double current_rad_distance = (left_delta + right_delta)/2.0;
         if (current_rad_distance > distance_in_rad)
             break;

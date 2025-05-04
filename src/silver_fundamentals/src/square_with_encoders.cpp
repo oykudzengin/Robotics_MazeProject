@@ -6,13 +6,14 @@
 // wheelbase 26.203
 
 int main(int argc, char **argv) {
-    double wheel_radius = std::atof(argv[1]);
-    double wheel_base = std::atof(argv[2]);
-    int amount = std::atoi(argv[3]);
+    int amount = 1;
+    if (argc >= 2) {
+        amount = std::atoi(argv[1]);
+    }
     ros::init(argc, argv, "square_with_encoders");
     // larger wheelbase -> higher turning angle
     // larger wheelradius -> going further
-    FeedbackDrive driver = FeedbackDrive(wheel_radius, wheel_base, 10.0);
+    FeedbackDrive driver = FeedbackDrive(3.25, 26.203, 8.0);
     driver.reset_encoders();
     for (int i = 0; i < 4*amount; i++) {
         driver.drive_n_cm(100);
