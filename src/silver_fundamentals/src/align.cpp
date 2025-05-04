@@ -99,8 +99,8 @@ int align() {
     int ransac_iterations = 5000;
     double ransac_distance = 0.08;
     int ransac_threshold_points = 150;
-    double ransac_min_angle = -80.0;
-    double ransac_max_angle = 80.0;
+    double ransac_min_angle = -120.0;
+    double ransac_max_angle = 120.0;
     ros::NodeHandle n;
 
     ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>(
