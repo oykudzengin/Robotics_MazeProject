@@ -294,7 +294,7 @@ int main(int argc, char **argv) {
     while (ros::ok()) {
         laser_cart_srv.request.start = -120;
         laser_cart_srv.request.end = 120;
-        laser_cart_srv.request.max_dist = 100.0;
+        laser_cart_srv.request.max_dist = 80.0;
 
         if (!laser_cart_client.call(laser_cart_srv)) {
             ROS_ERROR("Failed to call laser_cart_client.call()");
