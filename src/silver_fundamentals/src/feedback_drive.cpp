@@ -196,8 +196,6 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     }
 }
 
-
-
 void FeedbackDrive::compute_hitbox(double width, double distance) {
     width /= 100.0;
     distance /= 100.0;
@@ -230,5 +228,54 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
 
     return false;
 
+
+
 }
 
+bool FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
+    double angle_rad = angle / 180.0 * PI;
+    double dist_from_inner_wheel = radius - WHEEL_BASE/2;
+    double dist_from_outer_wheel = radius + WHEEL_BASE/2;
+    double inner_driving_dist = angle_rad * dist_from_inner_wheel;
+    double outer_driving_dist = angle_rad * dist_from_outer_wheel;
+    double center_driving_dist = angle_rad * radius;
+
+    double inner_driving_speed = speed * (radius - WHEEL_BASE/2) / radius;
+    double outer_driving_speed = speed * (radius + WHEEL_BASE/2) / radius;
+
+    switch (dir) {
+        case none: {
+            ROS_ERROR("Direction must be set.");
+            return 1;
+        }
+        case left: {
+            ROS_INFO("Turning left.");
+            drive_srv.request.left = inner_driving_speed;
+            drive_srv.request.right = outer_driving_speed;
+        }
+        case right: {
+            ROS_INFO("Turning right.");
+            drive_srv.request.left = outer_driving_speed;
+            drive_srv.request.right = inner_driving_speed;
+        }
+    }
+
+    drive_data_client.call(drive_data_srv);
+    double base_line_inner = dir == left ? drive_data_srv.response.left_encoder:drive_data_srv.response.right_encoder;
+    double base_line_outer = dir == left ? drive_data_srv.response.right_encoder:drive_data_srv.response.left_encoder;
+
+    drive_srv.call(drive_srv);
+    while (ros::ok() && drive_data_client.call(drive_data_srv)) {
+        double inner_delta = (dir == left ? drive_data_srv.response.left_encoder: drive_data_srv.response.right_encoder) - base_line_inner;
+        double outer_delta = (dir == left ? drive_data_srv.response.right_encoder: drive_data_srv.response.left_encoder) - base_line_outer;
+
+        if (abs(inner_delta) > abs(inner_driving_dist) || abs(outer_delta) > abs(outer_driving_dist))
+            break;
+
+        rate.sleep();
+    }
+
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
+    drive_client.call(drive_srv);
+}
