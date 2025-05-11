@@ -8,7 +8,10 @@
 
 #include "ransac.h"
 
-#define ROBOT_RADIUS 13.3
+#define ROBOT_RADIUS 13.3f
+
+#define WIDTH_THRESHOLD_RADIUS 4f
+#define ANGLE_THRESHOLD 5f
 
 
 inline double threshold_for_angle(double theta,
@@ -296,6 +299,7 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
 
     int ransac_iterations = 7000;
     double ransac_distance = 0.8;
+    double used_values_proportion = 0.8;
 
     right_laser_srv.request.start = -110;
     right_laser_srv.request.stop = -70;
@@ -326,6 +330,16 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
         // get ransac angle
         double right_wall_angle = ransac(right_pts, ransac_distance, ransac_iterations, &right_values_used);
         double left_wall_angle = ransac(left_pts, ransac_distance, ransac_iterations, &left_values_used);
+
+        double correction_angle;
+        if (right_values_used < used_values_proportion*side_laser_points && left_values_used < used_values_proportion*side_laser_points)
+            correction_angle = 0.0;
+        else if (right_values_used < used_values_proportion*side_laser_points)
+            correction_angle = left_wall_angle - 90.0;
+        else if (left_values_used < used_values_proportion*side_laser_points)
+            correction_angle = right_wall_angle + 90.0;
+        else
+            correction_angle = (left_wall_angle + right_wall_angle) / 2.0;
 
 
 
