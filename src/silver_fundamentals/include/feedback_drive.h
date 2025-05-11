@@ -16,7 +16,7 @@ class FeedbackDrive {
         void turn_n_degrees(double n, direction d);
         void reset_encoders(void);
         void distance_to_wall(double should_distance);
-        bool turn(double, direction, double, double);
+        int turn(double, direction, double, double);
 
 
     private:

@@ -232,7 +232,7 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
 
 }
 
-bool FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
+int FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
     const double angle_rad = angle / 180.0 * PI;
     const double dist_from_inner_wheel = radius - WHEEL_BASE/2;
     const double dist_from_outer_wheel = radius + WHEEL_BASE/2;
@@ -251,11 +251,13 @@ bool FeedbackDrive::turn(const double angle, direction dir, const double radius,
             ROS_INFO("Turning left.");
             drive_srv.request.left = inner_driving_speed;
             drive_srv.request.right = outer_driving_speed;
+            break;
         }
         case right: {
             ROS_INFO("Turning right.");
             drive_srv.request.left = outer_driving_speed;
             drive_srv.request.right = inner_driving_speed;
+            break;
         }
     }
 
@@ -277,4 +279,5 @@ bool FeedbackDrive::turn(const double angle, direction dir, const double radius,
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
+    return 0;
 }
