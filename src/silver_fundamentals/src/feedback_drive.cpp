@@ -233,15 +233,14 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
 }
 
 bool FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
-    double angle_rad = angle / 180.0 * PI;
-    double dist_from_inner_wheel = radius - WHEEL_BASE/2;
-    double dist_from_outer_wheel = radius + WHEEL_BASE/2;
-    double inner_driving_dist = angle_rad * dist_from_inner_wheel;
-    double outer_driving_dist = angle_rad * dist_from_outer_wheel;
-    double center_driving_dist = angle_rad * radius;
+    const double angle_rad = angle / 180.0 * PI;
+    const double dist_from_inner_wheel = radius - WHEEL_BASE/2;
+    const double dist_from_outer_wheel = radius + WHEEL_BASE/2;
+    const double inner_driving_dist = angle_rad * dist_from_inner_wheel;
+    const double outer_driving_dist = angle_rad * dist_from_outer_wheel;
 
-    double inner_driving_speed = speed * (radius - WHEEL_BASE/2) / radius;
-    double outer_driving_speed = speed * (radius + WHEEL_BASE/2) / radius;
+    volatile double inner_driving_speed = speed * (radius - WHEEL_BASE/2) / radius;
+    volatile double outer_driving_speed = speed * (radius + WHEEL_BASE/2) / radius;
 
     switch (dir) {
         case none: {
@@ -264,7 +263,7 @@ bool FeedbackDrive::turn(const double angle, direction dir, const double radius,
     double base_line_inner = dir == left ? drive_data_srv.response.left_encoder:drive_data_srv.response.right_encoder;
     double base_line_outer = dir == left ? drive_data_srv.response.right_encoder:drive_data_srv.response.left_encoder;
 
-    drive_srv.call(drive_srv);
+    drive_client.call(drive_srv);
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
         double inner_delta = (dir == left ? drive_data_srv.response.left_encoder: drive_data_srv.response.right_encoder) - base_line_inner;
         double outer_delta = (dir == left ? drive_data_srv.response.right_encoder: drive_data_srv.response.left_encoder) - base_line_outer;
