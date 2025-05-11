@@ -17,6 +17,7 @@ class FeedbackDrive {
         void reset_encoders(void);
         void distance_to_wall(double should_distance);
         int turn(double, direction, double, double);
+        int drive_along_wall(double, double, double, bool (*)());
 
 
     private:
@@ -37,6 +38,9 @@ class FeedbackDrive {
 
         ros::ServiceClient reset_encoders_client;
         silver_fundamentals::ResetEncoders reset_encoders_srv;
+
+        ros::ServiceClient laser_cart_client;
+
 
         ros::Rate rate{1000};
 

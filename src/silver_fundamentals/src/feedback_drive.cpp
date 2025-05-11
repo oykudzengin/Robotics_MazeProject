@@ -6,6 +6,8 @@
 #include <vector>
 #include <sstream>
 
+#include "ransac.h"
+
 #define ROBOT_RADIUS 13.3
 
 
@@ -28,9 +30,10 @@ inline double threshold_for_angle(double theta,
     double d = std::min(dx, dy);
     return std::isfinite(d) ? d : 0.0;
 }
-#include "silver_fundamentals/Laser.h"
-#include <laser_distance_map.h>
-#include "ros/ros.h"
+
+static int points_on_angle_range(const double angle) {
+    return angle * PI / 180 / ANGLE_STEP;
+}
 
 FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     wheel_radius = wr;
@@ -40,6 +43,7 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     drive_data_client = n.serviceClient<silver_fundamentals::DriveData>("encoder_data");
     drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
     reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("wrap_reset_encoders");
+    laser_cart_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRangeCartesian");
 
 }
 
@@ -283,3 +287,53 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
     drive_client.call(drive_srv);
     return 0;
 }
+
+int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double left_wall_dist, const double speed, bool (*cond)()) {
+
+    silver_fundamentals::Laser right_laser_srv;
+    silver_fundamentals::Laser left_laser_srv;
+    silver_fundamentals::Laser front_laser_srv;
+
+    int ransac_iterations = 7000;
+    double ransac_distance = 0.8;
+
+    right_laser_srv.request.start = -110;
+    right_laser_srv.request.stop = -70;
+    right_laser_srv.request.max_dist = 100;
+    left_laser_srv.request.start = 70;
+    left_laser_srv.request.stop = 110;
+    left_laser_srv.request.max_dist = 100;
+    front_laser_srv.request.start = -25;
+    front_laser_srv.request.stop = 25;
+    front_laser_srv.request.max_dist = 100;
+    int side_laser_points = points_on_angle_range(40);
+    int front_laser_points = points_on_angle_range(50);
+
+
+    drive_srv.request.left = speed;
+    drive_srv.request.right = speed;
+
+    bool success = cond();
+    while (ros::ok() && !success) {
+
+        laser_cart_client.call(right_laser_srv);
+        laser_cart_client.call(left_laser_srv);
+        int right_values_used, left_values_used;
+
+        std::vector<geometry_msgs::Point> right_pts = right_laser_srv.response.values;
+        std::vector<geometry_msgs::Point> left_pts = left_laser_srv.response.values;
+
+        // get ransac angle
+        double right_wall_angle = ransac(right_pts, ransac_distance, ransac_iterations, &right_values_used);
+        double left_wall_angle = ransac(left_pts, ransac_distance, ransac_iterations, &left_values_used);
+
+
+
+        drive_client.call(drive_srv);
+
+
+        rate.sleep();
+    }
+}
+
+

@@ -98,11 +98,15 @@ add_executable(square_no_sensors src/square_no_sensors.cpp)
 target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
 
-add_executable(align src/align.cpp src/feedback_drive.cpp)
+add_executable(align src/align.cpp src/feedback_drive.cpp
+        src/ransac.cpp
+        include/ransac.h)
 target_link_libraries(align ${catkin_LIBRARIES})
 add_dependencies(align create_fundamentals_generate_messages_cpp)
 
-add_executable(test src/feedback_drive.cpp src/test.cpp)
+add_executable(test src/feedback_drive.cpp src/test.cpp
+        src/ransac.cpp
+        include/ransac.h)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
