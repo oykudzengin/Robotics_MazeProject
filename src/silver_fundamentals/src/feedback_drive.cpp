@@ -233,11 +233,13 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
 }
 
 int FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
-    const double angle_rad = angle / 180.0 * PI;
+    const double angle_rad = angle * PI / (180.0 * wheel_radius);
     const double dist_from_inner_wheel = radius - WHEEL_BASE/2;
     const double dist_from_outer_wheel = radius + WHEEL_BASE/2;
     const double inner_driving_dist = angle_rad * dist_from_inner_wheel;
     const double outer_driving_dist = angle_rad * dist_from_outer_wheel;
+
+    ROS_INFO("angle is %f, meaning inner_dist of %f, outer dist of %f", angle_rad, inner_driving_dist, outer_driving_dist);
 
     volatile double inner_driving_speed = speed * (radius - WHEEL_BASE/2) / radius;
     volatile double outer_driving_speed = speed * (radius + WHEEL_BASE/2) / radius;
