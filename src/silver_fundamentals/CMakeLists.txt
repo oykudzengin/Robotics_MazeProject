@@ -102,6 +102,10 @@ add_executable(align src/align.cpp src/feedback_drive.cpp)
 target_link_libraries(align ${catkin_LIBRARIES})
 add_dependencies(align create_fundamentals_generate_messages_cpp)
 
+add_executable(test src/feedback_drive.cpp src/test.cpp)
+target_link_libraries(test ${catkin_LIBRARIES})
+add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
