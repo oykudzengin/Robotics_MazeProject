@@ -41,6 +41,7 @@ add_service_files(
         LaserCartesian.srv
         DriveData.srv
         ResetEncoders.srv
+        ExecutePlan.srv
 )
 
 #common commands for building c++ executables and libraries
