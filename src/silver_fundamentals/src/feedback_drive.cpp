@@ -301,16 +301,16 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     double ransac_distance = 0.8;
     double used_values_proportion = 0.95;
 
-    right_laser_srv.request.start = -120.0;
+    right_laser_srv.request.start = -110.0;
     right_laser_srv.request.end = -80.0;
     right_laser_srv.request.max_dist = 60.0;
     left_laser_srv.request.start = 80.0;
-    left_laser_srv.request.end = 120.0;
+    left_laser_srv.request.end = 110.0;
     left_laser_srv.request.max_dist = 60.0;
     front_laser_srv.request.start = -25.0;
     front_laser_srv.request.end = 25.0;
     front_laser_srv.request.max_dist = 100.0;
-    const int side_laser_points = points_on_angle_range(40);
+    const int side_laser_points = points_on_angle_range(30);
     int front_laser_points = points_on_angle_range(50);
 
     auto left_repulsion = [left_wall_dist] (const double current_dist) {
@@ -340,16 +340,23 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
         double left_wall_angle = ransac_with_dist(left_pts, ransac_distance, ransac_iterations, &left_values_used, &left_distance);
 
         double correction_angle;
-        if (right_values_used < used_values_proportion*side_laser_points && left_values_used < used_values_proportion*side_laser_points)
+        if (right_values_used < used_values_proportion*side_laser_points && left_values_used < used_values_proportion*side_laser_points) {
             correction_angle = 0.0;
-        else if (right_values_used < used_values_proportion*side_laser_points)
+            right_distance = std::numeric_limits<double>::infinity();
+            left_distance = std::numeric_limits<double>::infinity();
+        }
+        else if (right_values_used < used_values_proportion*side_laser_points) {
             correction_angle = left_wall_angle - 90.0;
-        else if (left_values_used < used_values_proportion*side_laser_points)
+            right_distance = std::numeric_limits<double>::infinity();
+        }
+        else if (left_values_used < used_values_proportion*side_laser_points) {
             correction_angle = right_wall_angle + 90.0;
+            left_distance = std::numeric_limits<double>::infinity();
+        }
         else
             correction_angle = (left_wall_angle + right_wall_angle) / 2.0;
 
-        ROS_INFO("right dist is %4f, left dist is %4f, sum is %4f, right angle %4f, left %4f", right_distance, left_distance, right_distance + left_distance, right_wall_angle, left_wall_angle);
+        ROS_INFO("right dist is %4f, left dist is %4f, sum is %4f, right angle %4f, left %4f", right_distance, left_distance, right_distance + left_distance, right_wall_angle+90, left_wall_angle-90);
 
 
 
