@@ -331,13 +331,14 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
         laser_cart_client.call(right_laser_srv);
         laser_cart_client.call(left_laser_srv);
         int right_values_used, left_values_used;
+        double right_distance, left_distance;
 
         std::vector<geometry_msgs::Point> right_pts = right_laser_srv.response.values;
         std::vector<geometry_msgs::Point> left_pts = left_laser_srv.response.values;
 
         // get ransac angle
-        double right_wall_angle = ransac(right_pts, ransac_distance, ransac_iterations, &right_values_used);
-        double left_wall_angle = ransac(left_pts, ransac_distance, ransac_iterations, &left_values_used);
+        double right_wall_angle = ransac_with_dist(right_pts, ransac_distance, ransac_iterations, &right_values_used, &right_distance);
+        double left_wall_angle = ransac_with_dist(left_pts, ransac_distance, ransac_iterations, &left_values_used, &left_distance);
 
         double correction_angle;
         if (right_values_used < used_values_proportion*side_laser_points && left_values_used < used_values_proportion*side_laser_points)
@@ -348,6 +349,8 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
             correction_angle = right_wall_angle + 90.0;
         else
             correction_angle = (left_wall_angle + right_wall_angle) / 2.0;
+
+        ROS_INFO("right dist is %4f, left dist is %4f, sum is %4f", right_distance, left_distance, right_distance + left_distance);
 
 
 

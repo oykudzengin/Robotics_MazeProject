@@ -39,7 +39,8 @@ int turn(int argc, char **argv) {
 
 
 int main(int argc, char **argv) {
-    turn(argc, argv);
+    auto driver = FeedbackDrive(3.25, 23.5, 10.0);
+    driver.drive_along_wall(40, 40, 10, nullptr);
     return 0;
     ros::init(argc, argv, "test");
     ros::NodeHandle n;
