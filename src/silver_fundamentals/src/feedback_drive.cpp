@@ -298,7 +298,7 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     silver_fundamentals::LaserCartesian front_laser_srv;
 
     int ransac_iterations = 10000;
-    double ransac_distance = 0.8;
+    double ransac_distance = 0.6;
     double used_values_proportion = 0.95;
 
     right_laser_srv.request.start = -110.0;
