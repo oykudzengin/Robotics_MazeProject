@@ -2,6 +2,7 @@
 #include <silver_fundamentals/ExecutePlan.h>
 #include "silver_fundamentals/Laser.h"
 #include <feedback_drive.h>
+#include <config.h>
 
 bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
                   silver_fundamentals::ExecutePlan::Response &res) 
@@ -15,24 +16,24 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
 
     for (int i=0; i < plan.size(); i++) {
         switch (plan[i]) {
-            case 0: { //right
+            case RIGHT: { //right
                 ROS_INFO("Turning right");
                 driver.turn_n_degrees(90, right);
                 driver.drive_n_cm(40);
                 break;
             }
-            case 1: { //up
+            case UP: { //up
                 ROS_INFO("Moving up");
                 driver.drive_n_cm(40);
                 break;
             }
-            case 2: { //left
+            case LEFT: { //left
                 ROS_INFO("Turning left");
                 driver.turn_n_degrees(90,left);
                 driver.drive_n_cm(40);
                 break;
             }
-            case 3: { //down
+            case DOWN: { //down
                 ROS_INFO("Moving down");
                 driver.turn_n_degrees(180, right);
                 driver.drive_n_cm(40);
