@@ -12,6 +12,7 @@
 
 // wheel diameter 3.25
 // wheelbase 26.203
+/*
 int turn(int argc, char **argv) {
     double speed;
     direction dir;
@@ -35,7 +36,7 @@ int turn(int argc, char **argv) {
     driver.turn(angle, dir, radius, speed);
     return 0;
 }
-
+*/
 
 int main(int argc, char **argv) {
     // turn(argc, argv);
