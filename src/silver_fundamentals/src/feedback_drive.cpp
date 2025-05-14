@@ -1,12 +1,13 @@
 #include <feedback_drive.h>
 #include <cmath>
 #include "silver_fundamentals/Laser.h"
+#include "silver_fundamentals/LaserCartesian.h"
 #include <laser_distance_map.h>
 #include "ros/ros.h"
 #include <vector>
 #include <sstream>
 
-#include "ransac.h"
+#include <ransac.h>
 
 #define ROBOT_RADIUS 13.3f
 
@@ -293,25 +294,32 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
 
 int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double left_wall_dist, const double speed, bool (*cond)()) {
 
-    silver_fundamentals::Laser right_laser_srv;
-    silver_fundamentals::Laser left_laser_srv;
-    silver_fundamentals::Laser front_laser_srv;
+    silver_fundamentals::LaserCartesian right_laser_srv;
+    silver_fundamentals::LaserCartesian left_laser_srv;
+    silver_fundamentals::LaserCartesian front_laser_srv;
 
     int ransac_iterations = 7000;
     double ransac_distance = 0.8;
     double used_values_proportion = 0.8;
 
     right_laser_srv.request.start = -110;
-    right_laser_srv.request.stop = -70;
+    right_laser_srv.request.end = -70;
     right_laser_srv.request.max_dist = 100;
     left_laser_srv.request.start = 70;
-    left_laser_srv.request.stop = 110;
+    left_laser_srv.request.end = 110;
     left_laser_srv.request.max_dist = 100;
     front_laser_srv.request.start = -25;
-    front_laser_srv.request.stop = 25;
+    front_laser_srv.request.end = 25;
     front_laser_srv.request.max_dist = 100;
     int side_laser_points = points_on_angle_range(40);
     int front_laser_points = points_on_angle_range(50);
+
+    auto left_repulsion = [left_wall_dist] (const double current_dist) {
+        return std::max(0.0, 150*(1.0/current_dist - 1.0/left_wall_dist));
+    };
+    auto right_repulsion = [right_wall_dist] (const double current_dist) {
+        return std::max(0.0, 150*(1.0/current_dist + 1.0/right_wall_dist));
+    };
 
 
     drive_srv.request.left = speed;

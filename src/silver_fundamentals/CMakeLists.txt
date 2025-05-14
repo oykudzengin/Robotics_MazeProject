@@ -82,7 +82,7 @@ add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
 target_link_libraries(wanderer ${catkin_LIBRARIES})
 add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
 
-add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp)
+add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp src/ransac.cpp)
 target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
 add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp)
 
@@ -98,15 +98,11 @@ add_executable(square_no_sensors src/square_no_sensors.cpp)
 target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
 
-add_executable(align src/align.cpp src/feedback_drive.cpp
-        src/ransac.cpp
-        include/ransac.h)
+add_executable(align src/align.cpp src/feedback_drive.cpp src/ransac.cpp)
 target_link_libraries(align ${catkin_LIBRARIES})
 add_dependencies(align create_fundamentals_generate_messages_cpp)
 
-add_executable(test src/feedback_drive.cpp src/test.cpp
-        src/ransac.cpp
-        include/ransac.h)
+add_executable(test src/feedback_drive.cpp src/test.cpp src/ransac.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 

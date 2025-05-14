@@ -9,6 +9,20 @@
 #include <feedback_drive.h>
 #include <ransac.h>
 
+double minIgnoringNaN(const std::vector<double> &v) {
+    double best = std::numeric_limits<double>::infinity();
+    bool gotOne = false;
+
+    for (double x: v) {
+        if (std::isnan(x)) continue;
+        gotOne = true;
+        best = std::min(best, x);
+    }
+    return gotOne
+               ? best
+               : std::numeric_limits<double>::quiet_NaN();
+}
+
 int align() {
     int ransac_iterations = 7000;
     double ransac_distance = 0.8;

@@ -4,25 +4,14 @@
 #include "silver_fundamentals/Laser.h"
 #include <config.h>
 #include <random>
+#include <ransac.h>
 
 
-double minIgnoringNaN(const std::vector<double> &v) {
-    double best = std::numeric_limits<double>::infinity();
-    bool gotOne = false;
 
-    for (double x: v) {
-        if (std::isnan(x)) continue;
-        gotOne = true;
-        best = std::min(best, x);
-    }
-    return gotOne
-               ? best
-               : std::numeric_limits<double>::quiet_NaN();
-}
-
-double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount) {
+double ransac_with_dist(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount, double *dist) {
     if (pts.size() < 2) {
         *amount = 0;
+        *dist   = std::numeric_limits<double>::infinity();
         return std::numeric_limits<double>::infinity();
     }
 
@@ -48,10 +37,11 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
         double dy = (P.y - Q.y);
 
         double norm = std::hypot(dx, dy);
+        if (norm == 0.0) { --iter; continue; }
 
         double a = dy / norm;
         double b = dx / norm;
-        double c = dx * P.y - dy * P.x;
+        double c = (dx * P.y - dy * P.x) / norm;
 
 
         unsigned int inliners = 0;
@@ -72,7 +62,8 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
 
     if (best_count < 2) {
         *amount = 0;
-        std::numeric_limits<double>::infinity();
+        *dist   = std::numeric_limits<double>::infinity();
+        return std::numeric_limits<double>::infinity();
     }
 
 
@@ -88,6 +79,15 @@ double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, c
     double angle_rad = std::atan2(y0, x0);
     double angle_deg = angle_rad * 180.0 / M_PI;
 
+    double d0 = std::fabs(best_c);
+
     *amount = best_count;
+    *dist = d0;
     return -angle_deg;
 }
+
+double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount) {
+    double unused;
+    return ransac_with_dist(pts, max_offset, max_iterations, amount, &unused);
+}
+
