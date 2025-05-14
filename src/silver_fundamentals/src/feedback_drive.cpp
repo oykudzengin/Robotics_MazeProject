@@ -297,8 +297,8 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     silver_fundamentals::LaserCartesian left_laser_srv;
     silver_fundamentals::LaserCartesian front_laser_srv;
 
-    int ransac_iterations = 7000;
-    double ransac_distance = 0.8;
+    int ransac_iterations = 10000;
+    double ransac_distance = 0.7;
     double used_values_proportion = 0.95;
 
     right_laser_srv.request.start = -100.0;
@@ -349,7 +349,7 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
         else
             correction_angle = (left_wall_angle + right_wall_angle) / 2.0;
 
-        ROS_INFO("right dist is %4f, left dist is %4f, sum is %4f", right_distance, left_distance, right_distance + left_distance);
+        ROS_INFO("right dist is %4f, left dist is %4f, sum is %4f, right angle %4f, left %4f", right_distance, left_distance, right_distance + left_distance, right_wall_angle, left_wall_angle);
 
 
 
