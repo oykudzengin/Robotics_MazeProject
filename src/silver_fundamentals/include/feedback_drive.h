@@ -45,7 +45,7 @@ class FeedbackDrive {
         ros::Rate rate{1000};
 
         void compute_hitbox(double width, double distance);
-        bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle);
+        bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle) const;
 };
 
 

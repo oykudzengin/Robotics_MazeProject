@@ -83,7 +83,6 @@ void FeedbackDrive::drive_n_cm(double n) {
     drive_client.call(drive_srv);
 }
 
-
 void FeedbackDrive::turn_n_degrees(double n, direction d) {
     switch (d) {
         case none: {
@@ -217,7 +216,7 @@ void FeedbackDrive::compute_hitbox(double width, double distance) {
     }
 }
 
-bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle, const double max_angle) {
+bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle, const double max_angle) const {
     if (min_angle >= max_angle) return false;
 
     int idx_start = static_cast<int>(
@@ -302,15 +301,15 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     double ransac_distance = 0.8;
     double used_values_proportion = 0.8;
 
-    right_laser_srv.request.start = -110.;
-    right_laser_srv.request.end = -70.;
-    right_laser_srv.request.max_dist = 100.;
-    left_laser_srv.request.start = 70.;
-    left_laser_srv.request.end = 110.;
-    left_laser_srv.request.max_dist = 100.;
-    front_laser_srv.request.start = -25.;
-    front_laser_srv.request.end = 25.;
-    front_laser_srv.request.max_dist = 100.;
+    right_laser_srv.request.start = -110.0;
+    right_laser_srv.request.end = -70.0;
+    right_laser_srv.request.max_dist = 100.0;
+    left_laser_srv.request.start = 70.0;
+    left_laser_srv.request.end = 110.0;
+    left_laser_srv.request.max_dist = 100.0;
+    front_laser_srv.request.start = -25.0;
+    front_laser_srv.request.end = 25.0;
+    front_laser_srv.request.max_dist = 100.0;
     const int side_laser_points = points_on_angle_range(40);
     int front_laser_points = points_on_angle_range(50);
 
