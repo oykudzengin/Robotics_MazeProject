@@ -36,7 +36,7 @@ inline double threshold_for_angle(double theta,
 }
 
 static int points_on_angle_range(const double angle) {
-    return angle * PI / 180 / ANGLE_STEP;
+    return static_cast<int>(angle / ANGLE_STEP);
 }
 
 FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
@@ -310,7 +310,7 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     front_laser_srv.request.start = -25.0;
     front_laser_srv.request.end = 25.0;
     front_laser_srv.request.max_dist = 100.0;
-    const int side_laser_points = points_on_angle_range(30);
+    const double side_laser_points = points_on_angle_range(30);
     int front_laser_points = points_on_angle_range(50);
 
     auto left_repulsion = [left_wall_dist] (const double current_dist) {
