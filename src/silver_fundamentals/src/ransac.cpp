@@ -83,7 +83,7 @@ double ransac_with_dist(std::vector<geometry_msgs::Point> &pts, const double max
 
     *amount = best_count;
     *dist = d0;
-    return -angle_deg;
+    return angle_deg;
 }
 
 double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount) {
