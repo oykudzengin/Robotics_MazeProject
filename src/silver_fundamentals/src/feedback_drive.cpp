@@ -302,16 +302,16 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     double ransac_distance = 0.8;
     double used_values_proportion = 0.8;
 
-    right_laser_srv.request.start = -110;
-    right_laser_srv.request.end = -70;
-    right_laser_srv.request.max_dist = 100;
-    left_laser_srv.request.start = 70;
-    left_laser_srv.request.end = 110;
-    left_laser_srv.request.max_dist = 100;
-    front_laser_srv.request.start = -25;
-    front_laser_srv.request.end = 25;
-    front_laser_srv.request.max_dist = 100;
-    int side_laser_points = points_on_angle_range(40);
+    right_laser_srv.request.start = -110.;
+    right_laser_srv.request.end = -70.;
+    right_laser_srv.request.max_dist = 100.;
+    left_laser_srv.request.start = 70.;
+    left_laser_srv.request.end = 110.;
+    left_laser_srv.request.max_dist = 100.;
+    front_laser_srv.request.start = -25.;
+    front_laser_srv.request.end = 25.;
+    front_laser_srv.request.max_dist = 100.;
+    const int side_laser_points = points_on_angle_range(40);
     int front_laser_points = points_on_angle_range(50);
 
     auto left_repulsion = [left_wall_dist] (const double current_dist) {
@@ -322,8 +322,8 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     };
 
 
-    drive_srv.request.left = speed;
-    drive_srv.request.right = speed;
+    // drive_srv.request.left = speed;
+    // drive_srv.request.right = speed;
 
     bool success = cond();
     while (ros::ok() && !success) {
