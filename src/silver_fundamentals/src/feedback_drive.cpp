@@ -47,7 +47,7 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     drive_data_client = n.serviceClient<silver_fundamentals::DriveData>("encoder_data");
     drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
     reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("wrap_reset_encoders");
-    laser_cart_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRangeCartesian");
+    laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
 
 }
 
