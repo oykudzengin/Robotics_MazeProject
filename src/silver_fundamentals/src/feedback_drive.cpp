@@ -301,8 +301,8 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
     double ransac_distance = 0.08;
     double used_values_proportion = 0.95;
 
-    right_laser_srv.request.start = -110.0;
-    right_laser_srv.request.end = -80.0;
+    right_laser_srv.request.start = -120.0;
+    right_laser_srv.request.end = 120.0;
     right_laser_srv.request.max_dist = 60.0;
     left_laser_srv.request.start = 80.0;
     left_laser_srv.request.end = 110.0;
@@ -342,12 +342,12 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
         double correction_angle;
         if (right_values_used < used_values_proportion*side_laser_points && left_values_used < used_values_proportion*side_laser_points) {
             correction_angle = 0.0;
-            right_distance = std::numeric_limits<double>::infinity();
+            //right_distance = std::numeric_limits<double>::infinity();
             left_distance = std::numeric_limits<double>::infinity();
         }
         else if (right_values_used < used_values_proportion*side_laser_points) {
             correction_angle = left_wall_angle - 90.0;
-            right_distance = std::numeric_limits<double>::infinity();
+            //right_distance = std::numeric_limits<double>::infinity();
         }
         else if (left_values_used < used_values_proportion*side_laser_points) {
             correction_angle = right_wall_angle + 90.0;
