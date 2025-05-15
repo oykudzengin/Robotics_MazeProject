@@ -370,7 +370,7 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
 // x is right-left
 geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left) {
     double additional_encoder_distance = (delta_right + delta_left)/2.0;
-    double average_encoder_distance = (delta_left - delta_right)/(4.0*wheel_base);
+    double average_encoder_distance = (delta_right - delta_left)/(4.0*wheel_base);
     current_pos.x += additional_encoder_distance * std::cos(current_pos.z+average_encoder_distance);
     current_pos.y += additional_encoder_distance * std::sin(current_pos.z+average_encoder_distance);
     current_pos.z += 2.0*average_encoder_distance;
@@ -416,15 +416,18 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     double base_line_left = encoder_srv.response.left_encoder;
     double base_line_right = encoder_srv.response.right_encoder;
 
+    const double base_speed = 4.0;
+
 
     geometry_msgs::Point current_pos;
     current_pos.x = 0.0;
-    current_pos.y = 10.0;
+    current_pos.y = 0.0;
     current_pos.z = 0.0;
     while (ros::ok()) {
         geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
+        double angle = std::atan2(-field_vector.x, field_vector.y);
 
-        ROS_INFO("Field vector x is %f, y is %f", field_vector.x, field_vector.y);
+        ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
        sleep_rate.sleep();
     }
 }
