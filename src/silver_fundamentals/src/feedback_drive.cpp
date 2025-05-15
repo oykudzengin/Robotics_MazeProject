@@ -405,8 +405,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 }
 
-int FeedbackDrive::potentialFieldDrive(geometry_msgs::Point goal, double k_att, double k_rep, double r) {
-	 auto sleep_rate = ros::rate(1)
+int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r) {
+	 auto sleep_rate = ros::Rate(1);
 
     silver_fundamentals::DriveData encoder_srv;
     drive_data_client.call(encoder_srv);
