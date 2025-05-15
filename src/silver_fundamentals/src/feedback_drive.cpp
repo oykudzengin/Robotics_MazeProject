@@ -388,13 +388,12 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
     double x_force = -k_att*(current_pos.x - goal.x);
     double y_force = -k_att*(current_pos.y - goal.y);
-    ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
+    // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
 
     for (auto &pt : laser_srv.response.values) {
         double real_x = pt.y;
         double real_y = pt.x;
         double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
-        ROS_INFO("real_x: %f real_y: %f, d0", real_x, real_y);
         if (d_zero > r)
             continue;
         x_force += k_rep * (1/d_zero - 1/r) * (current_pos.x - real_x) / (d_zero * d_zero * d_zero * 2.0);
