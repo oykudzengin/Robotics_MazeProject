@@ -396,8 +396,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
         double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
         if (d_zero > r)
             continue;
-        x_force += k_rep * (1/d_zero - 1/r) * (current_pos.x - real_x) / (d_zero * d_zero * d_zero * 2.0);
-        y_force += k_rep * (1/d_zero - 1/r) * (current_pos.y - real_y) / (d_zero * d_zero * d_zero * 2.0);
+        x_force += k_rep * (1/d_zero - 1/r) * -real_x / (d_zero * d_zero * d_zero * 2.0);
+        y_force += k_rep * (1/d_zero - 1/r) * -real_y / (d_zero * d_zero * d_zero * 2.0);
     }
 
     geometry_msgs::Point result;
