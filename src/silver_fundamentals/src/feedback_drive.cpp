@@ -374,6 +374,8 @@ geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current
     current_pos.x += additional_encoder_distance * std::cos(current_pos.z+average_encoder_distance);
     current_pos.y += additional_encoder_distance * std::sin(current_pos.z+average_encoder_distance);
     current_pos.z += 2.0*average_encoder_distance;
+
+    return current_pos;
 }
 
 geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r) {
@@ -430,7 +432,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
         const double angle = std::atan2(field_vector.x, field_vector.y);
 
-        ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
+        //ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
         drive_srv.request.left = base_speed - (angle/PI)*8;
         drive_srv.request.right = base_speed + (angle/PI)*8;
         drive_client.call(drive_srv);
@@ -444,6 +446,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         current_encoder_right = encoder_srv.response.right_encoder;
 
         current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
+        ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z);
 
     } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.1);
 }
