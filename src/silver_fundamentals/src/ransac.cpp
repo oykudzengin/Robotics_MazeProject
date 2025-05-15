@@ -150,6 +150,6 @@ double new_ransac(std::vector<geometry_msgs::Point> &pts, const double max_offse
 
 double ransac(std::vector<geometry_msgs::Point> &pts, const double max_offset, const int max_iterations, int *amount) {
     double unused;
-    return new_ransac(pts, max_offset, max_iterations, amount, &unused);
+    return ransac_with_dist(pts, max_offset, max_iterations, amount, &unused);
 }
 

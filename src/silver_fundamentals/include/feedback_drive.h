@@ -6,6 +6,7 @@
 #include "create_fundamentals/DiffDrive.h"
 #include "silver_fundamentals/ResetEncoders.h"
 #include <config.h>
+#include <geometry_msgs/Point.h>
 
 class FeedbackDrive {
     public:
@@ -18,6 +19,8 @@ class FeedbackDrive {
         void distance_to_wall(double should_distance);
         int turn(double, direction, double, double);
         int drive_along_wall(double, double, double, bool (*)());
+
+        int potentialFieldDrive(geometry_msgs::Point goal, double k_att, double k_rep, double r);
 
 
     private:
@@ -46,6 +49,11 @@ class FeedbackDrive {
 
         void compute_hitbox(double width, double distance);
         bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle) const;
+
+        geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
+        geometry_msgs::Point position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left);
+
+
 };
 
 

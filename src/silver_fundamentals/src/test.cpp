@@ -42,29 +42,11 @@ bool stud() {return false;}
 int main(int argc, char **argv) {
     ros::init(argc, argv, "test");
     auto driver = FeedbackDrive(3.25, 23.5, 10.0);
-    driver.drive_along_wall(40, 40, 10, stud);
-    return 0;
-    ros::NodeHandle n;
 
-    ros::ServiceClient laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
-    silver_fundamentals::LaserCartesian laser_cart_srv;
+    geometry_msgs::Point goal;
+    goal.x = atof(argv[1]);
+    goal.y = atof(argv[2]);
 
-    laser_cart_srv.request.start = -120.0;
-    laser_cart_srv.request.end = 120.0;
-    laser_cart_srv.request.max_dist = 100.0;
-
-    while (ros::ok()) {
-        int amount;
-        double dist;
-
-        while (!laser_cart_client.call(laser_cart_srv)) {
-            ROS_ERROR("Failed to call laser cartesian service");
-        }
-        std::vector<geometry_msgs::Point> pts = laser_cart_srv.response.values;
-
-        double angle = ransac_with_dist(pts, 0.08, 7000, &amount, &dist);
-        ROS_INFO("Angle: %4f, points used %3d, distance %5f", angle, amount, dist);
-    }
-
-    return 0;
+    driver.reset_encoders();
+    driver.potential_field_drive(goal, atof(argv[3]), atof(argv[4]), atof(argv[5]));
 }
