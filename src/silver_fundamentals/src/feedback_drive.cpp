@@ -390,11 +390,13 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double y_force = -k_att*(current_pos.y - goal.y);
 
     for (auto &pt : laser_srv.response.values) {
-        double d_zero = std::sqrt(pt.x * pt.x + pt.y * pt.y);
+        double real_x = pt.y;
+        double real_y = pt.x;
+        double d_zero = std::sqrt((current_pos.x-real_y) * (current_pos.x-real_y) + (current_pos.y-real_x) * (current_pos.y-real_x));
         if (d_zero > r)
             continue;
-        x_force += k_rep * (1/d_zero - 1/r) * (current_pos.x - pt.x) / (d_zero * d_zero * d_zero * 2.0);
-        y_force += k_rep * (1/d_zero - 1/r) * (current_pos.y - pt.y) / (d_zero * d_zero * d_zero * 2.0);
+        x_force -= k_rep * (1/d_zero - 1/r) * (current_pos.x - real_y) / (d_zero * d_zero * d_zero * 2.0);
+        y_force -= k_rep * (1/d_zero - 1/r) * (current_pos.y - real_x) / (d_zero * d_zero * d_zero * 2.0);
     }
 
     geometry_msgs::Point result;
