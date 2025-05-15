@@ -390,6 +390,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double y_force = -k_att*(current_pos.y - goal.y);
 
     for (auto &pt : laser_srv.response.values) {
+        ROS_INFO("Obstacle at %f %f", pt.x, pt.y);
         double real_x = pt.y;
         double real_y = pt.x;
         double d_zero = std::sqrt((current_pos.x-real_x) * (current_pos.x-real_x) + (current_pos.y-real_y) * (current_pos.y-real_y));
@@ -417,7 +418,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
 
 
     geometry_msgs::Point current_pos;
-    current_pos.x = 10.0;
+    current_pos.x = 0.0;
     current_pos.y = 0.0;
     current_pos.z = 0.0;
     while (ros::ok()) {
