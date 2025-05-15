@@ -417,7 +417,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
 
 
     geometry_msgs::Point current_pos;
-    current_pos.x = 0.0;
+    current_pos.x = 10.0;
     current_pos.y = 0.0;
     current_pos.z = 0.0;
     while (ros::ok()) {
