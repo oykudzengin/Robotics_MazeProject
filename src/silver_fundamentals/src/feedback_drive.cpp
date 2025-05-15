@@ -435,8 +435,8 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const double angle = std::atan2(field_vector.x, field_vector.y);
 
         //ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
-        drive_srv.request.left = base_speed - (angle/PI)*8;
-        drive_srv.request.right = base_speed + (angle/PI)*8;
+        drive_srv.request.left = base_speed - (angle/PI)/10*(angle/PI)/10*(angle/PI)/10;
+        drive_srv.request.right = base_speed + (angle/PI)/10*(angle/PI)/10*(angle/PI)/10;
         drive_client.call(drive_srv);
 
         sleep_rate.sleep();
