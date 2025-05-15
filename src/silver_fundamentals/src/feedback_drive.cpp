@@ -393,8 +393,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
         double d_zero = std::sqrt(pt.x * pt.x + pt.y * pt.y);
         if (d_zero > r)
             continue;
-        x_force -= k_rep * (1/d_zero - 1/r) * (current_pos.x - pt.x) / (d_zero * d_zero * d_zero * 2.0);
-        y_force -= k_rep * (1/d_zero - 1/r) * (current_pos.y - pt.y) / (d_zero * d_zero * d_zero * 2.0);
+        x_force += k_rep * (1/d_zero - 1/r) * (current_pos.x - pt.x) / (d_zero * d_zero * d_zero * 2.0);
+        y_force += k_rep * (1/d_zero - 1/r) * (current_pos.y - pt.y) / (d_zero * d_zero * d_zero * 2.0);
     }
 
     geometry_msgs::Point result;
@@ -421,7 +421,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     while (ros::ok()) {
         geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
 
-        ROS_INFO("Field vector y is %f, x is %f", field_vector.x, field_vector.y);
+        ROS_INFO("Field vector x is %f, y is %f", field_vector.x, field_vector.y);
        sleep_rate.sleep();
     }
 }
