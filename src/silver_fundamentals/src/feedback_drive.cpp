@@ -369,8 +369,8 @@ int FeedbackDrive::drive_along_wall(const double right_wall_dist, const double l
 }
 // x is right-left
 geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left) {
-    double delta_right_m = delta_right*wheel_radius;
-    double delta_left_m = delta_left*wheel_radius;
+    double delta_right_m = delta_right*wheel_radius/100;
+    double delta_left_m = delta_left*wheel_radius/100;
     double additional_encoder_distance = (delta_right_m + delta_left_m)/2.0;
     double average_encoder_distance = (delta_right_m - delta_left_m)/(4.0*wheel_base);
     current_pos.x += additional_encoder_distance * std::sin(current_pos.z+average_encoder_distance);
