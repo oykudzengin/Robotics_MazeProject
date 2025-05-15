@@ -425,7 +425,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     current_pos.z = 0.0;
     while (ros::ok()) {
         geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
-        double angle = std::atan2(-field_vector.x, field_vector.y);
+        double angle = std::atan2(field_vector.x, field_vector.y);
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
        sleep_rate.sleep();
