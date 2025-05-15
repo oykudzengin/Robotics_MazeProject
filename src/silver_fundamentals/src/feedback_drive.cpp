@@ -410,11 +410,14 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r) {
 	 auto sleep_rate = ros::Rate(1);
-
     silver_fundamentals::DriveData encoder_srv;
+
     drive_data_client.call(encoder_srv);
     double base_line_left = encoder_srv.response.left_encoder;
     double base_line_right = encoder_srv.response.right_encoder;
+
+    double currrent_encoder_right = base_line_right;
+    double current_encoder_left = base_line_left;
 
     const double base_speed = 4.0;
 
@@ -423,12 +426,25 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     current_pos.x = 0.0;
     current_pos.y = 0.0;
     current_pos.z = 0.0;
-    while (ros::ok()) {
+    do {
         geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
         double angle = std::atan2(field_vector.x, field_vector.y);
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
-       sleep_rate.sleep();
-    }
+        drive_srv.request.left = base_speed - (angle/PI)*8;
+        drive_srv.request.right = base_speed + (angle/PI)*8;
+        drive_client.call(drive_srv);
+
+        sleep_rate.sleep();
+
+        base_line_left = current_encoder_left;
+        base_line_right = current_encoder_right;
+        drive_data_client.call(encoder_srv);
+        current_encoder_left = encoder_srv.response.left_encoder;
+        current_encoder_right = encoder_srv.response.right_encoder;
+
+        current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
+
+    } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y) > 0.1);
 }
 
