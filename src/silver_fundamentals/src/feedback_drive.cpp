@@ -451,5 +451,11 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z);
 
     } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.1);
+
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
+    drive_client.call(drive_srv);
+
+    return 0;
 }
 
