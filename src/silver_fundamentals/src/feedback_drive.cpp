@@ -459,7 +459,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         else if (angle < 0)
             angle = std::max(-max_turning_angle, angle);
         else
-            angle = std::min(max_turning_angle, angle));
+            angle = std::min(max_turning_angle, angle);
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         double rotation_rate = angle * rot_rate;
