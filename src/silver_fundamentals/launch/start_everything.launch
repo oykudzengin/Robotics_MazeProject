@@ -1,0 +1,16 @@
+<launch>
+  <!-- Start roscore is NOT included in launch files (you still start it manually or via script) -->
+
+  <!-- Run driver.py -->
+  <node pkg="create_fundamentals" type="driver.py" name="driver_node" output="screen" />
+
+  <!-- Include laser.launch -->
+  <include file="$(find create_fundamentals)/launch/laser.launch" />
+
+  <!-- Run drive_server -->
+  <node pkg="silver_fundamentals" type="drive_server" name="drive_server" output="screen" />
+
+  <!-- Run laser_server -->
+  <node pkg="silver_fundamentals" type="laser_server" name="laser_server" output="screen" />
+</launch>
+

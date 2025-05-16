@@ -18,10 +18,17 @@ enum direction {
   };
 
   enum globDirection {
-    RIGHT = 0,
-    UP = 1,
-    LEFT = 2,
-    DOWN = 3,
+    g_RIGHT = 0,
+    g_UP = 1,
+    g_LEFT = 2,
+    g_DOWN = 3,
+  };
+
+    enum locDirection {
+    l_RIGHT = 1,
+    l_UP = 0,
+    l_LEFT = 3,
+    l_DOWN = 2,
   };
 
 #endif //CONFIG_H
