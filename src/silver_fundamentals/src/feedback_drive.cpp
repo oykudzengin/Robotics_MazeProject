@@ -400,7 +400,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double c = std::cos(yaw);
     double s = std::sin(yaw);
 
-    double local_dx =  c-*wx + s*wy;
+    double local_dx =  -c*wx + s*wy;
     double local_dy = s*wx + c*wy;
 
 
