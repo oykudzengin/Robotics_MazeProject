@@ -43,6 +43,7 @@ class FeedbackDrive {
         silver_fundamentals::ResetEncoders reset_encoders_srv;
 
         ros::ServiceClient laser_cart_client;
+        ros::ServiceClient laser_cart_offset_client;
 
 
         ros::Rate rate{1000};

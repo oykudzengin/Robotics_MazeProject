@@ -50,6 +50,7 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
     reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("wrap_reset_encoders");
     laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
+    laser_cart_offset_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesianOffset");
 
 }
 
@@ -387,8 +388,9 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     laser_srv.request.start = -120.0;
     laser_srv.request.end = 120.0;
     laser_srv.request.max_dist = 100.0;
+    laser_srv.request.offset = ROBOT_RADIUS/100.0;
 
-    while (!laser_cart_client.call(laser_srv))
+    while (!laser_cart_offset_client.call(laser_srv))
         ROS_ERROR("Failed to call laser cart service, retrying...");
 
 
