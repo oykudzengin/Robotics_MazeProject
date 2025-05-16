@@ -396,7 +396,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double wy = goal.y - current_pos.y;
 
     // convert to local frame
-    double yaw = -current_pos.z;
+    double yaw = current_pos.z;
     double c = std::cos(yaw);
     double s = std::sin(yaw);
 
