@@ -454,8 +454,6 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
         double angle = std::atan2(field_vector.x, field_vector.y);
 
-
-
         // clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
         if (std::abs(angle) < min_turning_angle)
             angle = 0.0;
@@ -463,6 +461,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
             angle = current_turning_angle + max_turning_angle;
         else if (current_turning_angle-angle > max_turning_angle)
             angle = current_turning_angle - max_turning_angle;
+        current_turning_angle = angle;
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         double rotation_rate = angle * rot_rate * base_speed;
