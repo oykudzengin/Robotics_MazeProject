@@ -48,5 +48,5 @@ int main(int argc, char **argv) {
     goal.y = atof(argv[2]);
 
     driver.reset_encoders();
-    driver.potential_field_drive(goal, atof(argv[3]), atof(argv[4]), atof(argv[5]));
+    driver.potential_field_drive(goal, atof(argv[3]), atof(argv[4]), atof(argv[5]), atof(argv[6]));
 }
