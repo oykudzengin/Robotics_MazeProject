@@ -395,8 +395,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 
     // world view distances
-    double wx = goal.x - current_pos.x;
-    double wy = goal.y - current_pos.y;
+    double wx = 2*goal.x - current_pos.x;
+    double wy = 2*goal.y - current_pos.y;
 
     // convert to local frame
     double yaw = current_pos.z;
@@ -407,8 +407,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double local_dy = s*wx + c*wy;
 
 
-    double x_force = k_att*local_dx + k_att;
-    double y_force = k_att*local_dy + k_att;
+    double x_force = k_att*local_dx;
+    double y_force = k_att*local_dy;
     // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
 
     for (auto &pt : laser_srv.response.values) {
