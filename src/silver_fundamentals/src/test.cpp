@@ -41,7 +41,7 @@ bool stud() {return false;}
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "test");
-    auto driver = FeedbackDrive(3.25, 23.5, 10.0);
+    auto driver = FeedbackDrive(3.25, 26.5, 10.0);
 
     geometry_msgs::Point goal;
     goal.x = atof(argv[1]);
