@@ -429,7 +429,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 4.0/180.0*PI;
-    double max_turning_angle = 180.0/180.0*PI;
+    double max_turning_angle = 30.0/180.0*PI;
 
 
 	auto sleep_rate = ros::Rate(100);
@@ -442,7 +442,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     double current_encoder_right = base_line_right;
     double current_encoder_left = base_line_left;
 
-    const double base_speed = 3.0;
+    const double base_speed = 8.0;
 
 
     geometry_msgs::Point current_pos;
