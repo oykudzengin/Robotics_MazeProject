@@ -412,7 +412,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 }
 
-int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r) {
+int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r, double rot_rate) {
 	 auto sleep_rate = ros::Rate(100);
     silver_fundamentals::DriveData encoder_srv;
 
@@ -435,8 +435,9 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const double angle = std::atan2(field_vector.x, field_vector.y);
 
         //ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
-        drive_srv.request.left = base_speed - 4*(angle/PI)*(angle/PI);
-        drive_srv.request.right = base_speed + 4*(angle/PI)*(angle/PI);
+        double rotation_rate = angle * rot_rate;
+        drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate;
+        drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate;
         drive_client.call(drive_srv);
 
         sleep_rate.sleep();
