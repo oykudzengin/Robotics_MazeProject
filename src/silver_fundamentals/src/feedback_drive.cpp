@@ -434,7 +434,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
         const double angle = std::atan2(field_vector.x, field_vector.y);
 
-        //ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
+        ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
         double rotation_rate = angle * rot_rate;
         drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate;
         drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate;
@@ -449,7 +449,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         current_encoder_right = encoder_srv.response.right_encoder;
 
         current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
-        ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z);
+        //ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z);
 
     } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.1);
 
