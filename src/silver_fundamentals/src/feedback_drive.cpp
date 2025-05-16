@@ -459,7 +459,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         // clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
         if (std::abs(angle) < min_turning_angle)
             angle = 0.0;
-        else if (angle-current_turing_angle > max_turning_angle)
+        else if (angle-current_turning_angle > max_turning_angle)
             angle = current_turning_angle + max_turning_angle;
         else if (current_turning_angle-angle > max_turning_angle)
             angle = current_turning_angle - max_turning_angle;
