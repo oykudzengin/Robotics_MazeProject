@@ -411,7 +411,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
     for (auto &pt : laser_srv.response.values) {
         double real_x = pt.y;
-        double real_y = pt.x - LIDAR_SENSOR_OFFSET;
+        double real_y = pt.x - LIDAR_SENSOR_OFFSET/100.0;
         double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
         if (d_zero > r)
             continue;
