@@ -463,7 +463,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         current_encoder_right = encoder_srv.response.right_encoder;
 
         current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
-        ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/pi*180.0);
+        ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
 
     } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.1);
 
