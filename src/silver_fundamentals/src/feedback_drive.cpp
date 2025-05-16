@@ -392,16 +392,16 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 
     // world view distances
-    double wx = current_pos.x - goal.x;
-    double wy = current_pos.y - goal.y;
+    double wx = goal.x - current_pos.x;
+    double wy = goal.y - current_pos.y;
 
     // convert to local frame
     double yaw = current_pos.z;
     double c = std::cos(yaw);
     double s = std::sin(yaw);
 
-    double local_dx =  c*wx + s*wy;
-    double local_dy = -s*wx + c*wy;
+    double local_dx =  c-*wx + s*wy;
+    double local_dy = s*wx + c*wy;
 
 
     double x_force = -k_att*local_dx;
@@ -448,7 +448,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
         const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
         const double angle = std::atan2(field_vector.x, field_vector.y);
 
-        ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle);
+        ROS_INFO("Field vector x is %f, y is %f, angle is %f", field_vector.x, field_vector.y, angle/PI*180.0);
         double rotation_rate = angle * rot_rate;
         drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate;
         drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate;
