@@ -442,7 +442,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     double current_encoder_right = base_line_right;
     double current_encoder_left = base_line_left;
 
-    const double base_speed = 8.0;
+    const double base_speed = 3.0;
 
 
     geometry_msgs::Point current_pos;
