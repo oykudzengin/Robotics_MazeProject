@@ -404,8 +404,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double local_dy = s*wx + c*wy;
 
 
-    double x_force = -k_att*local_dx;
-    double y_force = -k_att*local_dy;
+    double x_force = k_att*local_dx;
+    double y_force = k_att*local_dy;
     // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
 
     for (auto &pt : laser_srv.response.values) {
