@@ -3,6 +3,32 @@
 #include "silver_fundamentals/Laser.h"
 #include <feedback_drive.h>
 #include <config.h>
+#include <vector>
+#include <cstddef>   // for std::size_t
+// Example usage
+#include <iostream>
+
+
+std::vector<int> compressPlan(const std::vector<int32_t>& globalPlan) {
+    // 1. Build an extPlan with a leading '1'
+    std::vector<int> extPlan;
+    extPlan.reserve(globalPlan.size() + 1);
+    extPlan.push_back(1);  // initial heading for conversion
+    for (auto dir : globalPlan) {
+        extPlan.push_back(static_cast<int>(dir));
+    }
+
+    // 2. Compute local instructions
+    std::vector<int> localPlan;
+    localPlan.reserve(extPlan.size() - 1);
+    for (size_t i = 0; i + 1 < extPlan.size(); ++i) {
+        int diff = (extPlan[i] - extPlan[i+1] + 4) % 4;
+        localPlan.push_back(diff);
+    }
+
+    return localPlan;
+}
+
 
 bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
                   silver_fundamentals::ExecutePlan::Response &res) 
