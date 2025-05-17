@@ -41,6 +41,7 @@ add_service_files(
         LaserCartesian.srv
         DriveData.srv
         ResetEncoders.srv
+        ExecutePlan.srv
 )
 
 #common commands for building c++ executables and libraries
@@ -106,8 +107,13 @@ add_executable(test src/feedback_drive.cpp src/test.cpp src/ransac.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
+add_executable(execute_plan_server src/execute_plan_server.cpp src/feedback_drive.cpp)
+target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
+add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp)
+
 add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
 add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
 add_dependencies(square_with_encoders silver_fundamentals_generate_messages_cpp)
 add_dependencies(align silver_fundamentals_generate_messages_cpp)
+add_dependencies(execute_plan_server silver_fundamentals_generate_messages_cpp)
