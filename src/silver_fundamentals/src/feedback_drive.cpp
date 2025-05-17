@@ -462,7 +462,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     result.y = y_att+y_rep;
     result.z = angle_between;
 
-    ROS_WARN("attx: %f, atty: %f, repx: %f, repy: %f, angle: %f", x_att, y_att, x_rep, y_rep, angle_between);
+    ROS_WARN("attx: %f, atty: %f, repx: %f, repy: %f, angle: %f %f", x_att, y_att, x_rep, y_rep, angle_between, current_pos.z);
 
     return result;
 }
