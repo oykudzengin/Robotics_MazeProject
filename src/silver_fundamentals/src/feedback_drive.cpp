@@ -452,7 +452,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double m_rep = std::hypot(x_rep, y_rep);
 
     double angle_between = 0.0;
-    if (m_rep > 1e-6 && m_att > 1e-6)
+    if (m_rep > 1e10 && m_att > 1e-6 && m_rep)
         angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0 )));
 
     geometry_msgs::Point result;
