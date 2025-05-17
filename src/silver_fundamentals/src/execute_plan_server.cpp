@@ -77,13 +77,13 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
                   silver_fundamentals::ExecutePlan::Response &res) 
 {
 
-    ROS_INFO("Received a plan of %d steps", req.plan.size());
+    ROS_INFO("Received a plan of %ld steps", req.plan.size());
     auto driver = FeedbackDrive(3.25, 26.203, 2.0);
     driver.reset_encoders();
 
     std::vector<int> plan = req.plan; //compressPlan will work here
     auto waypoints = convertMovesToWaypoints(plan);
-    driver.feedback_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
+    driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
     return true;
 }
 
