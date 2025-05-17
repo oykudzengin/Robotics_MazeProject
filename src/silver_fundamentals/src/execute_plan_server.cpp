@@ -46,6 +46,7 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             pt.y = y;
             waypoints.push_back(pt);
         }
+        last_dir = dir;
     }
     waypoints[waypoints.size() - 1].z = 0.15;
     return waypoints;
