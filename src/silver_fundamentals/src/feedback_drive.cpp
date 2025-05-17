@@ -480,7 +480,7 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
             angle = current_turning_angle - max_turning_angle;
         current_turning_angle = angle;
          */
-        if (angle > 170.0/180.0*PI)
+        if (angle > 150/180.0*PI)
             angle -= 2.0*PI;
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
