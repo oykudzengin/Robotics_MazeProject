@@ -382,6 +382,22 @@ geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current
     return current_pos;
 }
 
+geometry_msgs::Point global_to_local(geometry_msgs::Point current_pos, geometry_msgs::Point target_pos) {
+    double wx = target_pos.x - current_pos.x;
+    double wy = target_pos.y - current_pos.y;
+
+    // convert to local frame
+    double yaw = current_pos.z;
+    double c = std::cos(yaw);
+    double s = std::sin(yaw);
+
+    geometry_msgs::Point local_pos;
+
+    local_pos.x =  c*wx - s*wy;
+    local_pos.y = s*wx + c*wy;
+    local_pos.z = std::hypot(local_pos.x, local_pos.y);
+}
+
 geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r) {
     // init and call laser srv
     silver_fundamentals::LaserCartesian laser_srv;
@@ -396,28 +412,24 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 
     // world view distances
-    double wx = goal.x - current_pos.x;
-    double wy = goal.y - current_pos.y;
+	geometry_msgs::Point local_goal_pos = global_to_local(current_pos, goal);
 
-    // convert to local frame
-    double yaw = current_pos.z;
-    double c = std::cos(yaw);
-    double s = std::sin(yaw);
-
-    double local_dx =  c*wx - s*wy;
-    double local_dy = s*wx + c*wy;
+    double local_dx = local_goal_pos.x;
+    double local_dy = local_goal_pos.y;
 
     // length of force vector
-    double force_vector_dist = std::hypot(local_dx, local_dy);
-	double x_force = 1e-6;
-    double y_force = 1e-6;
+    double force_vector_dist = local_goal_pos.z;
+	double x_att = 1e-6;
+    double y_att = 1e-6;
 
     if (force_vector_dist > 1e-6) {
-        x_force = k_att*local_dx/r;
-        y_force = k_att*local_dy/r;
+        x_att = k_att*local_dx/r;
+        y_att = k_att*local_dy/r;
     }
 
     // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
+	double x_rep = 0.0;
+    double y_rep = 0.0;
 
     for (auto &pt : laser_srv.response.values) {
         double real_x = pt.y;
@@ -426,26 +438,34 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
         if (d_zero > r)
             continue;
         if (d_zero < 1e-6) {
-            y_force += -1e9;
-            x_force += 0;
+            y_rep += -1e9;
+            x_rep += 0;
         } else {
-        	x_force += k_rep * (1/d_zero - 1/r) * -real_x / (d_zero * d_zero * d_zero * 2.0);
-        	y_force += k_rep * (1/d_zero - 1/r) * -real_y / (d_zero * d_zero * d_zero * 2.0);
+        	x_rep += k_rep * (1/d_zero - 1/r) * -real_x / (d_zero * d_zero * d_zero * 2.0);
+        	y_rep += k_rep * (1/d_zero - 1/r) * -real_y / (d_zero * d_zero * d_zero * 2.0);
         }
     }
 
+
+    double dot = x_att*x_rep + y_att*y_rep;
+    double m_att = std::hypot(x_att, y_att);
+    double m_rep = std::hypot(x_rep, y_rep);
+
+    double angle_between = 0.0;
+    if (m_rep > 1e-6 && m_att > 1e-6)
+        angle_between = std::acos( std::clamp(dot / (m_att * m_rep), -1.0, 1.0 ));
+
     geometry_msgs::Point result;
-    result.x = x_force;
-    result.y = y_force;
+    result.x = x_att+x_rep;
+    result.y = y_att+y_rep;
+    result.z = angle_between;
+
     return result;
-
-
 }
 
 int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 6.0/180.0*PI;
     double max_turning_angle = 120.0/180.0*PI;
-
 
 	auto sleep_rate = ros::Rate(100);
     silver_fundamentals::DriveData encoder_srv;
@@ -468,8 +488,18 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
 
     for (auto &goal : goals) {
     	do {
+
+            // get potential field forces
     	    const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
    		    double angle = std::atan2(field_vector.x, field_vector.y);
+
+            // check exit condition
+            if (std::abs(field_vector.z)*180.0/PI > 170.0) {
+                drive_srv.request.left = 0;
+    			drive_srv.request.right = 0;
+    			drive_client.call(drive_srv);
+                return 1;
+            }
 
         	// clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
         	if (std::abs(angle) < min_turning_angle)
@@ -479,10 +509,13 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
             	angle -= 2.0*PI;
 
         	ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
-        	double rotation_rate = angle * rot_rate * base_speed;
+
+            // compute turning radius
+            double rotation_rate = angle * rot_rate * base_speed;
         	drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
         	drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
         	drive_client.call(drive_srv);
+
 
         	sleep_rate.sleep();
 
@@ -492,6 +525,7 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
         	current_encoder_left = encoder_srv.response.left_encoder;
         	current_encoder_right = encoder_srv.response.right_encoder;
 
+            // update position
         	current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
         	//ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
 

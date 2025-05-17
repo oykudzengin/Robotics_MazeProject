@@ -88,8 +88,8 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
         ROS_ERROR("%f %f", waypoints[i].x, waypoints[i].y);
     }
     ROS_ERROR("]");
-    driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
-    return true;
+    int ret = driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
+    return ret == 0;
 }
 
 
