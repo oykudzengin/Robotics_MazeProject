@@ -35,8 +35,8 @@ convertMovesToWaypoints(const std::vector<int>& moves)
                 continue;
         }
         if (last_dir == dir) {
-            waypoints[waypoints.size() - 1].x += x;
-            waypoints[waypoints.size() - 1].y += y;
+            waypoints[waypoints.size() - 1].x = x;
+            waypoints[waypoints.size() - 1].y = y;
         } else if (std::abs(last_dir - dir) == 2) {
             waypoints[waypoints.size() - 1].z = 0.15;
             geometry_msgs::Point pt;
