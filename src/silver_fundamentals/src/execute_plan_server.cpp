@@ -20,6 +20,7 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     // Starting point
     double x = 0.0;
     double y = 0.0;
+    double last_dir = 10.0;
 
     size_t i = 0;
     while (i < moves.size()) {
@@ -31,6 +32,10 @@ convertMovesToWaypoints(const std::vector<int>& moves)
         }
         size_t runLength = j - i;
         // apply the total displacement for the entire run
+        if (std::abs(dir-last_dir) == 2)
+            waypoints[i-1].z = 0.15;
+        last_dir = dir;
+
         switch (dir) {
             case 1: y += step_length * runLength; break; // up
             case 2: x += step_length * runLength; break; // left
