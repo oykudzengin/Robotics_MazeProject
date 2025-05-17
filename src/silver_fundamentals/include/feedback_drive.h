@@ -20,7 +20,7 @@ class FeedbackDrive {
         int turn(double, direction, double, double);
         int drive_along_wall(double, double, double, bool (*)());
 
-        int potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r, double rot_rate);
+        int potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate);
 
 
     private:

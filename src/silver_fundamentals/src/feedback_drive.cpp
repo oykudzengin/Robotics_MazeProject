@@ -442,7 +442,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 }
 
-int FeedbackDrive::potential_field_drive(vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
+int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 6.0/180.0*PI;
     double max_turning_angle = 120.0/180.0*PI;
 
@@ -476,7 +476,7 @@ int FeedbackDrive::potential_field_drive(vector<geometry_msgs::Point> goals, dou
             	angle = 0.0;
 
         	if (angle > 170/180.0*PI)
-            a	ngle -= 2.0*PI;
+                angle -= 2.0*PI;
 
         	ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         	double rotation_rate = angle * rot_rate * base_speed;

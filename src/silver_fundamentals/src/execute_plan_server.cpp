@@ -57,7 +57,7 @@ std::vector<int> compressPlan(const std::vector<int32_t>& globalPlan) {
     std::vector<int> extPlan;
     extPlan.reserve(globalPlan.size() + 1);
     extPlan.push_back(1);  // initial heading for conversion
-    for (auto dir : fix drive into wall maybe and norm attraction 13globalPlan) {
+    for (auto dir : globalPlan) {
         extPlan.push_back(static_cast<int>(dir));
     }
 
@@ -80,33 +80,35 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
     ROS_INFO("Received a plan of %d steps", req.plan.size());
     auto driver = FeedbackDrive(3.25, 26.203, 2.0);
 
-    std::vector<int> plan = req.plan; //compressPlan will work here
+    std::vector<int32_t> plan = req.plan; //compressPlan will work here
+    std::vector<int> localPlan = compressPlan(plan);
     ros::Rate loop_rate(10);
+    double step_length = 0.8; // meters per cell (80 cm)
 
-    for (int i=0; i < plan.size(); i++) {
+    for (int i=0; i < localPlan.size(); i++) {
         locDirection cur_dir = static_cast<locDirection>(plan[i]); // Convert to locDirection enum
         switch (cur_dir) {
             case l_RIGHT: { //right
                 ROS_INFO("Turning right");
                 driver.turn_n_degrees(90, right);
-                driver.drive_n_cm(40);
+                driver.drive_n_cm(step_length);
                 break;
             }
             case l_UP: { //up
                 ROS_INFO("Moving up");
-                driver.drive_n_cm(40);
+                driver.drive_n_cm(step_length);
                 break;
             }
             case l_LEFT: { //left
                 ROS_INFO("Turning left");
                 driver.turn_n_degrees(90,left);
-                driver.drive_n_cm(40);
+                driver.drive_n_cm(step_length);
                 break;
             }
             case l_DOWN: { //down
                 ROS_INFO("Moving down");
                 driver.turn_n_degrees(180, right);
-                driver.drive_n_cm(40);
+                driver.drive_n_cm(step_length);
                 break;
             }
             default:
