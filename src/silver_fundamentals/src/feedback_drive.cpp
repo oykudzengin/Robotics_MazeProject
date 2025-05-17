@@ -408,11 +408,11 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double local_dy = s*wx + c*wy;
 
     // length of force vector
-    double r = std::hypot(local_dx, local_dy);
+    double force_vector_dist = std::hypot(local_dx, local_dy);
 	double x_force = 0.0;
     double y_force = 0.0;
 
-    if (r > 1e-6) {
+    if (force_vector_dist > 1e-6) {
         x_force = k_att*local_dx/r;
         y_force = k_att*local_dy/r;
     }
