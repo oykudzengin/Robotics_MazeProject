@@ -425,8 +425,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double y_att = 1e-6;
 
     if (force_vector_dist > 1e-6) {
-        x_att = k_att*local_dx/r;
-        y_att = k_att*local_dy/r;
+        x_att = k_att*local_dx/force_vector_dist;
+        y_att = k_att*local_dy/force_vector_dist;
     }
 
     // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
