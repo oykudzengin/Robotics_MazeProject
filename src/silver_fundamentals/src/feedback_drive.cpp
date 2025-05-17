@@ -389,7 +389,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     laser_srv.request.end = 120.0;
     laser_srv.request.max_dist = 100.0;
     laser_srv.request.lidar_sensor_offset = LIDAR_SENSOR_OFFSET/100.0;
-    laser_srv.request.wall_thickness = (ROBOT_RADIUS+5)/100.0;
+    laser_srv.request.wall_thickness = (ROBOT_RADIUS+1)/100.0;
 
     while (!laser_cart_offset_client.call(laser_srv))
         ROS_ERROR("Failed to call laser cart service, retrying...");
@@ -476,8 +476,8 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         double rotation_rate = angle * rot_rate * base_speed;
-        drive_srv.request.left = base_speed - (wheel_base/2 * rotation_rate*rotation_rate) - (base_speed * angle/180.0);
-        drive_srv.request.right = base_speed + (wheel_base/2 * rotation_rate*rotation_rate) - (base_speed * angle/180.0);
+        drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * angle/180.0);
+        drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * angle/180.0);
         drive_client.call(drive_srv);
 
         sleep_rate.sleep();
