@@ -28,13 +28,13 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             case 1: // up
                 y += step_length;
                 break;
-            case 0: // right
+            case 2: // left
                 x += step_length;
                 break;
             case 3: // down
                 y -= step_length;
                 break;
-            case 2: // left
+            case 0: // right 
                 x -= step_length;
                 break;
             default:
@@ -78,7 +78,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
 {
 
     ROS_INFO("Received a plan of %ld steps", req.plan.size());
-    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
+    auto driver = FeedbackDrive(3.25, 26.5, 2.0);
     driver.reset_encoders();
 
     std::vector<int> plan = req.plan; //compressPlan will work here
@@ -88,7 +88,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
         ROS_ERROR("%f %f", waypoints[i].x, waypoints[i].y);
     }
     ROS_ERROR("]");
-    driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
+    driver.potential_field_drive(waypoints, 10.0, 0.01, 0.2, 0.07);
     return true;
 }
 

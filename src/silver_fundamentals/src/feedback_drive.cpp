@@ -466,7 +466,8 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
     current_pos.y = 0.0;
     current_pos.z = 0.0;
 
-    for (auto &goal : goals) {
+    for (int goal_idx = 0; goal_idx < goals.size(); goal_idx++) {
+        auto &goal = goals[goal_idx]; 
     	do {
     	    const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
    		    double angle = std::atan2(field_vector.x, field_vector.y);
@@ -480,8 +481,8 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
 
         	ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         	double rotation_rate = angle * rot_rate * base_speed;
-        	drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
-        	drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
+        	drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
+        	drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
         	drive_client.call(drive_srv);
 
         	sleep_rate.sleep();
@@ -495,7 +496,7 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
         	current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
         	//ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
 
-    	} while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.3);
+    	} while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > (goal_idx==goals.size()-1?0.15:0.4));
     }
 
     drive_srv.request.left = 0;
