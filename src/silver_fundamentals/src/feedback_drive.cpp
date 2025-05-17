@@ -442,7 +442,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 }
 
-int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r, double rot_rate) {
+int FeedbackDrive::potential_field_drive(vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 6.0/180.0*PI;
     double max_turning_angle = 120.0/180.0*PI;
 
@@ -465,42 +465,38 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
     current_pos.x = 0.0;
     current_pos.y = 0.0;
     current_pos.z = 0.0;
-    do {
-        const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
-        double angle = std::atan2(field_vector.x, field_vector.y);
 
-        // clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
-        if (std::abs(angle) < min_turning_angle)
-            angle = 0.0;
+    for (auto &goal : goals) {
+    	do {
+    	    const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
+   		    double angle = std::atan2(field_vector.x, field_vector.y);
 
-        /*
-        else if (angle-current_turning_angle > max_turning_angle)
-            angle = current_turning_angle + max_turning_angle;
-        else if (current_turning_angle-angle > max_turning_angle)
-            angle = current_turning_angle - max_turning_angle;
-        current_turning_angle = angle;
-         */
-        if (angle > 170/180.0*PI)
-            angle -= 2.0*PI;
+        	// clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
+        	if (std::abs(angle) < min_turning_angle)
+            	angle = 0.0;
 
-        ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
-        double rotation_rate = angle * rot_rate * base_speed;
-        drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
-        drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
-        drive_client.call(drive_srv);
+        	if (angle > 170/180.0*PI)
+            a	ngle -= 2.0*PI;
 
-        sleep_rate.sleep();
+        	ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
+        	double rotation_rate = angle * rot_rate * base_speed;
+        	drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
+        	drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/150.0)));
+        	drive_client.call(drive_srv);
 
-        base_line_left = current_encoder_left;
-        base_line_right = current_encoder_right;
-        drive_data_client.call(encoder_srv);
-        current_encoder_left = encoder_srv.response.left_encoder;
-        current_encoder_right = encoder_srv.response.right_encoder;
+        	sleep_rate.sleep();
 
-        current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
-        //ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
+        	base_line_left = current_encoder_left;
+        	base_line_right = current_encoder_right;
+        	drive_data_client.call(encoder_srv);
+        	current_encoder_left = encoder_srv.response.left_encoder;
+        	current_encoder_right = encoder_srv.response.right_encoder;
 
-    } while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.1);
+        	current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
+        	//ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
+
+    	} while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > 0.3);
+    }
 
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
