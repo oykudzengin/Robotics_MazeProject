@@ -31,7 +31,7 @@ int turn(int argc, char **argv) {
     ros::init(argc, argv, "test");
     // larger wheelbase -> higher turning angle
     // larger wheelradius -> going further
-    auto driver = FeedbackDrive(3.25, 23.5, 10.0);
+    auto driver = FeedbackDrive(3.25, 26.5, 10.0);
     driver.reset_encoders();
     driver.turn(angle, dir, radius, speed);
     return 0;
