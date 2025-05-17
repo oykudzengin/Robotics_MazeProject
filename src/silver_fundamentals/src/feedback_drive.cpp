@@ -426,8 +426,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
         if (d_zero > r)
             continue;
         if (d_zero < 1e-6) {
-            x_force += -1e9;
             y_force += -1e9;
+            x_force += 0;
         } else {
         	x_force += k_rep * (1/d_zero - 1/r) * -real_x / (d_zero * d_zero * d_zero * 2.0);
         	y_force += k_rep * (1/d_zero - 1/r) * -real_y / (d_zero * d_zero * d_zero * 2.0);
@@ -444,7 +444,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 6.0/180.0*PI;
-    double max_turning_angle = 185.0/180.0*PI;
+    double max_turning_angle = 120.0/180.0*PI;
 
 
 	auto sleep_rate = ros::Rate(100);
@@ -480,8 +480,8 @@ int FeedbackDrive::potential_field_drive(geometry_msgs::Point goal, double k_att
 
         ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
         double rotation_rate = angle * rot_rate * base_speed;
-        drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * angle/180.0);
-        drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * angle/180.0);
+        drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
+        drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
         drive_client.call(drive_srv);
 
         sleep_rate.sleep();
