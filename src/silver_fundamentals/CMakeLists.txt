@@ -107,7 +107,7 @@ add_executable(test src/feedback_drive.cpp src/test.cpp src/ransac.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(execute_plan_server src/execute_plan_server.cpp src/feedback_drive.cpp)
+add_executable(execute_plan_server src/execute_plan_server.cpp src/feedback_drive.cpp src/ransac.cpp)
 target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
 add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp)
 
