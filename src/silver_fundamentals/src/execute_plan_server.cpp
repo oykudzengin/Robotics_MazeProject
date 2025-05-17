@@ -21,9 +21,9 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     double x = 0.0;
     double y = 0.0;
 
-    for (int dir : moves)
+    for (size_t i = 0; i < moves.size(); i++)
     {
-        switch (dir)
+        switch (moves[i])
         {
             case 1: // up
                 y += step_length;
@@ -38,14 +38,16 @@ convertMovesToWaypoints(const std::vector<int>& moves)
                 x -= step_length;
                 break;
             default:
-                ROS_WARN("Unknown direction code: %d", dir);
+                ROS_WARN("Unknown direction code: %d", moves[i]);
                 continue;  // skip invalid codes
         }
 
         geometry_msgs::Point pt;
         pt.x = (double) x;
         pt.y = (double) y;
-        pt.z = 0.0;  // assume planar (z=0)
+        
+        pt.z = (i == moves.size() - 1) ? 0.15 : 0.4;
+        
         waypoints.push_back(pt);
     }
 
