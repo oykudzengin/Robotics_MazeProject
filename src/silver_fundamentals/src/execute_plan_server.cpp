@@ -83,6 +83,11 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
 
     std::vector<int> plan = req.plan; //compressPlan will work here
     auto waypoints = convertMovesToWaypoints(plan);
+    ROS_INFO("Waypoints: [");
+    for (size_t i = 0; i < waypoints.size(); ++i) {
+        ROS_INFO("%ld", waypoints[i]);
+    }
+    ROS_INFO("]");
     driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
     return true;
 }
