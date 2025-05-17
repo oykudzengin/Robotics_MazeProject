@@ -460,6 +460,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     result.y = y_att+y_rep;
     result.z = angle_between;
 
+    ROS_WARN("attx: %f, atty: %f, repx: %f, repy: %f, angle: %f", x_att, y_att, x_rep, y_rep, angle_between);
+
     return result;
 }
 
@@ -510,7 +512,7 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
         	if (angle > 170/180.0*PI)
             	angle -= 2.0*PI;
 
-        	ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
+        	//ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
 
             // compute turning radius
         	double rotation_rate = angle * rot_rate * base_speed;
