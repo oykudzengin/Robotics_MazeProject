@@ -57,7 +57,7 @@ std::vector<int> compressPlan(const std::vector<int32_t>& globalPlan) {
     std::vector<int> extPlan;
     extPlan.reserve(globalPlan.size() + 1);
     extPlan.push_back(1);  // initial heading for conversion
-    for (auto dir : fix drive into wall maybe and norm attraction 13globalPlan) {
+    for (auto dir : globalPlan) {
         extPlan.push_back(static_cast<int>(dir));
     }
 
