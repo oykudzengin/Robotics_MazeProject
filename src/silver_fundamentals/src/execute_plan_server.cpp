@@ -43,8 +43,8 @@ convertMovesToWaypoints(const std::vector<int>& moves)
         }
 
         geometry_msgs::Point pt;
-        pt.x = x;
-        pt.y = y;
+        pt.x = (double) x;
+        pt.y = (double) y;
         pt.z = 0.0;  // assume planar (z=0)
         waypoints.push_back(pt);
     }
@@ -57,7 +57,7 @@ std::vector<int> compressPlan(const std::vector<int32_t>& globalPlan) {
     std::vector<int> extPlan;
     extPlan.reserve(globalPlan.size() + 1);
     extPlan.push_back(1);  // initial heading for conversion
-    for (auto dir : globalPlan) {
+    for (auto dir : fix drive into wall maybe and norm attraction 13globalPlan) {
         extPlan.push_back(static_cast<int>(dir));
     }
 
