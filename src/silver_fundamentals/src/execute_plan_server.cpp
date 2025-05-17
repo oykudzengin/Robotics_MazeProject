@@ -21,32 +21,33 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     double x = 0.0;
     double y = 0.0;
 
-    for (int dir : moves)
-    {
-        switch (dir)
-        {
-            case 1: // up
-                y += step_length;
-                break;
-            case 0: // right
-                x += step_length;
-                break;
-            case 3: // down
-                y -= step_length;
-                break;
-            case 2: // left
-                x -= step_length;
-                break;
-            default:
-                ROS_WARN("Unknown direction code: %d", dir);
-                continue;  // skip invalid codes
+    size_t i = 0;
+    while (i < moves.size()) {
+        int dir = moves[i];
+        size_t j = i + 1;
+        // count consecutive runs of the same direction
+        while (j < moves.size() && moves[j] == dir) {
+            ++j;
         }
-
+        size_t runLength = j - i;
+        // apply the total displacement for the entire run
+        switch (dir) {
+            case 1: y += step_length * runLength; break; // up
+            case 2: x += step_length * runLength; break; // left
+            case 3: y -= step_length * runLength; break; // down
+            case 0: x -= step_length * runLength; break; //right
+            default:
+                ROS_WARN("Unknown direction code in run: %d", dir);
+                i = j;
+                continue;
+        }
         geometry_msgs::Point pt;
-        pt.x = (double) x;
-        pt.y = (double) y;
-        pt.z = 0.0;  // assume planar (z=0)
+        pt.x = x;
+        pt.y = y;
+        // use 0.15 for the final waypoint, 0.4 otherwise
+        pt.z = (j == moves.size()) ? 0.15 : 0.4;
         waypoints.push_back(pt);
+        i = j;
     }
 
     return waypoints;
@@ -78,7 +79,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
 {
 
     ROS_INFO("Received a plan of %ld steps", req.plan.size());
-    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
+    auto driver = FeedbackDrive(3.25, 26.5, 2.0);
     driver.reset_encoders();
 
     std::vector<int> plan = req.plan; //compressPlan will work here
@@ -88,7 +89,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
         ROS_ERROR("%f %f", waypoints[i].x, waypoints[i].y);
     }
     ROS_ERROR("]");
-    int ret = driver.potential_field_drive(waypoints, 10.0, 0.01, 0.3, 0.08);
+    int ret = driver.potential_field_drive(waypoints, 10.0, 0.01, 0.2, 0.07);
     return ret == 0;
 }
 
