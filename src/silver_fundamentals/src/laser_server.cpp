@@ -118,8 +118,8 @@ bool laser_angle_range_cartesian_offset(silver_fundamentals::LaserCartesian::Req
     ROS_INFO("min index is %d, max_index is %d", min_index, max_index);
 
     for (int i = min_index; i <= max_index && i < static_cast<int>(laser_data.ranges.size()); i++) {
-        double dist = laser_data.ranges[i] - req.offset;
-        if (std::isnan(dist) || dist > max_dist || dist < laser_data.range_min) {
+        double original_dist = laser_data.ranges[i];
+        if (std::isnan(original_dist) || dist > max_dist || dist < laser_data.range_min) {
             ROS_ERROR(" %d Laser cartesian angle out of range", i);
             continue;
         }
@@ -127,10 +127,23 @@ bool laser_angle_range_cartesian_offset(silver_fundamentals::LaserCartesian::Req
         double angle_rad = angle*PI/180.0f;
 
         geometry_msgs::Point point;
-        point.x = std::cos(angle_rad) * dist;
-        point.y = std::sin(angle_rad) * dist;
+        point.x = std::cos(angle_rad) * original_dist;
+        point.y = std::sin(angle_rad) * original_dist;
         point.z = angle;
 
+        point.x -= req.lidar_sensor_offset;
+        double r = std::hypot(point.x, point.y);
+
+        if (r > req.wall_thickness)
+        {
+            double scale = (r - req.wall_thickness) / r;
+            point.x *= scale;
+            point.y *= scale;
+        } else
+        {
+            point.x = 0.0;
+            point.y = 0.0;
+        }
         cart_points.push_back(point);
     }
 

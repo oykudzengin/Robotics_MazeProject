@@ -1,7 +1,8 @@
 float64 start
 float64 end
 float64 max_dist
-float64 offset
+float64 lidar_sensor_offset
+float64 wall_thickness
 ---
 geometry_msgs/Point[] values
 int32 size
