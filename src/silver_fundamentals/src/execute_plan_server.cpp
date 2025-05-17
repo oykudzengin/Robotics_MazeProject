@@ -86,7 +86,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
     std::vector<geometry_msgs::Point> waypoints = convertMovesToWaypoints(plan);
     ROS_ERROR("Waypoints: [");
     for (size_t i = 0; i < waypoints.size(); ++i) {
-        ROS_ERROR("%f %f", waypoints[i].x, waypoints[i].y);
+        ROS_ERROR("%f %f %f", waypoints[i].x, waypoints[i].y), waypoints[i].z;
     }
     ROS_ERROR("]");
     int ret = driver.potential_field_drive(waypoints, 10.0, 0.01, 0.2, 0.07);
