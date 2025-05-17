@@ -27,14 +27,14 @@ static int count = 0;
 int minimum_discarding(std::vector<double>* ranges)
 {
     int count = 0;
-    for (int i = 0; i < static_cast<int>(ranges->size()); i++)
+    for (double & range : *ranges)
     {
-        if (ranges->at(i) < laser_data.range_min)
+        if (range < laser_data.range_min)
         {
-            ranges->at(i) = std::numeric_limits<double>::infinity();
+            range = std::numeric_limits<double>::infinity();
             count++;
-        } else if (std::isnan(ranges->at(i))) {
-            ranges->at(i) = std::numeric_limits<double>::infinity();
+        } else if (std::isnan(range)) {
+            range = std::numeric_limits<double>::infinity();
         }
     }
     return count;
@@ -119,7 +119,7 @@ bool laser_angle_range_cartesian_offset(silver_fundamentals::LaserCartesian::Req
 
     for (int i = min_index; i <= max_index && i < static_cast<int>(laser_data.ranges.size()); i++) {
         double original_dist = laser_data.ranges[i];
-        if (std::isnan(original_dist) || dist > max_dist || dist < laser_data.range_min) {
+        if (std::isnan(original_dist) || original_dist > max_dist || original_dist < laser_data.range_min) {
             ROS_ERROR(" %d Laser cartesian angle out of range", i);
             continue;
         }
