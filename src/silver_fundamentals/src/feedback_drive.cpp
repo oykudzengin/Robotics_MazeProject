@@ -442,7 +442,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 }
 
-int FeedbackDrive::potential_field_drive(vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
+int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
     double min_turning_angle = 6.0/180.0*PI;
     double max_turning_angle = 120.0/180.0*PI;
 
