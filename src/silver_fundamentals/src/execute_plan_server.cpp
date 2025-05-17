@@ -42,11 +42,13 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             geometry_msgs::Point pt;
             pt.x = x;
             pt.y = y;
+            pt.z = 0.4;
             waypoints.push_back(pt);
         } else {
             geometry_msgs::Point pt;
             pt.x = x;
             pt.y = y;
+            pt.z = 0.4;
             waypoints.push_back(pt);
         }
         last_dir = dir;
