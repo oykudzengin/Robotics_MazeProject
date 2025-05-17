@@ -21,16 +21,15 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     double x = 0.0;
     double y = 0.0;
     double last_dir = 10.0;
-    double runLength = 0.8;
     
 
     for (int i = 0; i < moves.size(); i++) {
         int dir = moves[i];
         switch (dir) {
-            case 1: y += step_length * runLength; break; // up
-            case 2: x += step_length * runLength; break; // left
-            case 3: y -= step_length * runLength; break; // down
-            case 0: x -= step_length * runLength; break; //right
+            case 1: y += step_length; break; // up
+            case 2: x += step_length; break; // left
+            case 3: y -= step_length; break; // down
+            case 0: x -= step_length; break; //right
             default:
                 ROS_WARN("Unknown direction code in run: %d", dir);
                 continue;
@@ -40,6 +39,10 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             waypoints[waypoints.size() - 1].y += y;
         } else if (std::abs(last_dir - dir) == 2) {
             waypoints[waypoints.size() - 1].z = 0.15;
+            geometry_msgs::Point pt;
+            pt.x = x;
+            pt.y = y;
+            waypoints.push_back(pt);
         } else {
             geometry_msgs::Point pt;
             pt.x = x;
