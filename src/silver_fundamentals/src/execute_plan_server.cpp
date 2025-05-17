@@ -21,34 +21,33 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     double x = 0.0;
     double y = 0.0;
 
-    for (size_t i = 0; i < moves.size(); i++)
-    {
-        switch (moves[i])
-        {
-            case 1: // up
-                y += step_length;
-                break;
-            case 2: // left
-                x += step_length;
-                break;
-            case 3: // down
-                y -= step_length;
-                break;
-            case 0: // right 
-                x -= step_length;
-                break;
-            default:
-                ROS_WARN("Unknown direction code: %d", moves[i]);
-                continue;  // skip invalid codes
+    size_t i = 0;
+    while (i < moves.size()) {
+        int dir = moves[i];
+        size_t j = i + 1;
+        // count consecutive runs of the same direction
+        while (j < moves.size() && moves[j] == dir) {
+            ++j;
         }
-
+        size_t runLength = j - i;
+        // apply the total displacement for the entire run
+        switch (dir) {
+            case 1: y += step_length * runLength; break; // up
+            case 2: x += step_length * runLength; break; // left
+            case 3: y -= step_length * runLength; break; // down
+            case 0: x -= step_length * runLength; break; //right
+            default:
+                ROS_WARN("Unknown direction code in run: %d", dir);
+                i = j;
+                continue;
+        }
         geometry_msgs::Point pt;
-        pt.x = (double) x;
-        pt.y = (double) y;
-        
-        pt.z = (i == moves.size() - 1) ? 0.15 : 0.4;
-        
+        pt.x = x;
+        pt.y = y;
+        // use 0.15 for the final waypoint, 0.4 otherwise
+        pt.z = (j == moves.size()) ? 0.15 : 0.4;
         waypoints.push_back(pt);
+        i = j;
     }
 
     return waypoints;
