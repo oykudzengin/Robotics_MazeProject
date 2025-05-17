@@ -396,6 +396,8 @@ geometry_msgs::Point global_to_local(geometry_msgs::Point current_pos, geometry_
     local_pos.x =  c*wx - s*wy;
     local_pos.y = s*wx + c*wy;
     local_pos.z = std::hypot(local_pos.x, local_pos.y);
+
+    return local_pos;
 }
 
 geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r) {
