@@ -21,25 +21,11 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     double x = 0.0;
     double y = 0.0;
     double last_dir = 10.0;
+    double runLength = 0.8;
     
 
-    size_t i = 0;
-    while (i < moves.size()) {
+    for (int i = 0; i < moves.size(); i++) {
         int dir = moves[i];
-
-        if (std::abs(dir-last_dir) == 2)
-            waypoints[i-1].z = 0.15;
-        last_dir = dir;
-
-        size_t j = i + 1;
-        // count consecutive runs of the same direction
-        while (j < moves.size() && moves[j] == dir) {
-            ++j;
-        }
-        size_t runLength = j - i;
-        // apply the total displacement for the entire run
-        
-
         switch (dir) {
             case 1: y += step_length * runLength; break; // up
             case 2: x += step_length * runLength; break; // left
@@ -47,18 +33,21 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             case 0: x -= step_length * runLength; break; //right
             default:
                 ROS_WARN("Unknown direction code in run: %d", dir);
-                i = j;
                 continue;
         }
-        geometry_msgs::Point pt;
-        pt.x = x;
-        pt.y = y;
-        // use 0.15 for the final waypoint, 0.4 otherwise
-        pt.z = (j == moves.size()) ? 0.15 : 0.4;
-        waypoints.push_back(pt);
-        i = j;
+        if (last_dir == dir) {
+            waypoints[waypoints.size() - 1].x += x;
+            waypoints[waypoints.size() - 1].y += y;
+        } else if (std::abs(last_dir - dir) == 2) {
+            waypoints[waypoints.size() - 1].z = 0.15;
+        } else {
+            geometry_msgs::Point pt;
+            pt.x = x;
+            pt.y = y;
+            waypoints.push_back(pt);
+        }
     }
-
+    waypoints[waypoints.size() - 1].z = 0.15;
     return waypoints;
 }
 
