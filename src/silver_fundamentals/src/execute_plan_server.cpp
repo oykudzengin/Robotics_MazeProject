@@ -7,7 +7,50 @@
 #include <cstddef>   // for std::size_t
 // Example usage
 #include <iostream>
+#include <geometry_msgs/Point.h>
 
+
+std::vector<geometry_msgs::Point>
+convertMovesToWaypoints(const std::vector<int>& moves)
+{
+    const double step_length = 0.8;  // meters per cell (80 cm)
+    std::vector<geometry_msgs::Point> waypoints;
+    waypoints.reserve(moves.size());
+
+    // Starting point
+    double x = 0.0;
+    double y = 0.0;
+
+    for (int dir : moves)
+    {
+        switch (dir)
+        {
+            case 1: // up
+                y += step_length;
+                break;
+            case 0: // right
+                x += step_length;
+                break;
+            case 3: // down
+                y -= step_length;
+                break;
+            case 2: // left
+                x -= step_length;
+                break;
+            default:
+                ROS_WARN("Unknown direction code: %d", dir);
+                continue;  // skip invalid codes
+        }
+
+        geometry_msgs::Point pt;
+        pt.x = x;
+        pt.y = y;
+        pt.z = 0.0;  // assume planar (z=0)
+        waypoints.push_back(pt);
+    }
+
+    return waypoints;
+}
 
 std::vector<int> compressPlan(const std::vector<int32_t>& globalPlan) {
     // 1. Build an extPlan with a leading '1'
