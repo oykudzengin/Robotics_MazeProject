@@ -89,7 +89,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
         ROS_ERROR("%f %f %f", waypoints[i].x, waypoints[i].y, waypoints[i].z);
     }
     ROS_ERROR("]");
-    int ret = driver.potential_field_drive(waypoints, 10.0, 0.01, 0.2, 0.07);
+    int ret = driver.potential_field_drive(waypoints, 100000.0, 0.01, 0.2, 0.07);
     if (ret != 0)
         ROS_ERROR("Potential field drive failed");
     res.success = ret == 0?true:false;
