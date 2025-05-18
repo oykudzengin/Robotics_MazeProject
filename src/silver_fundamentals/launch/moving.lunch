@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- Run drive_server -->
+  <node pkg="silver_fundamentals" type="drive_server" name="drive_server" output="screen" />
+
+  <!-- Run laser_server -->
+  <node pkg="silver_fundamentals" type="laser_server" name="laser_server" output="screen" />
+
+  <!-- Run align node -->
+  <node pkg="silver_fundamentals" type="align" name="align" output="screen" />
+
+</launch>

@@ -82,23 +82,48 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
                   silver_fundamentals::ExecutePlan::Response &res) 
 {
 
-    ROS_INFO("Received a plan of %ld steps", req.plan.size());
-    auto driver = FeedbackDrive(3.25, 26.5, 2.0);
-    driver.reset_encoders();
+    ROS_INFO("Received a plan of %d steps", req.plan.size());
+    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
 
-    std::vector<int> plan = req.plan; //compressPlan will work here
-    std::vector<geometry_msgs::Point> waypoints = convertMovesToWaypoints(plan);
-    ROS_ERROR("Waypoints: [");
-    for (size_t i = 0; i < waypoints.size(); ++i) {
-        ROS_ERROR("%f %f %f", waypoints[i].x, waypoints[i].y, waypoints[i].z);
+    std::vector<int32_t> plan = req.plan; //compressPlan will work here
+    std::vector<int> localPlan = compressPlan(plan);
+    ros::Rate loop_rate(10);
+    double step_length = 0.8; // meters per cell (80 cm)
+
+    for (int i=0; i < localPlan.size(); i++) {
+        locDirection cur_dir = static_cast<locDirection>(localPlan[i]); // Convert to locDirection enum
+        switch (cur_dir) {
+            case l_RIGHT: { //right
+                ROS_INFO("Turning right");
+                driver.turn_n_degrees(90, right);
+                driver.drive_n_cm(step_length);
+                break;
+            }
+            case l_UP: { //up
+                ROS_INFO("Moving up");
+                driver.drive_n_cm(step_length);
+                break;
+            }
+            case l_LEFT: { //left
+                ROS_INFO("Turning left");
+                driver.turn_n_degrees(90,left);
+                driver.drive_n_cm(step_length);
+                break;
+            }
+            case l_DOWN: { //down
+                ROS_INFO("Moving down");
+                driver.turn_n_degrees(180, right);
+                driver.drive_n_cm(step_length);
+                break;
+            }
+            default:
+                ROS_ERROR("Unknown action %d", plan[i]);
+        }
+        loop_rate.sleep();
     }
-    ROS_ERROR("]");
-    int ret = driver.potential_field_drive(waypoints, 1000.0, 0.01, 0.2, 0.08);
-    if (ret != 0)
-        ROS_ERROR("Potential field drive failed");
-    res.success = ret == 0?true:false;
-    return true;
+    res.success = true;
 }
+
 
 
 int main(int argc, char **argv) 
