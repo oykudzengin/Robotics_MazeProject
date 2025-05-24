@@ -34,6 +34,7 @@ convertMovesToWaypoints(const std::vector<int>& moves)
                 ROS_WARN("Unknown direction code in run: %d", dir);
                 continue;
         }
+#ifdef DOTASK2
         if (last_dir == dir) {
             waypoints[waypoints.size() - 1].x = x;
             waypoints[waypoints.size() - 1].y = y;
@@ -51,7 +52,15 @@ convertMovesToWaypoints(const std::vector<int>& moves)
             pt.z = 0.4;
             waypoints.push_back(pt);
         }
-        last_dir = dir;
+#else
+        geometry_msgs::Point pt;
+        pt.x = x;
+        pt.y = y;
+        pt.z = 0.4;
+        waypoints.push_back(pt);
+#endif
+    last_dir = dir;
+
     }
     waypoints[waypoints.size() - 1].z = 0.15;
     return waypoints;

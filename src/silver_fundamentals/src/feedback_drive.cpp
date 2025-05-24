@@ -7,6 +7,10 @@
 #include <vector>
 #include <geometry_msgs/Point.h>
 #include <sstream>
+#include <chrono>
+#include <thread>
+#include <unistd.h>
+#include <config.h>
 
 #include <ransac.h>
 
@@ -535,6 +539,16 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
         	//ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
 
     	} while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > goal.z);
+
+        //ros::Duration(0.5).sleep();
+#ifndef DOTASK2
+        drive_srv.request.left = 0;
+        drive_srv.request.right = 0;
+        drive_client.call(drive_srv);
+
+        ros::Rate(4.0).sleep();
+        ros::Rate(4.0).sleep();
+#endif
     }
 
     drive_srv.request.left = 0;

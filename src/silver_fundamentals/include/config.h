@@ -1,6 +1,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+
+#define DOTASK2
+
 #define LIDAR_POINTS 682
 #define PI 3.14159265
 #define WHEEL_RADIUS 3.2 //cm
