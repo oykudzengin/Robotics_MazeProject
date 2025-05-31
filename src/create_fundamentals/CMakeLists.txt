@@ -60,10 +60,6 @@ generate_messages(
     DEPENDENCIES std_msgs sensor_msgs
 )
 
-catkin_install_python(PROGRAMS
-  src/driver.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
 
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package

@@ -20,35 +20,49 @@ convertMovesToWaypoints(const std::vector<int>& moves)
     // Starting point
     double x = 0.0;
     double y = 0.0;
+    double last_dir = 10.0;
 
-    for (int dir : moves)
-    {
-        switch (dir)
-        {
-            case 1: // up
-                y += step_length;
-                break;
-            case 0: // right
-                x += step_length;
-                break;
-            case 3: // down
-                y -= step_length;
-                break;
-            case 2: // left
-                x -= step_length;
-                break;
+
+    for (int i = 0; i < moves.size(); i++) {
+        int dir = moves[i];
+        switch (dir) {
+            case 1: y += step_length; break; // up
+            case 2: x += step_length; break; // left
+            case 3: y -= step_length; break; // down
+            case 0: x -= step_length; break; //right
             default:
-                ROS_WARN("Unknown direction code: %d", dir);
-                continue;  // skip invalid codes
+                ROS_WARN("Unknown direction code in run: %d", dir);
+                continue;
         }
-
+#ifdef DOTASK2
+        if (last_dir == dir) {
+            waypoints[waypoints.size() - 1].x = x;
+            waypoints[waypoints.size() - 1].y = y;
+        } else if (std::abs(last_dir - dir) == 2) {
+            waypoints[waypoints.size() - 1].z = 0.15;
+            geometry_msgs::Point pt;
+            pt.x = x;
+            pt.y = y;
+            pt.z = 0.4;
+            waypoints.push_back(pt);
+        } else {
+            geometry_msgs::Point pt;
+            pt.x = x;
+            pt.y = y;
+            pt.z = 0.4;
+            waypoints.push_back(pt);
+        }
+#else
         geometry_msgs::Point pt;
-        pt.x = (double) x;
-        pt.y = (double) y;
-        pt.z = 0.0;  // assume planar (z=0)
+        pt.x = x;
+        pt.y = y;
+        pt.z = 0.4;
         waypoints.push_back(pt);
-    }
+#endif
+    last_dir = dir;
 
+    }
+    waypoints[waypoints.size() - 1].z = 0.15;
     return waypoints;
 }
 
@@ -77,46 +91,21 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
                   silver_fundamentals::ExecutePlan::Response &res) 
 {
 
-    ROS_INFO("Received a plan of %d steps", req.plan.size());
-    auto driver = FeedbackDrive(3.25, 26.203, 2.0);
+    ROS_INFO("Received a plan of %ld steps", req.plan.size());
+    auto driver = FeedbackDrive(3.25, 26.5, 2.0);
+    driver.reset_encoders();
 
-    std::vector<int32_t> plan = req.plan; //compressPlan will work here
-    std::vector<int> localPlan = compressPlan(plan);
-    ros::Rate loop_rate(10);
-    double step_length = 0.8; // meters per cell (80 cm)
-
-    for (int i=0; i < localPlan.size(); i++) {
-        locDirection cur_dir = static_cast<locDirection>(plan[i]); // Convert to locDirection enum
-        switch (cur_dir) {
-            case l_RIGHT: { //right
-                ROS_INFO("Turning right");
-                driver.turn_n_degrees(90, right);
-                driver.drive_n_cm(step_length);
-                break;
-            }
-            case l_UP: { //up
-                ROS_INFO("Moving up");
-                driver.drive_n_cm(step_length);
-                break;
-            }
-            case l_LEFT: { //left
-                ROS_INFO("Turning left");
-                driver.turn_n_degrees(90,left);
-                driver.drive_n_cm(step_length);
-                break;
-            }
-            case l_DOWN: { //down
-                ROS_INFO("Moving down");
-                driver.turn_n_degrees(180, right);
-                driver.drive_n_cm(step_length);
-                break;
-            }
-            default:
-                ROS_ERROR("Unknown action %d", plan[i]);
-        }
-        loop_rate.sleep();
+    std::vector<int> plan = req.plan; //compressPlan will work here
+    std::vector<geometry_msgs::Point> waypoints = convertMovesToWaypoints(plan);
+    ROS_ERROR("Waypoints: [");
+    for (size_t i = 0; i < waypoints.size(); ++i) {
+        ROS_ERROR("%f %f %f", waypoints[i].x, waypoints[i].y, waypoints[i].z);
     }
-
+    ROS_ERROR("]");
+    int ret = driver.potential_field_drive(waypoints, 1000.0, 0.01, 0.2, 0.08);
+    if (ret != 0)
+        ROS_ERROR("Potential field drive failed");
+    res.success = ret == 0?true:false;
     return true;
 }
 
