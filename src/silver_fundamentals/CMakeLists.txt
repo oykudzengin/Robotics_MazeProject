@@ -79,11 +79,11 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 # target_link_libraries(example_moving ${catkin_LIBRARIES})
 # add_dependencies(example_moving create_fundamentals_generate_messages_cpp)
 
-# add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
+# add_executable(wanderer src/wanderer.cpp lib/laser_distance_map.cpp)
 # target_link_libraries(wanderer ${catkin_LIBRARIES})
 # add_dependencies(wanderer create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-# add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp src/ransac.cpp)
+# add_executable(square_with_encoders lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/square_with_encoders.cpp lib/ransac.cpp)
 # target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
 # add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
@@ -99,15 +99,15 @@ add_dependencies(drive_server create_fundamentals_generate_messages_cpp silver_f
 # target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 # add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(align src/align.cpp lib/feedback_drive.cpp lib/ransac.cpp)
+add_executable(align src/align.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp)
 target_link_libraries(align ${catkin_LIBRARIES})
 add_dependencies(align create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(test lib/feedback_drive.cpp src/test.cpp lib/ransac.cpp)
+add_executable(test lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/test.cpp lib/ransac.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_drive.cpp src/ransac.cpp)
+add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/ransac.cpp)
 target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
 add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 

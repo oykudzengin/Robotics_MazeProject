@@ -9,6 +9,7 @@
 #include <sstream>
 #include <config.h>
 #include <ransac.h>
+#include <coordinate_conversion.h>
 
 #define ROBOT_RADIUS 13.3f
 #define LIDAR_SENSOR_OFFSET 14.0f
@@ -307,23 +308,7 @@ geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current
     return current_pos;
 }
 
-geometry_msgs::Point global_to_local(geometry_msgs::Point current_pos, geometry_msgs::Point target_pos) {
-    double wx = target_pos.x - current_pos.x;
-    double wy = target_pos.y - current_pos.y;
 
-    // convert to local frame
-    double yaw = current_pos.z;
-    double c = std::cos(yaw);
-    double s = std::sin(yaw);
-
-    geometry_msgs::Point local_pos;
-
-    local_pos.x =  c*wx - s*wy;
-    local_pos.y = s*wx + c*wy;
-    local_pos.z = std::hypot(local_pos.x, local_pos.y);
-
-    return local_pos;
-}
 
 geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r) {
     // init and call laser srv
