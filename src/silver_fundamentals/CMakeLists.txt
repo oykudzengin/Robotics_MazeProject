@@ -45,7 +45,7 @@ add_service_files(
 )
 
 #common commands for building c++ executables and libraries
-#add_library(${PROJECT_NAME} src/example.cpp)
+#add_library(${PROJECT_NAME} example/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
 #
 # CATKIN_MIGRATION: removed during catkin migration
@@ -71,49 +71,43 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(example_laser src/example_laser.cpp)
-target_link_libraries(example_laser ${catkin_LIBRARIES})
-add_dependencies(example_laser create_fundamentals_generate_messages_cpp)
+# add_executable(example_laser example/example_laser.cpp)
+# target_link_libraries(example_laser ${catkin_LIBRARIES})
+# add_dependencies(example_laser create_fundamentals_generate_messages_cpp)
 
-add_executable(example_moving src/example_moving.cpp)
-target_link_libraries(example_moving ${catkin_LIBRARIES})
-add_dependencies(example_moving create_fundamentals_generate_messages_cpp)
+# add_executable(example_moving example/example_moving.cpp)
+# target_link_libraries(example_moving ${catkin_LIBRARIES})
+# add_dependencies(example_moving create_fundamentals_generate_messages_cpp)
 
-add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
-target_link_libraries(wanderer ${catkin_LIBRARIES})
-add_dependencies(wanderer create_fundamentals_generate_messages_cpp)
+# add_executable(wanderer src/wanderer.cpp src/laser_distance_map.cpp)
+# target_link_libraries(wanderer ${catkin_LIBRARIES})
+# add_dependencies(wanderer create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp src/ransac.cpp)
-target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
-add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp)
+# add_executable(square_with_encoders src/feedback_drive.cpp src/square_with_encoders.cpp src/ransac.cpp)
+# target_link_libraries(square_with_encoders ${catkin_LIBRARIES})
+# add_dependencies(square_with_encoders create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(laser_server src/laser_server.cpp)
+add_executable(laser_server lib/laser_server.cpp)
 target_link_libraries(laser_server ${catkin_LIBRARIES})
-add_dependencies(laser_server create_fundamentals_generate_messages_cpp)
+add_dependencies(laser_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(drive_server src/drive_server.cpp)
+add_executable(drive_server lib/drive_server.cpp)
 target_link_libraries(drive_server ${catkin_LIBRARIES})
-add_dependencies(drive_server create_fundamentals_generate_messages_cpp)
+add_dependencies(drive_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(square_no_sensors src/square_no_sensors.cpp)
-target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
-add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp)
+# add_executable(square_no_sensors src/square_no_sensors.cpp)
+# target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
+# add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(align src/align.cpp src/feedback_drive.cpp src/ransac.cpp)
+add_executable(align src/align.cpp lib/feedback_drive.cpp lib/ransac.cpp)
 target_link_libraries(align ${catkin_LIBRARIES})
-add_dependencies(align create_fundamentals_generate_messages_cpp)
+add_dependencies(align create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(test src/feedback_drive.cpp src/test.cpp src/ransac.cpp)
+add_executable(test lib/feedback_drive.cpp src/test.cpp lib/ransac.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(execute_plan_server src/execute_plan_server.cpp src/feedback_drive.cpp)
+add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_drive.cpp)
 target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
-add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp)
+add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_dependencies(wanderer silver_fundamentals_generate_messages_cpp)
-add_dependencies(laser_server silver_fundamentals_generate_messages_cpp)
-add_dependencies(drive_server silver_fundamentals_generate_messages_cpp)
-add_dependencies(square_with_encoders silver_fundamentals_generate_messages_cpp)
-add_dependencies(align silver_fundamentals_generate_messages_cpp)
-add_dependencies(execute_plan_server silver_fundamentals_generate_messages_cpp)

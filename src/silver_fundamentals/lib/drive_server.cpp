@@ -23,8 +23,6 @@ void driveCallback(const create_fundamentals::SensorPacket::ConstPtr& msg)
 
 }
 
-
-
 bool get_encoder_data(silver_fundamentals::DriveData::Request  &req, silver_fundamentals::DriveData::Response &res) {
     res.left_encoder = left_encoder;
     res.right_encoder = right_encoder;
