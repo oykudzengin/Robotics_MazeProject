@@ -52,8 +52,6 @@ class FeedbackDrive {
 
         geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
         geometry_msgs::Point position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left);
-
-
 };
 
 

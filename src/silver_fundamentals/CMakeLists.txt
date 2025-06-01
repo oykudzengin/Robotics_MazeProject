@@ -19,7 +19,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamen
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 
 # CATKIN_MIGRATION: removed during catkin migration
