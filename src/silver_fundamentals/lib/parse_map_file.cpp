@@ -73,8 +73,6 @@ bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector
 
 #pragma GCC optimize ("O3")
 void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned int>> &map) {
-    const int cell_size = 80;
-    const int buffer_size = 80;
 
     row_count = map.size();
     col_count = map[0].size();
@@ -84,9 +82,11 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
 
     field.assign(lookup_grid_row_count, std::vector<double>(lookup_grid_col_count, 0));
 
+    ROS_INFO("got %d rows, %d cols, translating to highres %d rows %d cols\n", row_count, col_count, lookup_grid_row_count, lookup_grid_col_count);
+
     for (int current_row = 0; current_row < lookup_grid_row_count; current_row++) {
         for (int current_col = 0; current_col < lookup_grid_col_count; current_col++) {
-            double closest_wall_dist;
+            double closest_wall_dist = std::numeric_limits<double>::infinity();
             if (current_row < buffer_size && current_col < buffer_size)
                 /* upper left corner */
                 closest_wall_dist = std::sqrt(POW2(buffer_size - current_row) + POW2(buffer_size - current_col));
@@ -175,5 +175,9 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
 }
 
 double LikelihoodField::get_field_value(const geometry_msgs::Point global_space_point) {
-    return field[-global_space_point.y][-global_space_point.x];
+    int real_y = -(global_space_point.y*100) + buffer_size;
+    int real_x = -(global_space_point.x*100) + buffer_size;
+    if (real_x < 0 || real_y < 0 || real_x > cell_size*col_count+2*buffer_size || real_y > cell_size*row_count+2*buffer_size)
+        return std::numeric_limits<double>::infinity();
+    return field[real_y][real_x];
 }

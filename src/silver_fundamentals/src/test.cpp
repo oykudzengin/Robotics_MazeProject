@@ -54,11 +54,11 @@ int main(int argc, char **argv) {
     std::string pkg_path = "src/silver_fundamentals"; 
     std::string mapfile = pkg_path + "/maps/map.txt";
     auto lhf = LikelihoodField(mapfile, 5.0);
-    for (int i = 0; i > -400; i--) {
-	for (int j = 0; j > -400; j--) {
+    for (int i = 0; i < 240; i++) {
+	for (int j = 0; j < 240; j++) {
 	    geometry_msgs::Point temp;
-	    temp.x = i;
-	    temp.y = j;
+	    temp.x = i/100;
+	    temp.y = j/100;
 	    temp.z = 0;
 
 	    std::cout << lhf.get_field_value(temp) << " ";

@@ -20,5 +20,8 @@ private:
     int row_count;
     int col_count;
 
+    const int cell_size = 80;
+    const int buffer_size = 80;
+
 };
 #endif //ROBITICSFUNDAMENTALSSILVER_PARSE_MAP_FILE_H
