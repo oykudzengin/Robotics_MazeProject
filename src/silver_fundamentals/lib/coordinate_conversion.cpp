@@ -30,7 +30,7 @@ geometry_msgs::Point local_to_global(geometry_msgs::Point &relative_center, geom
     double wx = c*lx + s*ly;
     double wy = -s*lx + c*ly;
 
-    geometry::Point global_pos;
+    geometry_msgs::Point global_pos;
     global_pos.x = wx + relative_center.x;
     global_pos.y = wy + relative_center.y;
     global_pos.z = 0;
