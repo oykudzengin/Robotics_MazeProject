@@ -19,7 +19,7 @@ LikelihoodField::LikelihoodField(std::string filename, double sigma) {
 bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector <std::vector<unsigned int>> &map) {
     std::ifstream in(filename);
     if (!in.is_open()) {
-        std::cerr << "Could not open file.\n";
+        std::cerr << "Could not open file. " << filename << "\n";
         return false;
     }
     std::stringstream buffer;
@@ -30,7 +30,7 @@ bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector
     map.clear();
 
     int depth = 0;
-    std::vector<int> current_row;
+    std::vector<unsigned int> current_row;
     unsigned int current_cell_mask;
 
     for (unsigned int i = 0; i < content.size(); i++) {

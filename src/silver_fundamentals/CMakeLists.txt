@@ -103,7 +103,7 @@ add_executable(align src/align.cpp lib/feedback_drive.cpp lib/coordinate_convers
 target_link_libraries(align ${catkin_LIBRARIES})
 add_dependencies(align create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(test lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/test.cpp lib/ransac.cpp)
+add_executable(test lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/test.cpp lib/ransac.cpp lib/parse_map_file.cpp)
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 

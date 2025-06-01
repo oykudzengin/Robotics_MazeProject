@@ -6,8 +6,8 @@
 #include <geometry_msgs/Point.h>
 class LikelihoodField {
 public:
-    LikelihoodField(std::string filename);
-    ~LikelihoodField = default;
+    LikelihoodField(std::string filename, double sigma);
+    ~LikelihoodField() = default;
     bool parse_file_lowres(const std::string &filename, std::vector <std::vector<unsigned int>> &map);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
     double get_field_value(const geometry_msgs::Point global_space_point);
@@ -20,5 +20,5 @@ private:
     int row_count;
     int col_count;
 
-}
+};
 #endif //ROBITICSFUNDAMENTALSSILVER_PARSE_MAP_FILE_H
