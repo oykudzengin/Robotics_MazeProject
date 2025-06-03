@@ -11,6 +11,7 @@ public:
     bool parse_file_lowres(const std::string &filename, std::vector <std::vector<unsigned int>> &map);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
     double get_field_value(const geometry_msgs::Point global_space_point);
+    double get_prob_field_value(const geometry_msgs::Point global_space_point);
 private:
     enum CellWall {
         TOP = 1 << 0, RIGHT = 1 << 1, BOTTOM = 1 << 2, LEFT = 1 << 3

@@ -1,13 +1,15 @@
+#include "ros/ros.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <geometry_msgs/Point.h>
+#include <config.h>
 
 #include <parse_map_file.h>
 
-#define POW2(x) (x*x)
+#define POW2(x) ((x)*(x))
 
 LikelihoodField::LikelihoodField(std::string filename, double sigma) {
     sigma_value = sigma;
@@ -87,9 +89,10 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
     for (int current_row = 0; current_row < lookup_grid_row_count; current_row++) {
         for (int current_col = 0; current_col < lookup_grid_col_count; current_col++) {
             double closest_wall_dist = std::numeric_limits<double>::infinity();
-            if (current_row < buffer_size && current_col < buffer_size)
+            if (current_row < buffer_size && current_col < buffer_size) {
                 /* upper left corner */
                 closest_wall_dist = std::sqrt(POW2(buffer_size - current_row) + POW2(buffer_size - current_col));
+            }
             else if (current_row < buffer_size && current_col + buffer_size >= lookup_grid_col_count)
                 /* upper right corner */
                 closest_wall_dist = std::sqrt(
@@ -117,52 +120,52 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
                 closest_wall_dist = lookup_grid_col_count - 1 - current_col;
             else {
                 /* inside some cell */
-                int low_res_row = (current_row - buffer_size) / cell_size;
-                int low_res_col = (current_col - buffer_size) / cell_size;
+                const int low_res_row = (current_row - buffer_size) / cell_size;
+                const int low_res_col = (current_col - buffer_size) / cell_size;
 
                 double l_row = (current_row - buffer_size) % cell_size;
                 double l_col = (current_col - buffer_size) % cell_size;
 
-                int current_mask = map[low_res_row][low_res_col];
+                const int current_mask = map[low_res_row][low_res_col];
+
+                // printf("%d, %d has coords %d %d, %f %f, mask %d\n", current_row, current_col, low_res_row, low_res_col, l_row, l_col, current_mask);
 
                 closest_wall_dist = std::numeric_limits<double>::infinity();
 
-                if (current_mask != 0) {
-                    /* cell has at least one wall */
-                    if (current_mask & TOP)
-                        closest_wall_dist = std::min(closest_wall_dist, l_row);
-                    if (current_mask & RIGHT)
-                        closest_wall_dist = std::min(closest_wall_dist, cell_size - 1 - l_col);
-                    if (current_mask & BOTTOM)
-                        closest_wall_dist = std::min(closest_wall_dist, cell_size - 1 - l_row);
-                    if (current_mask & LEFT)
-                        closest_wall_dist = std::min(closest_wall_dist, l_col);
-                } else {
-                    /* cell might have adjacent corners */
-                    if (low_res_row == 0 || low_res_col == 0 ||
-                        (map[low_res_row - 1][low_res_col - 1] & BOTTOM) != 0 ||
-                        (map[low_res_row - 1][low_res_col - 1] & RIGHT) != 0)
-                        /* top left corner exists */
-                        closest_wall_dist = std::min(closest_wall_dist, std::sqrt(POW2(l_row) + POW2(l_col)));
-                    if (low_res_row == 0 || low_res_col == col_count - 1 ||
-                        (map[low_res_row - 1][low_res_col + 1] & BOTTOM) != 0 ||
-                        (map[low_res_row - 1][low_res_col + 1] & LEFT) != 0)
-                        /* top right corner exists */
-                        closest_wall_dist = std::min(closest_wall_dist,
-                                                     std::sqrt(POW2(l_row) + POW2(cell_size - 1 - l_col)));
-                    if (low_res_row == row_count - 1 || low_res_col == 0 ||
-                        (map[low_res_row + 1][low_res_col - 1] & TOP) != 0 ||
-                        (map[low_res_row + 1][low_res_col - 1] & RIGHT) != 0)
-                        /* bottom left corner exists */
-                        closest_wall_dist = std::min(closest_wall_dist,
-                                                     std::sqrt(POW2(cell_size - 1 - l_row) + POW2(l_col)));
-                    if (low_res_row == row_count - 1 || low_res_col == col_count - 1 ||
-                        (map[low_res_row + 1][low_res_col + 1] & TOP) != 0 ||
-                        (map[low_res_row + 1][low_res_col + 1] & LEFT) != 0)
-                        /* bottom right corner exists */
-                        closest_wall_dist = std::min(closest_wall_dist, std::sqrt(
-                                POW2(cell_size - 1 - l_row) + POW2(cell_size - 1 - l_col)));
-                }
+                /* cell has at least one wall */
+                if (current_mask & TOP)
+                    closest_wall_dist = std::min(closest_wall_dist, l_row);
+                if (current_mask & RIGHT)
+                    closest_wall_dist = std::min(closest_wall_dist, cell_size - 1 - l_col);
+                if (current_mask & BOTTOM)
+                    closest_wall_dist = std::min(closest_wall_dist, cell_size - 1 - l_row);
+                if (current_mask & LEFT)
+                    closest_wall_dist = std::min(closest_wall_dist, l_col);
+
+                /* cell might have adjacent corners */
+                if (low_res_row == 0 || low_res_col == 0 ||
+                    (map[low_res_row - 1][low_res_col - 1] & BOTTOM) != 0 ||
+                    (map[low_res_row - 1][low_res_col - 1] & RIGHT) != 0)
+                    /* top left corner exists */
+                    closest_wall_dist = std::min(closest_wall_dist, std::sqrt(POW2(l_row) + POW2(l_col)));
+                if (low_res_row == 0 || low_res_col == col_count - 1 ||
+                    (map[low_res_row - 1][low_res_col + 1] & BOTTOM) != 0 ||
+                    (map[low_res_row - 1][low_res_col + 1] & LEFT) != 0)
+                    /* top right corner exists */
+                    closest_wall_dist = std::min(closest_wall_dist,
+                                                 std::sqrt(POW2(l_row) + POW2(cell_size - 1 - l_col)));
+                if (low_res_row == row_count - 1 || low_res_col == 0 ||
+                    (map[low_res_row + 1][low_res_col - 1] & TOP) != 0 ||
+                    (map[low_res_row + 1][low_res_col - 1] & RIGHT) != 0)
+                    /* bottom left corner exists */
+                    closest_wall_dist = std::min(closest_wall_dist,
+                                                 std::sqrt(POW2(cell_size - 1 - l_row) + POW2(l_col)));
+                if (low_res_row == row_count - 1 || low_res_col == col_count - 1 ||
+                    (map[low_res_row + 1][low_res_col + 1] & TOP) != 0 ||
+                    (map[low_res_row + 1][low_res_col + 1] & LEFT) != 0)
+                    /* bottom right corner exists */
+                    closest_wall_dist = std::min(closest_wall_dist, std::sqrt(
+                            POW2(cell_size - 1 - l_row) + POW2(cell_size - 1 - l_col)));
             }
 
             /* closest_wall_dist is now either set if wall were there or infinity if not */
@@ -177,7 +180,12 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
 double LikelihoodField::get_field_value(const geometry_msgs::Point global_space_point) {
     int real_y = -(global_space_point.y*100) + buffer_size;
     int real_x = -(global_space_point.x*100) + buffer_size;
+    // printf("%f %f gets looked up at %d %d\n", global_space_point.y, global_space_point.x,real_y, real_x);
     if (real_x < 0 || real_y < 0 || real_x > cell_size*col_count+2*buffer_size || real_y > cell_size*row_count+2*buffer_size)
         return std::numeric_limits<double>::infinity();
     return field[real_y][real_x];
+}
+double LikelihoodField::get_prob_field_value(const geometry_msgs::Point global_space_point) {
+    double dist2 = get_field_value(global_space_point)*get_field_value(global_space_point);
+    return std::exp(-dist2/(2*sigma_value*sigma_value));
 }
