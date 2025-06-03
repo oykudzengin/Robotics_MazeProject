@@ -42,6 +42,7 @@ bool stud() {return false;}
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "test");
+    ros::NodeHandle n;
     // auto driver = FeedbackDrive(3.25, 26.5, 10.0);
 
     // geometry_msgs::Point goal;
@@ -51,9 +52,9 @@ int main(int argc, char **argv) {
     // driver.reset_encoders();
     // driver.potential_field_drive(goal, atof(argv[3]), atof(argv[4]), atof(argv[5]), atof(argv[6]));
 
-    std::string pkg_path = "src/silver_fundamentals"; 
+    const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
-    auto lhf = LikelihoodField(mapfile, 5.0);
+    const auto lhf = LikelihoodField(n, mapfile, 5.0);
     for (int i = 0; i > -240; i--) {
         for (int j = 0; j > -240; j--) {
             geometry_msgs::Point temp;

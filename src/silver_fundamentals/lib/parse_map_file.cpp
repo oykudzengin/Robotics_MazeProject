@@ -5,20 +5,181 @@
 #include <string>
 #include <vector>
 #include <geometry_msgs/Point.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <visualization_msgs/Marker.h>
+#include <std_msgs/ColorRGBA.h>
 #include <config.h>
 
 #include <parse_map_file.h>
 
 #define POW2(x) ((x)*(x))
 
-LikelihoodField::LikelihoodField(std::string filename, double sigma) {
-    sigma_value = sigma;
+void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
+                                               const ros::Publisher &lowres_wall_pub,
+                                               const std::vector<std::vector<unsigned int> > &lowres_map) const {
+    visualization_msgs::Marker marker;
+    marker.header.frame_id = "map"; // same frame you used for your OccupancyGrids
+    marker.header.stamp = ros::Time::now();
+    marker.ns = "lowres_walls";
+    marker.id = 100; // any unique ID
+    marker.type = visualization_msgs::Marker::LINE_LIST;
+    marker.action = visualization_msgs::Marker::ADD;
+
+    // Set the thickness of each line (in meters). You can tweak this.
+    marker.scale.x = 0.05; // 5 cm thick lines
+
+    // Color: solid black (for example)
+    std_msgs::ColorRGBA black;
+    black.r = 0.0;
+    black.g = 0.0;
+    black.b = 0.0;
+    black.a = 1.0;
+    marker.color = black;
+
+    // Now iterate over every low‐res cell (r, c). If a bit is set, draw the corresponding edge.
+    //
+    // Convention:
+    //   Cell (c, r) covers world‐coords:
+    //     x ∈ [ c * LOWRES_RESOLUTION,  (c+1) * LOWRES_RESOLUTION ]
+    //     y ∈ [ r * LOWRES_RESOLUTION,  (r+1) * LOWRES_RESOLUTION ]
+    //
+    //   “TOP” edge is the horizontal segment at y = (r+1)*LOWRES_RESOLUTION,
+    //   from x = c*LOWRES_RESOLUTION to x = (c+1)*LOWRES_RESOLUTION.
+    //
+    //   “RIGHT” edge is the vertical segment at x = (c+1)*LOWRES_RESOLUTION,
+    //   from y = r*LOWRES_RESOLUTION to y = (r+1)*LOWRES_RESOLUTION.
+    //
+    //   “BOTTOM” edge is at y = r * LOWRES_RESOLUTION,
+    //   from x = c*LOWRES_RESOLUTION to x = (c+1)*LOWRES_RESOLUTION.
+    //
+    //   “LEFT” edge is at x = c * LOWRES_RESOLUTION,
+    //   from y = r*LOWRES_RESOLUTION to y = (r+1)*LOWRES_RESOLUTION.
+
+    for (int r = 0; r < row_count; ++r) {
+        for (int c = 0; c < col_count; ++c) {
+            const unsigned int mask = lowres_map[r][c];
+            if (mask == 0) continue; // no wall in this cell
+
+            // Precompute the four “corners” of this cell in WORLD coordinates:
+            const double x0 = c * 0.8;
+            const double y0 = r * 0.8;
+            const double x1 = (c + 1) * 0.8;
+            const double y1 = (r + 1) * 0.8;
+
+            geometry_msgs::Point p_start, p_end;
+
+            // TOP edge?
+            if (mask & BOTTOM) {
+                // from (x0, y1) to (x1, y1)
+                p_start.x = x0;
+                p_start.y = y1;
+                p_start.z = 0.0;
+                p_end.x = x1;
+                p_end.y = y1;
+                p_end.z = 0.0;
+                marker.points.push_back(p_start);
+                marker.points.push_back(p_end);
+            }
+
+            // RIGHT edge?
+            if (mask & RIGHT) {
+                // from (x1, y0) to (x1, y1)
+                p_start.x = x1;
+                p_start.y = y0;
+                p_start.z = 0.0;
+                p_end.x = x1;
+                p_end.y = y1;
+                p_end.z = 0.0;
+                marker.points.push_back(p_start);
+                marker.points.push_back(p_end);
+            }
+
+            // BOTTOM edge?
+            if (mask & TOP) {
+                // from (x0, y0) to (x1, y0)
+                p_start.x = x0;
+                p_start.y = y0;
+                p_start.z = 0.0;
+                p_end.x = x1;
+                p_end.y = y0;
+                p_end.z = 0.0;
+                marker.points.push_back(p_start);
+                marker.points.push_back(p_end);
+            }
+
+            // LEFT edge?
+            if (mask & LEFT) {
+                // from (x0, y0) to (x0, y1)
+                p_start.x = x0;
+                p_start.y = y0;
+                p_start.z = 0.0;
+                p_end.x = x0;
+                p_end.y = y1;
+                p_end.z = 0.0;
+                marker.points.push_back(p_start);
+                marker.points.push_back(p_end);
+            }
+        }
+    }
+
+    // Now publish that single Marker. RViz will draw one line per pair of points.
+    lowres_wall_pub.publish(marker);
+}
+
+void LikelihoodField::publish_high_res_walls(ros::NodeHandle &nh) const {
+    // 1) Create the high‐res OccupancyGrid message
+    nav_msgs::OccupancyGrid highres_grid;
+    highres_grid.header.frame_id = "map";
+    highres_grid.header.stamp    = ros::Time::now();
+
+    // 2) Compute high‐res dimensions
+    const int h_rows = row_count * cell_size + 2 * buffer_size;
+    const int h_cols = col_count * cell_size + 2 * buffer_size;
+
+    // 3) Set resolution so that 'cell_size' high‐res cells = 0.8 m (one low‐res cell)
+    highres_grid.info.resolution = 0.8 / static_cast<double>(cell_size);
+    highres_grid.info.width  = h_cols;
+    highres_grid.info.height = h_rows;
+
+    // 4) Place high‐res (buffer_size, buffer_size) at world (0,0)
+    double resH = highres_grid.info.resolution;
+    highres_grid.info.origin.position.x = -static_cast<double>(buffer_size) * resH;
+    highres_grid.info.origin.position.y = -static_cast<double>(buffer_size) * resH;
+    highres_grid.info.origin.position.z = 0.0;
+    highres_grid.info.origin.orientation.w = 1.0;
+
+    // 5) Resize data array
+    highres_grid.data.resize(h_rows * h_cols);
+
+    for (int r = 0; r < h_rows; ++r) {
+        for (int c = 0; c < h_cols; ++c) {
+            geometry_msgs::Point p;
+            p.x = (double) (c-buffer_size) / 100;
+            p.y = (double) (r-buffer_size) / 100;
+            highres_grid.data[r * h_cols + c] = get_prob_field_value(p) * 100.0;
+        }
+    }
+
+    highres_pub.publish(highres_grid);
+}
+
+
+LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filename, const double sigma)
+    : sigma_value(sigma) {
+    lowres_pub = nh.advertise<nav_msgs::OccupancyGrid>("lowres_map", 1, true);
+    highres_pub = nh.advertise<nav_msgs::OccupancyGrid>("highres_map", 1, true);
+
+
     std::vector<std::vector<unsigned int>> initial_map;
     parse_file_lowres(filename, initial_map);
     build_lookup_map(initial_map);
+
+    publish_low_res_walls(nh, lowres_pub, initial_map);
+    publish_high_res_walls(nh);
+    ros::Duration(0.5).sleep();
 }
 
-bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector <std::vector<unsigned int>> &map) {
+bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map) {
     std::ifstream in(filename);
     if (!in.is_open()) {
         std::cerr << "Could not open file. " << filename << "\n";
@@ -74,8 +235,7 @@ bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector
 }
 
 #pragma GCC optimize ("O3")
-void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned int>> &map) {
-
+void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned int> > &map) {
     row_count = map.size();
     col_count = map[0].size();
 
@@ -84,7 +244,8 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
 
     field.assign(lookup_grid_row_count, std::vector<double>(lookup_grid_col_count, 0));
 
-    ROS_INFO("got %d rows, %d cols, translating to highres %d rows %d cols\n", row_count, col_count, lookup_grid_row_count, lookup_grid_col_count);
+    ROS_INFO("got %d rows, %d cols, translating to highres %d rows %d cols\n", row_count, col_count,
+             lookup_grid_row_count, lookup_grid_col_count);
 
     for (int current_row = 0; current_row < lookup_grid_row_count; current_row++) {
         for (int current_col = 0; current_col < lookup_grid_col_count; current_col++) {
@@ -92,23 +253,22 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
             if (current_row < buffer_size && current_col < buffer_size) {
                 /* upper left corner */
                 closest_wall_dist = std::sqrt(POW2(buffer_size - current_row) + POW2(buffer_size - current_col));
-            }
-            else if (current_row < buffer_size && current_col + buffer_size >= lookup_grid_col_count)
+            } else if (current_row < buffer_size && current_col + buffer_size >= lookup_grid_col_count)
                 /* upper right corner */
                 closest_wall_dist = std::sqrt(
-                        POW2(buffer_size - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
+                    POW2(buffer_size - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
             else if (current_row < buffer_size)
                 /* top side */
                 closest_wall_dist = buffer_size - current_row;
             else if (current_row + buffer_size >= lookup_grid_row_count && current_col < buffer_size)
                 /* bottom left corner */
                 closest_wall_dist = std::sqrt(
-                        POW2(lookup_grid_row_count - 1 - current_row) + POW2(buffer_size - current_col));
+                    POW2(lookup_grid_row_count - 1 - current_row) + POW2(buffer_size - current_col));
             else if (current_row + buffer_size >= lookup_grid_row_count &&
                      current_col + buffer_size >= lookup_grid_col_count)
                 /* bottom right corner */
                 closest_wall_dist = std::sqrt(
-                        POW2(lookup_grid_row_count - 1 - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
+                    POW2(lookup_grid_row_count - 1 - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
             else if (current_row + buffer_size >= lookup_grid_row_count)
                 /* bottom side */
                 closest_wall_dist = lookup_grid_row_count - 1 - current_row;
@@ -116,7 +276,7 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
                 /* left side */
                 closest_wall_dist = buffer_size - current_col;
             else if (current_col + buffer_size >= lookup_grid_col_count)
-                /* right side */
+            /* right side */
                 closest_wall_dist = lookup_grid_col_count - 1 - current_col;
             else {
                 /* inside some cell */
@@ -165,27 +325,28 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
                     (map[low_res_row + 1][low_res_col + 1] & LEFT) != 0)
                     /* bottom right corner exists */
                     closest_wall_dist = std::min(closest_wall_dist, std::sqrt(
-                            POW2(cell_size - 1 - l_row) + POW2(cell_size - 1 - l_col)));
+                                                     POW2(cell_size - 1 - l_row) + POW2(cell_size - 1 - l_col)));
             }
 
             /* closest_wall_dist is now either set if wall were there or infinity if not */
             if (closest_wall_dist > 100)
                 continue;
             field[current_row][current_col] = closest_wall_dist;
-
         }
     }
 }
 
 double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space_point) const {
-    const int real_y = -(global_space_point.y*100) + buffer_size;
-    const int real_x = -(global_space_point.x*100) + buffer_size;
+    const int real_y = -(global_space_point.y * 100) + buffer_size;
+    const int real_x = -(global_space_point.x * 100) + buffer_size;
     // printf("%f %f gets looked up at %d %d\n", global_space_point.y, global_space_point.x,real_y, real_x);
-    if (real_x < 0 || real_y < 0 || real_x > cell_size*col_count+2*buffer_size || real_y > cell_size*row_count+2*buffer_size)
+    if (real_x < 0 || real_y < 0 || real_x > cell_size * col_count + 2 * buffer_size || real_y > cell_size *
+        row_count + 2 * buffer_size)
         return std::numeric_limits<double>::infinity();
     return field[real_y][real_x];
 }
+
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
-    const double dist2 = get_field_value(global_space_point)*get_field_value(global_space_point);
-    return std::exp(-dist2/(2*sigma_value*sigma_value));
+    const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
+    return std::exp(-dist2 / (2 * sigma_value * sigma_value));
 }
