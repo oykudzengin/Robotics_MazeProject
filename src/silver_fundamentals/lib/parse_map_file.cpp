@@ -177,15 +177,15 @@ void LikelihoodField::build_lookup_map(const std::vector <std::vector<unsigned i
     }
 }
 
-double LikelihoodField::get_field_value(const geometry_msgs::Point global_space_point) {
-    int real_y = -(global_space_point.y*100) + buffer_size;
-    int real_x = -(global_space_point.x*100) + buffer_size;
+double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space_point) const {
+    const int real_y = -(global_space_point.y*100) + buffer_size;
+    const int real_x = -(global_space_point.x*100) + buffer_size;
     // printf("%f %f gets looked up at %d %d\n", global_space_point.y, global_space_point.x,real_y, real_x);
     if (real_x < 0 || real_y < 0 || real_x > cell_size*col_count+2*buffer_size || real_y > cell_size*row_count+2*buffer_size)
         return std::numeric_limits<double>::infinity();
     return field[real_y][real_x];
 }
-double LikelihoodField::get_prob_field_value(const geometry_msgs::Point global_space_point) {
-    double dist2 = get_field_value(global_space_point)*get_field_value(global_space_point);
+double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
+    const double dist2 = get_field_value(global_space_point)*get_field_value(global_space_point);
     return std::exp(-dist2/(2*sigma_value*sigma_value));
 }
