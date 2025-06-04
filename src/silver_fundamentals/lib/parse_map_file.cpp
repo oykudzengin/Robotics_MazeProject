@@ -154,9 +154,10 @@ void LikelihoodField::publish_high_res_walls(ros::NodeHandle &nh) const {
     for (int r = 0; r < h_rows; ++r) {
         for (int c = 0; c < h_cols; ++c) {
             geometry_msgs::Point p;
-            p.x = (double) (c-buffer_size) / 100;
-            p.y = (double) (r-buffer_size) / 100;
-            highres_grid.data[r * h_cols + c] = get_prob_field_value(p) * 100.0;
+            p.x = (double) (-c+buffer_size) / 100;
+            p.y = (double) (-r+buffer_size) / 100;
+            highres_grid.data[r * h_cols + c] = (int)(get_prob_field_value(p) * 100.0);
+	    printf("%d, coords %d %d  has value %d %f\n", r * h_cols + c, r, c, highres_grid.data[r * h_cols + c], get_prob_field_value(p));
         }
     }
 

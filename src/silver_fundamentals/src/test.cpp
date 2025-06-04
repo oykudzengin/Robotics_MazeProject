@@ -62,8 +62,9 @@ int main(int argc, char **argv) {
             temp.y = static_cast<double>(j) / 100;
             temp.z = 0;
 
-            std::cout << lhf.get_prob_field_value(temp) << " ";
+            // std::cout << lhf.get_prob_field_value(temp) << " ";
         }
-        std::cout << std::endl;
+        // std::cout << std::endl;
     }
+    ros::spin();
 }
