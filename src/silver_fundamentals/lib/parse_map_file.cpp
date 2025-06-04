@@ -71,11 +71,11 @@ void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
             // TOP edge?
             if (mask & BOTTOM) {
                 // from (x0, y1) to (x1, y1)
-                p_start.x = x0;
-                p_start.y = y1;
+                p_start.y = x0;
+                p_start.x = y1;
                 p_start.z = 0.0;
-                p_end.x = x1;
-                p_end.y = y1;
+                p_end.y = x1;
+                p_end.x = y1;
                 p_end.z = 0.0;
                 marker.points.push_back(p_start);
                 marker.points.push_back(p_end);
@@ -84,11 +84,11 @@ void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
             // RIGHT edge?
             if (mask & RIGHT) {
                 // from (x1, y0) to (x1, y1)
-                p_start.x = x1;
-                p_start.y = y0;
+                p_start.y = x1;
+                p_start.x = y0;
                 p_start.z = 0.0;
-                p_end.x = x1;
-                p_end.y = y1;
+                p_end.y = x1;
+                p_end.x = y1;
                 p_end.z = 0.0;
                 marker.points.push_back(p_start);
                 marker.points.push_back(p_end);
@@ -97,11 +97,11 @@ void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
             // BOTTOM edge?
             if (mask & TOP) {
                 // from (x0, y0) to (x1, y0)
-                p_start.x = x0;
-                p_start.y = y0;
+                p_start.y = x0;
+                p_start.x = y0;
                 p_start.z = 0.0;
-                p_end.x = x1;
-                p_end.y = y0;
+                p_end.y = x1;
+                p_end.x = y0;
                 p_end.z = 0.0;
                 marker.points.push_back(p_start);
                 marker.points.push_back(p_end);
@@ -110,11 +110,11 @@ void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
             // LEFT edge?
             if (mask & LEFT) {
                 // from (x0, y0) to (x0, y1)
-                p_start.x = x0;
-                p_start.y = y0;
+                p_start.y = x0;
+                p_start.x = y0;
                 p_start.z = 0.0;
-                p_end.x = x0;
-                p_end.y = y1;
+                p_end.y = x0;
+                p_end.x = y1;
                 p_end.z = 0.0;
                 marker.points.push_back(p_start);
                 marker.points.push_back(p_end);
@@ -154,8 +154,8 @@ void LikelihoodField::publish_high_res_walls(ros::NodeHandle &nh) const {
     for (int r = 0; r < h_rows; ++r) {
         for (int c = 0; c < h_cols; ++c) {
             geometry_msgs::Point p;
-            p.x = (double) (-c+buffer_size) / 100;
-            p.y = (double) (-r+buffer_size) / 100;
+            p.y = (double) (-c+buffer_size) / 100;
+            p.x = (double) (-r+buffer_size) / 100;
             highres_grid.data[r * h_cols + c] = (int)(get_prob_field_value(p) * 100.0);
 	    // printf("%d, coords %d %d  has value %d %f\n", r * h_cols + c, r, c, highres_grid.data[r * h_cols + c], get_prob_field_value(p));
         }
@@ -349,6 +349,6 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
 
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
     const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
-    printf("%f %f has %f", global_space_point.y, global_space_point.x, dist2);
+    printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
     return std::exp(-dist2 / (2 * sigma_value * sigma_value));
 }
