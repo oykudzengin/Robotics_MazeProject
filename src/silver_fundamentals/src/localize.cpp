@@ -171,13 +171,13 @@ void viszualize_particles(ros::Publisher &posearray_pub, const std::array<Partic
         // --- POSITION ---
         // Internal: p.position.x = forward, p.position.y = left
         // ROS map: x = forward, y = left
-        pose_msg.position.x = -p.position.y; // left → ROS y (but placed into x field, because we swapped)
-        pose_msg.position.y = -p.position.x; // forward → ROS x (but placed into y field)
+        pose_msg.position.x = -p.position.y * 100; // left → ROS y (but placed into x field, because we swapped)
+        pose_msg.position.y = -p.position.x * 100; // forward → ROS x (but placed into y field)
         pose_msg.position.z = 0.0;
 
         // --- ORIENTATION ---
         // Internal θ = 0 means facing forward (ROS +X). So yaw_ros = θ_internal.
-        double yaw_ros = p.position.theta;
+        double yaw_ros = p.position.theta+PI;
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, yaw_ros);
         q.normalize();
@@ -238,7 +238,7 @@ int main(int argc, char **argv) {
         particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
 
         viszualize_particles(posearray_pub, particles);
-        printf("Particle at %f %f heading %f", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
+        printf("Particle at %f %f heading %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
     }
     return 0;
 }
