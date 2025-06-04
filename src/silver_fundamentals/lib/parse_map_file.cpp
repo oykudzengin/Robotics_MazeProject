@@ -330,8 +330,6 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             }
 
             /* closest_wall_dist is now either set if wall were there or infinity if not */
-            if (closest_wall_dist > 100000)
-                continue;
             field[current_row][current_col] = closest_wall_dist;
         }
     }
