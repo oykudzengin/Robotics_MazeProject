@@ -19,6 +19,8 @@ geometry_msgs::Point global_to_local(geometry_msgs::Point &relative_center, geom
     return local_pos;
 }
 
+
+
 geometry_msgs::Point local_to_global(geometry_msgs::Point &relative_center, geometry_msgs::Point &to_convert) {
     double lx = to_convert.x;
     double ly = to_convert.y;
@@ -36,4 +38,12 @@ geometry_msgs::Point local_to_global(geometry_msgs::Point &relative_center, geom
     global_pos.z = 0;
 
     return global_pos;
+}
+
+geometry_msgs::Point local_to_global(geometry_msgs::Pose2D &relative_center, geometry_msgs::Point &to_convert) {
+    geometry_msgs::Point relative_center_interally;
+    relative_center_interally.x = relative_center.x;
+    relative_center_interally.y = relative_center.y;
+    relative_center_interally.z = relative_center.theta;
+    return relative_center_interally;
 }
