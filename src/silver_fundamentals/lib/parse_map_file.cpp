@@ -330,7 +330,7 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             }
 
             /* closest_wall_dist is now either set if wall were there or infinity if not */
-            if (closest_wall_dist > 100)
+            if (closest_wall_dist > 100000)
                 continue;
             field[current_row][current_col] = closest_wall_dist;
         }
@@ -349,6 +349,6 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
 
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
     const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
-    printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
+    //printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
     return std::exp(-dist2 / (2 * sigma_value * sigma_value));
 }
