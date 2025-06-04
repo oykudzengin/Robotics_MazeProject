@@ -24,8 +24,8 @@
 #define SIGMA 5.0
 #define AMOUNT_OF_RAYS 48
 #define AMOUNT_OF_PARTICLES 1000
-#define AMOUNT_RANDOM_INJECTIONS 50
-#define PROBABILITY_RANDOM_INJECTIONS 0.05
+#define AMOUNT_RANDOM_INJECTIONS 0
+#define PROBABILITY_RANDOM_INJECTIONS 0
 #define ALPHA1 0.1 //rotation noise
 #define ALPHA2 0.1 //rotation noise related to translation
 #define ALPHA3 0.05 //translation noise
@@ -50,6 +50,14 @@ struct Particle {
         p.position.theta = utheta(gen);
         p.weight = 1.0;
 
+        return p;
+    }
+    static Particle zero() {
+        Particle p;
+        p.position.x = 0.0;
+        p.position.y = 0.0;
+        p.position.theta = 0.0;
+        p.weight = 1.0;
         return p;
     }
 };
@@ -205,7 +213,7 @@ int main(int argc, char **argv) {
     // init particles array
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++)
-        particles[i] = Particle::random(lhf);
+        /* particles[i] = Particle::random(lhf); */ particles[i] = Particle::zero();
 
     while (ros::ok()) {
         // do laser measurement
@@ -230,6 +238,7 @@ int main(int argc, char **argv) {
         particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
 
         viszualize_particles(posearray_pub, particles);
+        printf("Particle at %f %f heading %f", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
     }
     return 0;
 }
