@@ -166,7 +166,7 @@ void LikelihoodField::publish_high_res_walls(ros::NodeHandle &nh) const {
 
 LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filename, const double sigma)
     : sigma_value(sigma) {
-    lowres_pub = nh.advertise<nav_msgs::OccupancyGrid>("lowres_map", 1, true);
+    lowres_pub = nh.advertise<visualization_msgs::Marker>("lowres_map", 1, true);
     highres_pub = nh.advertise<nav_msgs::OccupancyGrid>("highres_map", 1, true);
 
 
