@@ -257,28 +257,28 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             } else if (current_row < buffer_size && current_col + buffer_size >= lookup_grid_col_count)
                 /* upper right corner */
                 closest_wall_dist = std::sqrt(
-                    POW2(buffer_size - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
+                    POW2(buffer_size - current_row) + POW2(buffer_size - (lookup_grid_col_count-1-current_col));
             else if (current_row < buffer_size)
                 /* top side */
                 closest_wall_dist = buffer_size - current_row;
             else if (current_row + buffer_size >= lookup_grid_row_count && current_col < buffer_size)
                 /* bottom left corner */
                 closest_wall_dist = std::sqrt(
-                    POW2(lookup_grid_row_count - 1 - current_row) + POW2(buffer_size - current_col));
+                    POW2(buffer_size - (lookup_grid_row_count - 1 - current_row)) + POW2(buffer_size - current_col));
             else if (current_row + buffer_size >= lookup_grid_row_count &&
                      current_col + buffer_size >= lookup_grid_col_count)
                 /* bottom right corner */
                 closest_wall_dist = std::sqrt(
-                    POW2(lookup_grid_row_count - 1 - current_row) + POW2(lookup_grid_col_count - 1 - current_col));
+                    POW2(buffer_size - (lookup_grid_row_count - 1 - current_row)) + POW2(buffer_size - (lookup_grid_col_count - 1 - current_col)));
             else if (current_row + buffer_size >= lookup_grid_row_count)
                 /* bottom side */
-                closest_wall_dist = lookup_grid_row_count - 1 - current_row;
+                closest_wall_dist = buffer_size - (lookup_grid_row_count - 1 - current_row);
             else if (current_col < buffer_size)
                 /* left side */
                 closest_wall_dist = buffer_size - current_col;
             else if (current_col + buffer_size >= lookup_grid_col_count)
             /* right side */
-                closest_wall_dist = lookup_grid_col_count - 1 - current_col;
+                closest_wall_dist = buffer_size - (lookup_grid_col_count - 1 - current_col);
             else {
                 /* inside some cell */
                 const int low_res_row = (current_row - buffer_size) / cell_size;
