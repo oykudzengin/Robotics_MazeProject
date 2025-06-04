@@ -157,7 +157,7 @@ void LikelihoodField::publish_high_res_walls(ros::NodeHandle &nh) const {
             p.x = (double) (-c+buffer_size) / 100;
             p.y = (double) (-r+buffer_size) / 100;
             highres_grid.data[r * h_cols + c] = (int)(get_prob_field_value(p) * 100.0);
-	    printf("%d, coords %d %d  has value %d %f\n", r * h_cols + c, r, c, highres_grid.data[r * h_cols + c], get_prob_field_value(p));
+	    // printf("%d, coords %d %d  has value %d %f\n", r * h_cols + c, r, c, highres_grid.data[r * h_cols + c], get_prob_field_value(p));
         }
     }
 
@@ -349,5 +349,6 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
 
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
     const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
+    printf("%f %f has %f", global_space_point.y, global_space_point.x, dist2);
     return std::exp(-dist2 / (2 * sigma_value * sigma_value));
 }
