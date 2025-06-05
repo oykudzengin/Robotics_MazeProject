@@ -24,8 +24,8 @@
 #define SIGMA 5.0
 #define AMOUNT_OF_RAYS 48
 #define AMOUNT_OF_PARTICLES 1000
-#define AMOUNT_RANDOM_INJECTIONS 0
-#define PROBABILITY_RANDOM_INJECTIONS 0
+#define AMOUNT_RANDOM_INJECTIONS 50
+#define PROBABILITY_RANDOM_INJECTIONS 0.05
 #define ALPHA1 0.1 //rotation noise
 #define ALPHA2 0.1 //rotation noise related to translation
 #define ALPHA3 0.05 //translation noise
@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
     // init particles array
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++)
-        /* particles[i] = Particle::random(lhf); */ particles[i] = Particle::zero();
+        particles[i] = Particle::random(lhf); /* particles[i] = Particle::zero(); */
 
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
