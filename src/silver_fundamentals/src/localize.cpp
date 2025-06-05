@@ -195,8 +195,8 @@ void visualize_reference_rays(const ros::Publisher ray_pub,
     start.z = 0.0;
 
     for (const auto& meas : reference_measurements) {
-        end.x = meas.y;
-        end.y = meas.x;
+        end.x = -meas.y;
+        end.y = -meas.x;
         end.z = 0;  // usually 0, but copy whatever z came in
 
         m.points.push_back(start);
