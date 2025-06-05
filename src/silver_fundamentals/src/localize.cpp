@@ -118,7 +118,7 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
     const double local_dx = delta_trans * std::sin(delta_rot / 2.0);
     const double local_dy = delta_trans * std::cos(delta_rot / 2.0);
 
-    const double delta_rot1 = std::atan2(local_dx, local_dy);
+    const double delta_rot1 = /* std::atan2(local_dx, local_dy); */ 0.5 * delta_rot;
     const double delta_rot2 = delta_rot - delta_rot1;
 
     printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
@@ -217,6 +217,8 @@ int main(int argc, char **argv) {
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++)
         /* particles[i] = Particle::random(lhf); */ particles[i] = Particle::zero();
 
+    double curr_right_encoder = encoder_srv.response.right_encoder;
+    double curr_left_encoder = encoder_srv.response.left_encoder;
     while (ros::ok()) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
@@ -226,18 +228,21 @@ int main(int argc, char **argv) {
         // do drive init
         while (!drive_data_client.call(encoder_srv))
             ROS_ERROR("encoder service call failed");
-        double curr_right_encoder = encoder_srv.response.right_encoder;
-        double curr_left_encoder = encoder_srv.response.left_encoder;
+
         // do driving
 
         // do sleep
         rate.sleep();
-	ros::Duration(0.1).sleep();
+        ros::Duration(0.1).sleep();
         // do odometry adjustment
         while (!drive_data_client.call(encoder_srv))
             ROS_ERROR("encoder service call failed");
+
         double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
         double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+        curr_right_encoder = encoder_srv.response.right_encoder;
+        curr_left_encoder = encoder_srv.response.left_encoder;
+
         particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
 
         viszualize_particles(posearray_pub, particles);

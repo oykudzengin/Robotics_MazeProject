@@ -299,11 +299,11 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
 geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left) {
     double delta_right_m = delta_right*wheel_radius/100;
     double delta_left_m = delta_left*wheel_radius/100;
-    double additional_encoder_distance = (delta_right_m + delta_left_m)/2.0;
-    double average_encoder_distance = (delta_right_m - delta_left_m)/(2.0*wheel_base/100);
-    current_pos.x += additional_encoder_distance * std::sin(current_pos.z+average_encoder_distance);
-    current_pos.y += additional_encoder_distance * std::cos(current_pos.z+average_encoder_distance);
-    current_pos.z += 2.0*average_encoder_distance;
+    double delta_trans = (delta_right_m + delta_left_m)/2.0;
+    double delta_rot = (delta_right_m - delta_left_m)/(2.0*wheel_base/100);
+    current_pos.x += delta_trans * std::sin(current_pos.z+delta_rot);
+    current_pos.y += delta_trans * std::cos(current_pos.z+delta_rot);
+    current_pos.z += 2.0*delta_rot;
 
     return current_pos;
 }
