@@ -20,8 +20,9 @@
 
 #include <coordinate_conversion.h>
 #include <geometry_msgs/Pose.h>
+#include <visualization_msgs/Marker.h>
 
-#define SIGMA 5.0
+#define SIGMA 10.0
 #define AMOUNT_OF_RAYS 48
 #define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 50
@@ -73,9 +74,10 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
         laser_pol_srv.request.start = ANGLE_MIN + i * step_size + step_size / 2;
         laser_pol_srv.request.end = ANGLE_MIN + i * step_size + step_size / 2;
 
-        double current_rad_angle = (ANGLE_MIN + i * step_size + step_size / 2) / 180.0 * PI;
+        const double current_rad_angle = (ANGLE_MIN + i * step_size + step_size / 2) / 180.0 * PI;
 
-        while (!laser_pol_client.call(laser_pol_srv));
+        while (!laser_pol_client.call(laser_pol_srv))
+            ROS_ERROR("laser_pol_client.call failed");
 
         if (laser_pol_srv.response.values[0] > 1)
             continue;
@@ -161,7 +163,51 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     particles = new_particles;
 }
 
-void viszualize_particles(ros::Publisher &posearray_pub, const std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
+void visualize_reference_rays(const ros::Publisher ray_pub,
+    const std::vector<geometry_msgs::Point>& reference_measurements)
+{
+
+    visualization_msgs::Marker m;
+    m.header.frame_id = "map";
+    m.header.stamp    = ros::Time::now();
+    m.ns             = "laser_rays";
+    m.id             = 0;
+    m.type           = visualization_msgs::Marker::LINE_LIST;
+    m.action         = visualization_msgs::Marker::ADD;
+
+    // Each line segment is defined by two consecutive points in m.points:
+    //   [start0, end0, start1, end1, start2, end2, ...]
+    m.scale.x = 0.02;  // line thickness (meters)
+
+    // Color the rays blue (or pick any color you prefer)
+    m.color.r = 0.0f;
+    m.color.g = 0.0f;
+    m.color.b = 1.0f;
+    m.color.a = 1.0f;
+
+    m.points.clear();
+    m.points.reserve(reference_measurements.size() * 2);
+
+    // For each measurement, draw a line from (0,0,0) to (px,py,0)
+    geometry_msgs::Point start, end;
+    start.x = 0.0;
+    start.y = 0.0;
+    start.z = 0.0;
+
+    for (const auto& meas : reference_measurements) {
+        end.x = meas.y;
+        end.y = meas.x;
+        end.z = 0;  // usually 0, but copy whatever z came in
+
+        m.points.push_back(start);
+        m.points.push_back(end);
+    }
+
+    m.lifetime = ros::Duration(0.0);  // latched until overwritten
+    ray_pub.publish(m);
+}
+
+void viszualize_particles(const ros::Publisher &posearray_pub, const std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
     geometry_msgs::PoseArray msg;
     msg.header.frame_id = "map";
     msg.header.stamp = ros::Time::now();
@@ -199,6 +245,8 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
            n.advertise<geometry_msgs::PoseArray>("particle_poses", 1, true);
+    static ros::Publisher ray_pub =
+        n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
     auto rate = ros::Rate(10);
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
@@ -223,6 +271,7 @@ int main(int argc, char **argv) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
+        visualize_reference_rays(ray_pub, reference_measurements);
         // do sampling
         resample(lhf, particles);
         // do drive init
