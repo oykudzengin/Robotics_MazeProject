@@ -339,7 +339,7 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
     const int real_y = -(global_space_point.y * 100) + buffer_size;
     const int real_x = -(global_space_point.x * 100) + buffer_size;
     // printf("%f %f gets looked up at %d %d\n", global_space_point.y, global_space_point.x,real_y, real_x);
-    if (real_x < 0 || real_y < 0 || real_x > cell_size * col_count + 2 * buffer_size || real_y > cell_size *
+    if (real_x < 0 || real_y < 0 || real_x >= cell_size * col_count + 2 * buffer_size || real_y >= cell_size *
         row_count + 2 * buffer_size)
         return std::numeric_limits<double>::infinity();
     return field[real_y][real_x];
