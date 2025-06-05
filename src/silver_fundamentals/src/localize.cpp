@@ -121,6 +121,8 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
     const double delta_rot1 = std::atan2(local_dx, local_dy);
     const double delta_rot2 = delta_rot - delta_rot1;
 
+    printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
+
     for (auto &p: particles) {
         // Add noise to the odometry values
         const double delta_rot1_hat = delta_rot1 + sample_normal(
@@ -238,7 +240,7 @@ int main(int argc, char **argv) {
         particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
 
         viszualize_particles(posearray_pub, particles);
-        printf("Particle at %f %f heading %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
+        // printf("Particle at %f %f heading %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
     }
     return 0;
 }
