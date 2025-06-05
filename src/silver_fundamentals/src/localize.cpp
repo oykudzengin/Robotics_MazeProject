@@ -106,6 +106,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
+
         particle.weight = weight;
     }
 }
@@ -278,13 +279,10 @@ int main(int argc, char **argv) {
     while (ros::ok()) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
-	ROS_ERROR("measurements done");
         compute_weights(lhf, particles, reference_measurements);
-	ROS_ERROR("weights done");
         visualize_reference_rays(ray_pub, reference_measurements);
         // do sampling
         resample(lhf, particles);
-	ROS_ERROR("Resample done");
         // do drive init
         while (!drive_data_client.call(encoder_srv))
             ROS_ERROR("encoder service call failed");
