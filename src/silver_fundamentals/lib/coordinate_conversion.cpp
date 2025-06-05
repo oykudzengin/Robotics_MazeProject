@@ -45,5 +45,5 @@ geometry_msgs::Point local_to_global(geometry_msgs::Pose2D &relative_center, geo
     relative_center_interally.x = relative_center.x;
     relative_center_interally.y = relative_center.y;
     relative_center_interally.z = relative_center.theta;
-    return relative_center_interally;
+    return local_to_global(relative_center_interally, to_convert);
 }
