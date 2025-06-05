@@ -21,6 +21,7 @@ class FeedbackDrive {
 
         int potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate);
 
+        geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
 
     private:
         double wheel_radius;
@@ -50,7 +51,6 @@ class FeedbackDrive {
         void compute_hitbox(double width, double distance);
         bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle) const;
 
-        geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
         geometry_msgs::Point position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left);
 };
 

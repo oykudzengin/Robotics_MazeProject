@@ -32,6 +32,12 @@
 #define ALPHA3 0.05 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
+#define K_ATT 1000.0
+#define K_REP 0.01
+#define NO_EFFECTION_POT_FIELDS 0.2
+#define ROT_RATE 0.06
+#define BASE_SPEED 4.0
+
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
@@ -259,7 +265,9 @@ int main(int argc, char **argv) {
 
     ros::ServiceClient laser_pol_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
     ros::ServiceClient drive_data_client = n.serviceClient<silver_fundamentals::DriveData>("encoder_data");
+    ros::ServiceClient drive_client =n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
     silver_fundamentals::DriveData encoder_srv;
+    create_fundamentals::DiffDrive drive_srv;
 
 
     // init particles array
@@ -281,6 +289,15 @@ int main(int argc, char **argv) {
             ROS_ERROR("encoder service call failed");
 
         // do driving
+        geometry_msgs::Point current, goal;
+        current.x = 0; current.y = 0; current.z = 0;
+        goal.x = 0; goal.y = 1; goal.z = 0;
+        const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+        double angle = std::atan2(field_vector.x, field_vector.y);
+        double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+        drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate - (BASE_SPEED * std::min(-1.0, std::max(1.0, angle/170.0)));
+        drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate - (BASE_SPEED * std::min(-1.0, std::max(1.0, angle/170.0)));
+        drive_client.call(drive_srv);
 
         // do sleep
         rate.sleep();
