@@ -173,8 +173,8 @@ void viszualize_particles(ros::Publisher &posearray_pub, const std::array<Partic
         // --- POSITION ---
         // Internal: p.position.x = forward, p.position.y = left
         // ROS map: x = forward, y = left
-        pose_msg.position.x = -p.position.y * 100; // left → ROS y (but placed into x field, because we swapped)
-        pose_msg.position.y = -p.position.x * 100; // forward → ROS x (but placed into y field)
+        pose_msg.position.x = -p.position.y; // left → ROS y (but placed into x field, because we swapped)
+        pose_msg.position.y = -p.position.x; // forward → ROS x (but placed into y field)
         pose_msg.position.z = 0.0;
 
         // --- ORIENTATION ---
@@ -233,7 +233,6 @@ int main(int argc, char **argv) {
 
         // do sleep
         rate.sleep();
-        ros::Duration(0.1).sleep();
         // do odometry adjustment
         while (!drive_data_client.call(encoder_srv))
             ROS_ERROR("encoder service call failed");
