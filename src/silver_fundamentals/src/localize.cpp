@@ -246,7 +246,7 @@ int main(int argc, char **argv) {
         particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
 
         viszualize_particles(posearray_pub, particles);
-        // printf("Particle at %f %f heading %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
+        printf("Particle at %f %f heading %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI);
     }
     return 0;
 }
