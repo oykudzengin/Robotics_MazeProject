@@ -12,7 +12,6 @@
 #include <coordinate_conversion.h>
 
 #define ROBOT_RADIUS 13.3f
-#define LIDAR_SENSOR_OFFSET 14.0f
 
 #define WIDTH_THRESHOLD_RADIUS 4f
 #define ANGLE_THRESHOLD 5f

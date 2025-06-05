@@ -4,6 +4,7 @@
 
 #define DOTASK2
 
+#define LIDAR_SENSOR_OFFSET 14.0f
 #define LIDAR_POINTS 682
 #define PI 3.14159265
 #define WHEEL_RADIUS 3.25 //cm
