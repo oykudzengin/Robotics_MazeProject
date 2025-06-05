@@ -199,7 +199,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
            n.advertise<geometry_msgs::PoseArray>("particle_poses", 1, true);
-    auto rate = ros::Rate(100);
+    auto rate = ros::Rate(10);
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
 
@@ -232,6 +232,7 @@ int main(int argc, char **argv) {
 
         // do sleep
         rate.sleep();
+	ros::Duration(0.1).sleep();
         // do odometry adjustment
         while (!drive_data_client.call(encoder_srv))
             ROS_ERROR("encoder service call failed");
