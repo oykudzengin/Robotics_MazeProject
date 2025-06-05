@@ -131,7 +131,7 @@ bool laser_angle_range_cartesian_offset(silver_fundamentals::LaserCartesian::Req
         point.y = std::sin(angle_rad) * original_dist;
         point.z = angle;
 
-        point.x -= req.lidar_sensor_offset;
+        point.x += req.lidar_sensor_offset;
         double r = std::hypot(point.x, point.y);
 
         if (r > req.wall_thickness)

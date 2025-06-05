@@ -26,17 +26,17 @@
 #define AMOUNT_OF_RAYS 48
 #define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 50
-#define PROBABILITY_RANDOM_INJECTIONS 0.05
+#define PROBABILITY_RANDOM_INJECTIONS 0.01
 #define ALPHA1 0.1 //rotation noise
 #define ALPHA2 0.1 //rotation noise related to translation
-#define ALPHA3 0.05 //translation noise
-#define ALPHA4 0.05 //translation noise related to rotation
+#define ALPHA3 0.2 //translation noise
+#define ALPHA4 0.2 //translation noise related to rotation
 
-#define K_ATT 1000.0
+#define K_ATT 10.0
 #define K_REP 0.01
-#define NO_EFFECTION_POT_FIELDS 0.2
-#define ROT_RATE 0.06
-#define BASE_SPEED 4.0
+#define NO_EFFECTION_POT_FIELDS 0.25
+#define ROT_RATE 0.05
+#define BASE_SPEED 6.0
 
 
 static std::random_device rd;
@@ -295,8 +295,8 @@ int main(int argc, char **argv) {
         const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
         double angle = std::atan2(field_vector.x, field_vector.y);
         double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-        drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate - (BASE_SPEED * std::min(-1.0, std::max(1.0, angle/170.0)));
-        drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate - (BASE_SPEED * std::min(-1.0, std::max(1.0, angle/170.0)));
+        drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+        drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
         drive_client.call(drive_srv);
 
         // do sleep
