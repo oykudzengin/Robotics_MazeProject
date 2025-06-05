@@ -106,7 +106,8 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-
+        if (weight < 1)
+            ROS_INFO("weight is %f", weight);
         particle.weight = weight;
     }
 }
