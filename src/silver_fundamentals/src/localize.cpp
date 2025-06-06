@@ -24,20 +24,20 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #define SIGMA 10.0
-#define AMOUNT_OF_RAYS 48
-#define AMOUNT_OF_PARTICLES 1000
-#define AMOUNT_RANDOM_INJECTIONS 50
-#define PROBABILITY_RANDOM_INJECTIONS 0.01
-#define ALPHA1 0.1 //rotation noise
-#define ALPHA2 0.1 //rotation noise related to translation
-#define ALPHA3 0.2 //translation noise
-#define ALPHA4 0.2 //translation noise related to rotation
+#define AMOUNT_OF_RAYS 10
+#define AMOUNT_OF_PARTICLES 500
+#define AMOUNT_RANDOM_INJECTIONS 1
+#define PROBABILITY_RANDOM_INJECTIONS 0.0001
+#define ALPHA1 1.0 //rotation noise
+#define ALPHA2 1.0 //rotation noise related to translation
+#define ALPHA3 2.0 //translation noise
+#define ALPHA4 2.0 //translation noise related to rotation
 
 #define K_ATT 10.0
 #define K_REP 0.01
-#define NO_EFFECTION_POT_FIELDS 0.25
-#define ROT_RATE 0.05
-#define BASE_SPEED 6.0
+#define NO_EFFECTION_POT_FIELDS 0.35
+#define ROT_RATE 0.03
+#define BASE_SPEED 4.0
 
 
 static std::random_device rd;
@@ -56,7 +56,7 @@ struct Particle {
         p.position.x = -ux(gen);
         p.position.y = -uy(gen);
         p.position.theta = utheta(gen);
-        p.weight = 1.0;
+        p.weight = 2.0;
 
         return p;
     }
@@ -107,7 +107,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-        if (weight < 1)
+        if (weight < 1 || weight > 0)
             ROS_INFO("weight is %f", weight);
         particle.weight = weight;
     }
@@ -265,13 +265,19 @@ void viszualize_particles(
             m.color.b = 0.0f;
             m.color.a = 1.0f;
         }
-        else if (p.weight >= 1.0) {
+        else if (p.weight == 1.0) {
             // green
             m.color.r = 0.0f;
             m.color.g = 1.0f;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
         }
+	else if (p.weight > 1.0) {
+	    m.color.r = 0.0f;
+	    m.color.g = 0.0f;
+	    m.color.b = 1.0f;
+	    m.color.a = 1.0f;
+	}
         else {
             // yellow
             m.color.r = 1.0f;
@@ -291,7 +297,7 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "localize");
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
-           n.advertise<geometry_msgs::PoseArray>("particle_poses", 1, true);
+           n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
     static ros::Publisher ray_pub =
         n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
     auto rate = ros::Rate(10);
