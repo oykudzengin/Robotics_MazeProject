@@ -139,6 +139,7 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
         const double var_trans = ALPHA3 * pow(delta_trans, 2) + ALPHA4 * (
                                                pow(delta_rot1, 2) + pow(delta_rot2, 2));
         const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);       // Add noise to the odometry values
+
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
         const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
         const double delta_rot2_hat = delta_rot2 + sample_normal(std::sqrt(var_rot2));

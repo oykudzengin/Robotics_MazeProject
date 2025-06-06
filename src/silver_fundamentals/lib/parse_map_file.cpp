@@ -330,7 +330,9 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             }
 
             /* closest_wall_dist is now either set if wall were there or infinity if not */
-            field[current_row][current_col] = closest_wall_dist;
+            const double dist2 = closest_wall_dist * closest_wall_dist;
+            //printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
+            field[current_row][current_col] = std::exp(-dist2 / (2 * sigma_value * sigma_value));
         }
     }
 }
@@ -346,7 +348,14 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
 }
 
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {
-    const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
+    /*
+     const double dist2 = get_field_value(global_space_point) * get_field_value(global_space_point);
     //printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
     return std::exp(-dist2 / (2 * sigma_value * sigma_value));
+    */
+    const int real_y = -(global_space_point.y * 100) + buffer_size;
+    const int real_x = -(global_space_point.x * 100) + buffer_size;
+    if (real_x < 0 || real_y < 0 || real_x >= cell_size * col_count + 2 * buffer_size || real_y >= cell_size * row_count + 2 * buffer_size)
+        return 0.0;
+    return field[real_y][real_x];
 }
