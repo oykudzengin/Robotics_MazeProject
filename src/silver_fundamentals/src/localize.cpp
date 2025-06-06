@@ -148,15 +148,36 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
         p.position.y += delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat);
         p.position.theta += delta_rot1_hat + delta_rot2_hat;
 
-	if (static_cast<int>(p.position.x * 100.0) % 80 < 10)
-		p.position.x = static_cast<double>(static_cast<int>(p.position.x * 100.0) / 80 * 80 + 10)/100.0;
-	if (static_cast<int>(p.position.y * 100.0) % 80 < 10)
-		p.position.y = static_cast<double>(static_cast<int>(p.position.y * 100.0) / 80 * 80 + 10)/100.0;
-	if (static_cast<int>(p.position.x * 100.0) % 80 > 70)
-		p.position.x = static_cast<double>(static_cast<int>(p.position.x * 100.0) / 80 * 80 + 70)/100.0;
-	if (static_cast<int>(p.position.y * 100.0) % 80 > 70)
-		p.position.y = static_cast<double>(static_cast<int>(p.position.y * 100.0) / 80 * 80 + 70)/100.0;
-    }
+        int xi = static_cast<int>(std::floor(p.position.x * 100.0));
+        int yi = static_cast<int>(std::floor(p.position.y * 100.0));
+
+        // Compute non‐negative remainders mod 80
+        int rem_x = ((xi % 80) + 80) % 80;
+        int rem_y = ((yi % 80) + 80) % 80;
+
+        // Snap X
+        if (rem_x < 10) {
+            int block = (xi - rem_x) / 80;   // integer division toward −∞ now
+            xi = block * 80 + 10;            // move to “10” within that block
+            p.position.x = xi / 100.0;       // back to meters
+        }
+        else if (rem_x > 70) {
+            int block = (xi - rem_x) / 80;
+            xi = block * 80 + 70;            // move to “70” within that block
+            p.position.x = xi / 100.0;
+        }
+
+        // Snap Y
+        if (rem_y < 10) {
+            int block = (yi - rem_y) / 80;
+            yi = block * 80 + 10;
+            p.position.y = yi / 100.0;
+        }
+        else if (rem_y > 70) {
+            int block = (yi - rem_y) / 80;
+            yi = block * 80 + 70;
+            p.position.y = yi / 100.0;
+        }
 }
 
 void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
