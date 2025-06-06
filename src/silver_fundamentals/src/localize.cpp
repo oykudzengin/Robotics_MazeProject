@@ -178,6 +178,7 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
             yi = block * 80 + 70;
             p.position.y = yi / 100.0;
         }
+    }
 }
 
 void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
