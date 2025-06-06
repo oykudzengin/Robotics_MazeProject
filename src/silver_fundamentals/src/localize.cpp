@@ -214,38 +214,76 @@ void visualize_reference_rays(const ros::Publisher ray_pub,
     m.lifetime = ros::Duration(0.0);  // latched until overwritten
     ray_pub.publish(m);
 }
+void viszualize_particles(
+    const ros::Publisher &marker_pub,
+    const std::array<Particle, AMOUNT_OF_PARTICLES> &particles)
+{
+    visualization_msgs::MarkerArray markers;
+    markers.markers.reserve(AMOUNT_OF_PARTICLES);
 
-void viszualize_particles(const ros::Publisher &posearray_pub, const std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
-    geometry_msgs::PoseArray msg;
-    msg.header.frame_id = "map";
-    msg.header.stamp = ros::Time::now();
-    msg.poses.reserve(AMOUNT_OF_PARTICLES);
+    for (size_t i = 0; i < particles.size(); ++i) {
+        const auto &p = particles[i];
 
-    for (const auto &p: particles) {
-        geometry_msgs::Pose pose_msg;
+        visualization_msgs::Marker m;
+        m.header.frame_id = "map";
+        m.header.stamp    = ros::Time::now();
+        m.ns              = "particles";
+        m.id              = static_cast<int>(i);
+        m.type            = visualization_msgs::Marker::ARROW;
+        m.action          = visualization_msgs::Marker::ADD;
 
         // --- POSITION ---
         // Internal: p.position.x = forward, p.position.y = left
-        // ROS map: x = forward, y = left
-        pose_msg.position.x = -p.position.y; // left → ROS y (but placed into x field, because we swapped)
-        pose_msg.position.y = -p.position.x; // forward → ROS x (but placed into y field)
-        pose_msg.position.z = 0.0;
+        // We want ROS: x = forward, y = left → no axis swap
+        m.pose.position.x = -p.position.y;
+        m.pose.position.y = -p.position.x;
+        m.pose.position.z = 0.0;
 
         // --- ORIENTATION ---
-        // Internal θ = 0 means facing forward (ROS +X). So yaw_ros = θ_internal.
-        double yaw_ros = p.position.theta+PI;
+        // Internal θ=0 means “facing +Y” (forward). ROS yaw=0 means +X, so rotate by +π/2.
+        double yaw_ros = p.position.theta + PI;
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, yaw_ros);
         q.normalize();
-        pose_msg.orientation.x = q.x();
-        pose_msg.orientation.y = q.y();
-        pose_msg.orientation.z = q.z();
-        pose_msg.orientation.w = q.w();
+        m.pose.orientation.x = q.x();
+        m.pose.orientation.y = q.y();
+        m.pose.orientation.z = q.z();
+        m.pose.orientation.w = q.w();
 
-        msg.poses.push_back(pose_msg);
+        // --- SCALE (arrow length) ---
+        // Make each arrow a quarter as long: 0.25 m
+        m.scale.x = 0.25;   // arrow length in meters
+        m.scale.y = 0.05;   // shaft diameter
+        m.scale.z = 0.05;   // head diameter
+
+        // --- COLOR (by weight) ---
+        if (p.weight <= 0.0) {
+            // red
+            m.color.r = 1.0f;
+            m.color.g = 0.0f;
+            m.color.b = 0.0f;
+            m.color.a = 1.0f;
+        }
+        else if (p.weight >= 1.0) {
+            // green
+            m.color.r = 0.0f;
+            m.color.g = 1.0f;
+            m.color.b = 0.0f;
+            m.color.a = 1.0f;
+        }
+        else {
+            // yellow
+            m.color.r = 1.0f;
+            m.color.g = 1.0f;
+            m.color.b = 0.0f;
+            m.color.a = 1.0f;
+        }
+
+        m.lifetime = ros::Duration(0.0);
+        markers.markers.push_back(m);
     }
 
-    posearray_pub.publish(msg);
+    marker_pub.publish(markers);
 }
 
 int main(int argc, char **argv) {
