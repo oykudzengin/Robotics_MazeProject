@@ -23,13 +23,13 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 40.0
+#define SIGMA 30.0
 #define AMOUNT_OF_RAYS 10
 #define AMOUNT_OF_PARTICLES 500
 #define AMOUNT_RANDOM_INJECTIONS 25
-#define PROBABILITY_RANDOM_INJECTIONS 0.05
-#define ALPHA1 0.05 //rotation noise
-#define ALPHA2 0.05 //rotation noise related to translation
+#define PROBABILITY_RANDOM_INJECTIONS 0.0001
+#define ALPHA1 0.1 //rotation noise
+#define ALPHA2 0.1 //rotation noise related to translation
 #define ALPHA3 0.05 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
@@ -107,7 +107,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-        particle.weight = weight;
+        particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
     }
 }
 
@@ -263,14 +263,14 @@ void viszualize_particles(
             m.color.b = 0.0f;
             m.color.a = 1.0f;
         }
-        else if (p.weight == 1.0) {
+        else if (p.weight == 10000) {
             // green
             m.color.r = 0.0f;
             m.color.g = 1.0f;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
         }
-	else if (p.weight > 1.0) {
+	else if (p.weight > 6000) {
 	    m.color.r = 0.0f;
 	    m.color.g = 0.0f;
 	    m.color.b = 1.0f;
@@ -320,6 +320,7 @@ int main(int argc, char **argv) {
 
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
+    unsigned int count = 0;
     while (ros::ok()) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
@@ -332,16 +333,18 @@ int main(int argc, char **argv) {
             ROS_ERROR("encoder service call failed");
 
         // do driving
-        geometry_msgs::Point current, goal;
-        current.x = 0; current.y = 0; current.z = 0;
-        goal.x = 0; goal.y = 1; goal.z = 0;
-        const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
-        double angle = std::atan2(field_vector.x, field_vector.y);
-        double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-        drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
-        drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
-        drive_client.call(drive_srv);
-
+	if (count % 5 == 0) {
+	
+		geometry_msgs::Point current, goal;
+		current.x = 0; current.y = 0; current.z = 0;
+		goal.x = 0; goal.y = 1; goal.z = 0;
+		const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+		double angle = std::atan2(field_vector.x, field_vector.y);
+		double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+		drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+		drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
+		drive_client.call(drive_srv);
+	}
         // do sleep
         rate.sleep();
         // do odometry adjustment
@@ -357,6 +360,7 @@ int main(int argc, char **argv) {
 
         viszualize_particles(posearray_pub, particles);
         printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+	count++;
     }
     return 0;
 }
