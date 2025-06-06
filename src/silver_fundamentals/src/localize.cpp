@@ -135,14 +135,13 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
     printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
 
     for (auto &p: particles) {
-        // Add noise to the odometry values
-        const double delta_rot1_hat = delta_rot1 + sample_normal(
-                                          ALPHA1 * pow(delta_rot1, 2) + ALPHA2 * delta_trans * delta_trans);
-        const double delta_trans_hat = delta_trans + sample_normal(
-                                           ALPHA3 * pow(delta_trans, 2) + ALPHA4 * (
-                                               pow(delta_rot1, 2) + pow(delta_rot2, 2)));
-        const double delta_rot2_hat = delta_rot2 + sample_normal(
-                                          ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2));
+        const double var_rot1 = ALPHA1 * pow(delta_rot1, 2) + ALPHA2 * delta_trans * delta_trans;
+        const double var_trans = ALPHA3 * pow(delta_trans, 2) + ALPHA4 * (
+                                               pow(delta_rot1, 2) + pow(delta_rot2, 2));
+        const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);       // Add noise to the odometry values
+        const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
+        const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
+        const double delta_rot2_hat = delta_rot2 + sample_normal(std::sqrt(var_rot2));
 
 
         p.position.x += delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat);
