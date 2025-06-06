@@ -179,7 +179,7 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
     publish_high_res_walls(nh);
     ros::Duration(0.5).sleep();
 }
-
+#pragma GCC optimize ("O0")
 bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map) {
     std::ifstream in(filename);
     if (!in.is_open()) {
@@ -332,7 +332,7 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             /* closest_wall_dist is now either set if wall were there or infinity if not */
             const double dist2 = closest_wall_dist * closest_wall_dist;
             //printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
-            field[current_row][current_col] = std::exp(-dist2 / (2 * sigma_value * sigma_value));
+            field[current_row][current_col] = std::max(0.05,std::exp(-dist2 / (2 * sigma_value * sigma_value)));
         }
     }
 }

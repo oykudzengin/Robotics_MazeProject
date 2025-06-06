@@ -23,13 +23,13 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 30.0
-#define AMOUNT_OF_RAYS 10
-#define AMOUNT_OF_PARTICLES 500
-#define AMOUNT_RANDOM_INJECTIONS 25
-#define PROBABILITY_RANDOM_INJECTIONS 0.0001
-#define ALPHA1 0.1 //rotation noise
-#define ALPHA2 0.1 //rotation noise related to translation
+#define SIGMA 32.0
+#define AMOUNT_OF_RAYS 20
+#define AMOUNT_OF_PARTICLES 600
+#define AMOUNT_RANDOM_INJECTIONS 30
+#define PROBABILITY_RANDOM_INJECTIONS 0.00001
+#define ALPHA1 0.3 //rotation noise
+#define ALPHA2 0.15 //rotation noise related to translation
 #define ALPHA3 0.05 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
@@ -56,7 +56,7 @@ struct Particle {
         p.position.x = -ux(gen);
         p.position.y = -uy(gen);
         p.position.theta = utheta(gen);
-        p.weight = 2.0;
+        p.weight = 10000;
 
         return p;
     }
@@ -107,7 +107,8 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-        particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
+        // particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
+	particle.weight = weight;
     }
 }
 
@@ -127,7 +128,7 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
     const double local_dx = delta_trans * std::sin(delta_rot / 2.0);
     const double local_dy = delta_trans * std::cos(delta_rot / 2.0);
 
-    const double delta_rot1 = /* std::atan2(local_dx, local_dy); */ 0.5 * delta_rot;
+    const double delta_rot1 = std::atan2(local_dx, local_dy); /*  0.5 * delta_rot; */
     const double delta_rot2 = delta_rot - delta_rot1;
 
     // printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
