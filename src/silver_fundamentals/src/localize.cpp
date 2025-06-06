@@ -121,7 +121,7 @@ double sample_normal(double std_dev) {
     return dist(gen);
 }
 
-void particle_odometry_update(LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, const double delta_right,
+void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, const double delta_right,
                               const double delta_left) {
     const double delta_right_m = delta_right * WHEEL_RADIUS / 100;
     const double delta_left_m = delta_left * WHEEL_RADIUS / 100;

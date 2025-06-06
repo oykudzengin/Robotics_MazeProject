@@ -16,7 +16,7 @@ public:
 
     LikelihoodField(ros::NodeHandle &nh, const std::string &filename, double sigma);
 
-    static bool parse_file_lowres(const std::string &filename);
+    static bool parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;

@@ -172,16 +172,16 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
 
 
 
-    parse_file_lowres(filename);
-    build_lookup_map(lowres_map);
+    std::vector<std::vector<unsigned int>> initial_map;
+    parse_file_lowres(filename, initial_map);
+    build_lookup_map(initial_map);
 
-    publish_low_res_walls(nh, lowres_pub, lowres_map);
     publish_high_res_walls(nh);
     ros::Duration(0.5).sleep();
 }
 #pragma GCC optimize ("O0")
-bool LikelihoodField::parse_file_lowres(const std::string &filename) {
-    std::vector<std::vector<unsigned int> > &map = lowres_map;
+bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map) {
+
     std::ifstream in(filename);
     if (!in.is_open()) {
         std::cerr << "Could not open file. " << filename << "\n";
