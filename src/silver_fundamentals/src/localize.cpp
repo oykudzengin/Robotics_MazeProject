@@ -148,14 +148,14 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
         p.position.y += delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat);
         p.position.theta += delta_rot1_hat + delta_rot2_hat;
 
-	if ((int)(p.position.x * 100.0) % 80 < 10)
-		p.position.x += (double)((int)(p.position.x * 100.0)/80*80+10)/100.0;
-	if ((int)(p.position.y * 100.0) % 80 < 10)
-		p.position.y += (double)((int)(p.position.y * 100.0)/80*80+10)/100.0;
-	if ((int)(p.position.x * 100.0) % 80 > 70)
-		p.position.x += (double)((int)(p.position.x * 100.0)/80*80+70)/100.0;
-	if ((int)(p.position.y * 100.0) % 80 > 70)
-		p.position.y += (double)((int)(p.position.y * 100.0)/80*80+70)/100.0;
+	if (static_cast<int>(p.position.x * 100.0) % 80 < 10)
+		p.position.x = static_cast<double>(static_cast<int>(p.position.x * 100.0) / 80 * 80 + 10)/100.0;
+	if (static_cast<int>(p.position.y * 100.0) % 80 < 10)
+		p.position.y = static_cast<double>(static_cast<int>(p.position.y * 100.0) / 80 * 80 + 10)/100.0;
+	if (static_cast<int>(p.position.x * 100.0) % 80 > 70)
+		p.position.x = static_cast<double>(static_cast<int>(p.position.x * 100.0) / 80 * 80 + 70)/100.0;
+	if (static_cast<int>(p.position.y * 100.0) % 80 > 70)
+		p.position.y = static_cast<double>(static_cast<int>(p.position.y * 100.0) / 80 * 80 + 70)/100.0;
     }
 }
 
