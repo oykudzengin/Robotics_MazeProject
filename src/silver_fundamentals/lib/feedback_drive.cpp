@@ -463,3 +463,98 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
     return 0;
 }
 
+bool FeedbackDrive::drive_n_cm_async(double n) {
+    // First call: initialize baseline and start driving
+    if (!async_moving) {
+        // Read current encoder values
+        drive_data_client.call(drive_data_srv);
+        encoder_base_line_l = drive_data_srv.response.left_encoder;
+        encoder_base_line_r = drive_data_srv.response.right_encoder;
+        // Compute target distance in radians
+        target_distance_rad = n / wheel_radius;
+        // Command robot to drive forward
+        drive_srv.request.left = speed;
+        drive_srv.request.right = speed;
+        drive_client.call(drive_srv);
+        // Mark as active
+        async_moving = true;
+        // Still driving
+        return true;
+    } else {
+        // Subsequent calls: check encoder deltas
+        drive_data_client.call(drive_data_srv);
+        double left_delta = drive_data_srv.response.left_encoder - encoder_base_line_l;
+        double right_delta = drive_data_srv.response.right_encoder - encoder_base_line_r;
+        double current_rad_distance = (left_delta + right_delta) / 2.0;
+        // If not yet reached the target, keep driving
+        if (current_rad_distance < target_distance_rad) {
+            return true;
+        } else {
+            // Stop the robot and clear the async flag
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            async_moving = false;
+            // Motion complete
+            return false;
+        }
+    }
+}
+
+
+bool FeedbackDrive::turn_n_degrees_async(double n, direction d) {
+    // First call: initialize baseline and start turning
+    if (!async_turning) {
+        // Read current encoder values
+        drive_data_client.call(drive_data_srv);
+        encoder_base_line_l = drive_data_srv.response.left_encoder;
+        encoder_base_line_r = drive_data_srv.response.right_encoder;
+        // Compute target turn distance in radians
+        target_turn_rad = (n * wheel_base * PI) / (360.0 * wheel_radius);
+        // Command robot to turn in place based on direction
+        if (d == left) {
+            drive_srv.request.left = -speed;
+            drive_srv.request.right = speed;
+        } else if (d == right) {
+            drive_srv.request.left = speed;
+            drive_srv.request.right = -speed;
+        } else {
+            // No direction: do nothing
+            return false;
+        }
+        drive_client.call(drive_srv);
+        // Mark as active
+        async_turning = true;
+        // Still turning
+        return true;
+    } else {
+        // Subsequent calls: check encoder deltas
+        drive_data_client.call(drive_data_srv);
+        double left_delta = std::abs(drive_data_srv.response.left_encoder - encoder_base_line_l);
+        double right_delta = std::abs(drive_data_srv.response.right_encoder - encoder_base_line_r);
+        double current_rad_distance = (left_delta + right_delta) / 2.0;
+        // If not yet reached the target, keep turning
+        if (current_rad_distance < target_turn_rad) {
+            return true;
+        } else {
+            // Stop the robot and clear the async flag
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            async_turning = false;
+            // Turn complete
+            return false;
+        }
+    }
+}
+
+bool FeedbackDrive::reset_encoder_base_lines() {
+    // Read and store current encoder readings as the new baselines
+    drive_data_client.call(drive_data_srv);
+    encoder_base_line_l = drive_data_srv.response.left_encoder;
+    encoder_base_line_r = drive_data_srv.response.right_encoder;
+    async_moving = false;
+    return true;
+}
+
+

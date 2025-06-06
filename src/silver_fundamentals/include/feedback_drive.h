@@ -23,10 +23,24 @@ class FeedbackDrive {
 
         geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
 
+        // Async drive/turn
+        bool drive_n_cm_async(double n);
+        bool turn_n_degrees_async(double n, direction d);
+        bool reset_encoder_base_lines();
+
     private:
         double wheel_radius;
         double wheel_base;
         double speed;
+
+        // Async drive and turn vars 
+        double encoder_base_line_r;
+        double encoder_base_line_l;
+        double target_distance_rad;
+        bool async_moving = false;
+        double target_turn_rad;
+        bool async_turning = false;
+
 
 
         std::array<double, LIDAR_POINTS> hitbox;
