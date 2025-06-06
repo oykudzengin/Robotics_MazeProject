@@ -23,15 +23,15 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 10.0
+#define SIGMA 40.0
 #define AMOUNT_OF_RAYS 10
 #define AMOUNT_OF_PARTICLES 500
-#define AMOUNT_RANDOM_INJECTIONS 1
-#define PROBABILITY_RANDOM_INJECTIONS 0.0001
-#define ALPHA1 1.0 //rotation noise
-#define ALPHA2 1.0 //rotation noise related to translation
-#define ALPHA3 2.0 //translation noise
-#define ALPHA4 2.0 //translation noise related to rotation
+#define AMOUNT_RANDOM_INJECTIONS 25
+#define PROBABILITY_RANDOM_INJECTIONS 0.05
+#define ALPHA1 0.05 //rotation noise
+#define ALPHA2 0.05 //rotation noise related to translation
+#define ALPHA3 0.05 //translation noise
+#define ALPHA4 0.05 //translation noise related to rotation
 
 #define K_ATT 10.0
 #define K_REP 0.01
@@ -107,8 +107,6 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-        if (weight < 1 || weight > 0)
-            ROS_INFO("weight is %f", weight);
         particle.weight = weight;
     }
 }
@@ -132,7 +130,7 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
     const double delta_rot1 = /* std::atan2(local_dx, local_dy); */ 0.5 * delta_rot;
     const double delta_rot2 = delta_rot - delta_rot1;
 
-    printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
+    // printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
 
     for (auto &p: particles) {
         const double var_rot1 = ALPHA1 * pow(delta_rot1, 2) + ALPHA2 * delta_trans * delta_trans;
