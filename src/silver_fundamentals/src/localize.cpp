@@ -23,11 +23,11 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 32.0
+#define SIGMA 50.0
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
 #define AMOUNT_RANDOM_INJECTIONS 30
-#define PROBABILITY_RANDOM_INJECTIONS 0.00001
+#define PROBABILITY_RANDOM_INJECTIONS 0.0001
 #define ALPHA1 0.3 //rotation noise
 #define ALPHA2 0.15 //rotation noise related to translation
 #define ALPHA3 0.05 //translation noise
@@ -147,6 +147,15 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
         p.position.x += delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat);
         p.position.y += delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat);
         p.position.theta += delta_rot1_hat + delta_rot2_hat;
+
+	if ((int)(p.position.x * 100.0) % 80 < 10)
+		p.position.x += (double)((int)(p.position.x * 100.0)/80*80+10)/100.0;
+	if ((int)(p.position.y * 100.0) % 80 < 10)
+		p.position.y += (double)((int)(p.position.y * 100.0)/80*80+10)/100.0;
+	if ((int)(p.position.x * 100.0) % 80 > 70)
+		p.position.x += (double)((int)(p.position.x * 100.0)/80*80+70)/100.0;
+	if ((int)(p.position.y * 100.0) % 80 > 70)
+		p.position.y += (double)((int)(p.position.y * 100.0)/80*80+70)/100.0;
     }
 }
 
@@ -334,7 +343,7 @@ int main(int argc, char **argv) {
             ROS_ERROR("encoder service call failed");
 
         // do driving
-	if (count % 5 == 0) {
+	if (count % 4 == 0) {
 	
 		geometry_msgs::Point current, goal;
 		current.x = 0; current.y = 0; current.z = 0;
