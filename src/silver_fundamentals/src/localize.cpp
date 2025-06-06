@@ -23,14 +23,14 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 50.0
+#define SIGMA 45.0
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
-#define AMOUNT_RANDOM_INJECTIONS 30
-#define PROBABILITY_RANDOM_INJECTIONS 0.0001
-#define ALPHA1 0.3 //rotation noise
-#define ALPHA2 0.15 //rotation noise related to translation
-#define ALPHA3 0.05 //translation noise
+#define AMOUNT_RANDOM_INJECTIONS 1.0
+#define PROBABILITY_RANDOM_INJECTIONS 0.005
+#define ALPHA1 0.2 //rotation noise
+#define ALPHA2 0.1 //rotation noise related to translation
+#define ALPHA3 0.1 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
 #define K_ATT 10.0
@@ -38,6 +38,8 @@
 #define NO_EFFECTION_POT_FIELDS 0.35
 #define ROT_RATE 0.03
 #define BASE_SPEED 4.0
+
+#define MINIMAL_WALL_DIST 2
 
 
 static std::random_device rd;
@@ -111,8 +113,8 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
             weight *= ray_weight;
         }
-        // particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
-	particle.weight = weight;
+        particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
+	// particle.weight = weight;
     }
 }
 
@@ -157,7 +159,7 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
         temp.y = p.position.y;
         temp.z = 0;
 
-        if (lhf.get_field_value(temp) < 0.1) {
+        if (lhf.get_field_value(temp) < MINIMAL_WALL_DIST) {
             p.weight = -1;
         }
     }
@@ -167,14 +169,17 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     constexpr double injection_probability = AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS; // probably wrong
 
     std::vector<double> masses;
-    masses.reserve(AMOUNT_OF_PARTICLES + 1);
+    masses.reserve(AMOUNT_OF_PARTICLES);
     for (const auto &particle: particles)
         masses.push_back(particle.weight);
-    masses.push_back(injection_probability);
+    // masses.push_back(injection_probability);
     std::discrete_distribution<int> sampler(masses.begin(), masses.end());
-
     std::array<Particle, AMOUNT_OF_PARTICLES> new_particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
+	if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
+	    new_particles[i] = Particle::random(lhf);
+            continue;
+	}
         const int idx = sampler(gen);
         if (idx == AMOUNT_OF_PARTICLES)
             new_particles[i] = Particle::random(lhf);
