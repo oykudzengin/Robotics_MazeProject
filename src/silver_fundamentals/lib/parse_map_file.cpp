@@ -171,16 +171,17 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
     highres_pub = nh.advertise<nav_msgs::OccupancyGrid>("highres_map", 1, true);
 
 
-    std::vector<std::vector<unsigned int>> initial_map;
-    parse_file_lowres(filename, initial_map);
-    build_lookup_map(initial_map);
 
-    publish_low_res_walls(nh, lowres_pub, initial_map);
+    parse_file_lowres(filename);
+    build_lookup_map(lowres_map);
+
+    publish_low_res_walls(nh, lowres_pub, lowres_map);
     publish_high_res_walls(nh);
     ros::Duration(0.5).sleep();
 }
 #pragma GCC optimize ("O0")
-bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map) {
+bool LikelihoodField::parse_file_lowres(const std::string &filename) {
+    std::vector<std::vector<unsigned int> > &map = lowres_map;
     std::ifstream in(filename);
     if (!in.is_open()) {
         std::cerr << "Could not open file. " << filename << "\n";
@@ -244,6 +245,7 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
     const int lookup_grid_col_count = col_count * cell_size + 2 * buffer_size;
 
     field.assign(lookup_grid_row_count, std::vector<double>(lookup_grid_col_count, 0));
+    dist_field.assign(lookup_grid_row_count, std::vector<double>(lookup_grid_col_count, 0));
 
     ROS_INFO("got %d rows, %d cols, translating to highres %d rows %d cols\n", row_count, col_count,
              lookup_grid_row_count, lookup_grid_col_count);
@@ -333,6 +335,7 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             const double dist2 = closest_wall_dist * closest_wall_dist;
             //printf("%f %f has %f\n", global_space_point.y, global_space_point.x, dist2);
             field[current_row][current_col] = std::max(0.1,std::exp(-dist2 / (2 * sigma_value * sigma_value)));
+            dist_field[current_row][current_col] = closest_wall_dist;
         }
     }
 }
@@ -344,7 +347,7 @@ double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space
     if (real_x < 0 || real_y < 0 || real_x >= cell_size * col_count + 2 * buffer_size || real_y >= cell_size *
         row_count + 2 * buffer_size)
         return std::numeric_limits<double>::infinity();
-    return field[real_y][real_x];
+    return dist_field[real_y][real_x];
 }
 
 double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_space_point) const {

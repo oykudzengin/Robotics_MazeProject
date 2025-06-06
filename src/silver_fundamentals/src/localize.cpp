@@ -101,6 +101,10 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
                      std::vector<geometry_msgs::Point> &measurements) {
     for (auto &particle: particles) {
+        if (particle.weight < 0) {
+            particle.weight = 0;
+            continue;
+        }
         double weight = 1;
         for (auto &measurement: measurements) {
             geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
@@ -117,7 +121,7 @@ double sample_normal(double std_dev) {
     return dist(gen);
 }
 
-void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particles, const double delta_right,
+void particle_odometry_update(LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, const double delta_right,
                               const double delta_left) {
     const double delta_right_m = delta_right * WHEEL_RADIUS / 100;
     const double delta_left_m = delta_left * WHEEL_RADIUS / 100;
@@ -148,35 +152,13 @@ void particle_odometry_update(std::array<Particle, AMOUNT_OF_PARTICLES> &particl
         p.position.y += delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat);
         p.position.theta += delta_rot1_hat + delta_rot2_hat;
 
-        int xi = static_cast<int>(std::floor(p.position.x * 100.0));
-        int yi = static_cast<int>(std::floor(p.position.y * 100.0));
+        geometry_msgs::Point temp;
+        temp.x = p.position.x;
+        temp.y = p.position.y;
+        temp.z = 0;
 
-        // Compute non‐negative remainders mod 80
-        int rem_x = ((xi % 80) + 80) % 80;
-        int rem_y = ((yi % 80) + 80) % 80;
-
-        // Snap X
-        if (rem_x < 10) {
-            int block = (xi - rem_x) / 80;   // integer division toward −∞ now
-            xi = block * 80 + 10;            // move to “10” within that block
-            p.position.x = xi / 100.0;       // back to meters
-        }
-        else if (rem_x > 70) {
-            int block = (xi - rem_x) / 80;
-            xi = block * 80 + 70;            // move to “70” within that block
-            p.position.x = xi / 100.0;
-        }
-
-        // Snap Y
-        if (rem_y < 10) {
-            int block = (yi - rem_y) / 80;
-            yi = block * 80 + 10;
-            p.position.y = yi / 100.0;
-        }
-        else if (rem_y > 70) {
-            int block = (yi - rem_y) / 80;
-            yi = block * 80 + 70;
-            p.position.y = yi / 100.0;
+        if (lhf.get_field_value(temp) < 0.1) {
+            p.weight = -1;
         }
     }
 }
@@ -377,21 +359,21 @@ int main(int argc, char **argv) {
 		drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
 		drive_client.call(drive_srv);
 	}
-        // do sleep
-        rate.sleep();
-        // do odometry adjustment
-        while (!drive_data_client.call(encoder_srv))
-            ROS_ERROR("encoder service call failed");
+    // do sleep
+    rate.sleep();
+    // do odometry adjustment
+    while (!drive_data_client.call(encoder_srv))
+        ROS_ERROR("encoder service call failed");
 
-        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
-        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
-        curr_right_encoder = encoder_srv.response.right_encoder;
-        curr_left_encoder = encoder_srv.response.left_encoder;
+    double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+    double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+    curr_right_encoder = encoder_srv.response.right_encoder;
+    curr_left_encoder = encoder_srv.response.left_encoder;
 
-        particle_odometry_update(particles, right_encoder_delta, left_encoder_delta);
+    particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
-        viszualize_particles(posearray_pub, particles);
-        printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+    viszualize_particles(posearray_pub, particles);
+    printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
 	count++;
     }
     return 0;

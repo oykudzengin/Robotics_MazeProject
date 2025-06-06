@@ -16,19 +16,21 @@ public:
 
     LikelihoodField(ros::NodeHandle &nh, const std::string &filename, double sigma);
 
-    static bool parse_file_lowres(const std::string &filename, std::vector <std::vector<unsigned int>> &map);
+    static bool parse_file_lowres(const std::string &filename);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;
     int get_row_count() const {return row_count;};
     int get_col_count() const {return col_count;};
     int get_cell_size() const {return cell_size;};
+    std::vector<std::vector<unsigned int>> lowres_map;
 private:
     enum CellWall {
         TOP = 1 << 0, RIGHT = 1 << 1, BOTTOM = 1 << 2, LEFT = 1 << 3
     };
 
     std::vector<std::vector<double>> field;
+    std::vector<std::vector<double>> dist_field;
     double sigma_value;
     int row_count;
     int col_count;
