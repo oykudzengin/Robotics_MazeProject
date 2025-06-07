@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(silver_fundamentals)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals std_msgs
-        message_generation)
+        message_generation geometry_msgs)
 
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
@@ -42,6 +42,7 @@ add_service_files(
         DriveData.srv
         ResetEncoders.srv
         ExecutePlan.srv
+        Com.srv
 )
 
 #common commands for building c++ executables and libraries
@@ -60,13 +61,13 @@ add_service_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-        DEPENDENCIES std_msgs create_fundamentals
+        DEPENDENCIES std_msgs create_fundamentals geometry_msgs
 )
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
         DEPENDS python-serial
-        CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime
+        CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime geometry_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -94,6 +95,10 @@ add_dependencies(laser_server create_fundamentals_generate_messages_cpp silver_f
 add_executable(drive_server lib/drive_server.cpp)
 target_link_libraries(drive_server ${catkin_LIBRARIES})
 add_dependencies(drive_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+
+add_executable(comm_node src/com_node.cpp)
+target_link_libraries(comm_node ${catkin_LIBRARIES})
+add_dependencies(comm_node create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
 # add_executable(square_no_sensors src/square_no_sensors.cpp)
 # target_link_libraries(square_no_sensors ${catkin_LIBRARIES})

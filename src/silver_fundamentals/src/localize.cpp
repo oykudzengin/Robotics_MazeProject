@@ -23,6 +23,8 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <LocalizeCommunication.h>
+
 #define SIGMA 45.0
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
@@ -71,6 +73,29 @@ struct Particle {
         return p;
     }
 };
+
+// localaise communication to execute plan server 
+namespace silver_fundamentals {
+    PlanSuccessState success_state = PlanSuccessState::NONE;
+    std::vector<geometry_msgs::Point> com_waypoints;
+    bool plan_exits = false;
+}
+
+// --- Localization state and flags ---
+static bool localized_flag = false;     // true once localisation is achieved
+static bool alignment_state = false;    // true once alignment step is complete
+
+enum class LocalizeState {
+    LOCALISING,               // initial scanning/localising
+    ALIGNING_ANGLE,           // adjusting orientation
+    ALIGNING_DRIVE,           // driving into alignment position
+    ALIGNING_ANGLE_ORIENT,    // final fine-angle orient
+    WAIT_FOR_PLAN_RECEIVED,   // waiting for plan input (localise without drive)
+    EXECUTING_PLAN            // carrying out received plan
+};
+
+static LocalizeState localize_state = LocalizeState::LOCALISING;
+
 
 
 std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_client) {
@@ -311,6 +336,8 @@ void viszualize_particles(
 }
 
 int main(int argc, char **argv) {
+
+    // set start state 
     ros::init(argc, argv, "localize");
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
@@ -340,6 +367,8 @@ int main(int argc, char **argv) {
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
+
+    // localise wnaderer
     while (ros::ok()) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
@@ -352,34 +381,59 @@ int main(int argc, char **argv) {
             ROS_ERROR("encoder service call failed");
 
         // do driving
-	if (count % 4 == 0) {
-	
-		geometry_msgs::Point current, goal;
-		current.x = 0; current.y = 0; current.z = 0;
-		goal.x = 0; goal.y = 1; goal.z = 0;
-		const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
-		double angle = std::atan2(field_vector.x, field_vector.y);
-		double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-		drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
-		drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
-		drive_client.call(drive_srv);
-	}
-    // do sleep
-    rate.sleep();
-    // do odometry adjustment
-    while (!drive_data_client.call(encoder_srv))
-        ROS_ERROR("encoder service call failed");
+        if (count % 4 == 0) {
+        
+            geometry_msgs::Point current, goal;
+            current.x = 0; current.y = 0; current.z = 0;
+            goal.x = 0; goal.y = 1; goal.z = 0;
+            const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+            double angle = std::atan2(field_vector.x, field_vector.y);
+            double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+            drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+            drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
+            drive_client.call(drive_srv);
+        }
+        // do sleep
+        rate.sleep();
+        // do odometry adjustment
+        while (!drive_data_client.call(encoder_srv))
+            ROS_ERROR("encoder service call failed");
 
-    double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
-    double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
-    curr_right_encoder = encoder_srv.response.right_encoder;
-    curr_left_encoder = encoder_srv.response.left_encoder;
+        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+        curr_right_encoder = encoder_srv.response.right_encoder;
+        curr_left_encoder = encoder_srv.response.left_encoder;
 
-    particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
-    viszualize_particles(posearray_pub, particles);
-    printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
-	count++;
+        viszualize_particles(posearray_pub, particles);
+        printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+        count++;
     }
+
+    // aligment
+
+    // do turn to goal pos
+    // do drive to goal pos
+    // do turn for final orient
+
+    // publish loc and orient to /pose 
+
+    // play sound 
+
+    // loop until executed a plan successfull 
+    // subscribe to topic and wait for call
+    
+
+    // execute plan with loc 
+
+
+
+
+
+
+
+
+
     return 0;
 }
