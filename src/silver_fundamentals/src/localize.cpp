@@ -24,6 +24,9 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <LocalizeCommunication.h>
+#include "silver_fundamentals/Pose.h"
+#include <silver_fundamentals/Com.h>
+
 
 #define SIGMA 45.0
 #define AMOUNT_OF_RAYS 20
@@ -42,6 +45,9 @@
 #define BASE_SPEED 4.0
 
 #define MINIMAL_WALL_DIST 2
+
+// chek if localised threshold
+#define var_threshold 0.0
 
 
 static std::random_device rd;
@@ -90,7 +96,7 @@ enum class LocalizeState {
     ALIGNING_ANGLE,           // adjusting orientation
     ALIGNING_DRIVE,           // driving into alignment position
     ALIGNING_ANGLE_ORIENT,    // final fine-angle orient
-    WAIT_FOR_PLAN_RECEIVED,   // waiting for plan input (localise without drive)
+    WAIT_FOR_PLAN,   // waiting for plan input (localise without drive)
     EXECUTING_PLAN            // carrying out received plan
 };
 
@@ -344,6 +350,11 @@ int main(int argc, char **argv) {
            n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
     static ros::Publisher ray_pub =
         n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+    
+    // Publisher for Pose messages
+    static ros::Publisher pose_pub =
+        n.advertise<silver_fundamentals::Pose>("pose", 10);
+    
     auto rate = ros::Rate(10);
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
@@ -368,8 +379,13 @@ int main(int argc, char **argv) {
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
 
-    // localise wnaderer
-    while (ros::ok()) {
+    // Prepare comm service client and request
+    ros::ServiceClient comm_client = n.serviceClient<silver_fundamentals::Com>("comm");
+    silver_fundamentals::Com comm_srv;
+    comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+
+    // localise wanderer
+    while (ros::ok() && localize_state == LocalizeState::LOCALISING) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
@@ -409,30 +425,90 @@ int main(int argc, char **argv) {
         viszualize_particles(posearray_pub, particles);
         printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
         count++;
+
+        // Check if localised 
+            // calc variance
+        double variance = 0.0;
+        if (variance >= var_threshold) {
+            localize_state = LocalizeState::ALIGNING_ANGLE;
+        }
     }
 
     // aligment
-
     // do turn to goal pos
+
+    // get first aligment angel (turn to align point)
+    double angle = 0.0;
+    direction dir = left;
+
+    driver.turn_n_degrees_async(angle, dir);
+
+    // check if orient is good ?
+    localize_state = LocalizeState::ALIGNING_DRIVE;
+
     // do drive to goal pos
+
+    // get distance to align point 
+    double dist_to_align = 0.0;
+    driver.drive_n_cm_async(dist_to_align);
+
+    // check if distance to aling point  is good ?
+    localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
+
     // do turn for final orient
+
+    // get final aligment angel (turn to be correctly oriented at aling point)
+    angle = 0.0;
+    dir = left;
+
+    driver.turn_n_degrees_async(angle, dir);
+
+    // check if distance to aling point  is good ?
+    localize_state = LocalizeState::WAIT_FOR_PLAN;
 
     // publish loc and orient to /pose 
 
-    // play sound 
+    // get current x coordiante 
+    // get current y coordiante 
+    // get current orientaion 
 
-    // loop until executed a plan successfull 
-    // subscribe to topic and wait for call
+    // aprox x to column
+    int col = 0;
+
+    // aprox y to row 
+    int row = 0;
+
+    // aprox orient to 0-3 up, ldeft, dwon --- 
+    int final_orient = 0;
+
+    // TODO: publish to o /pose 
+    // create and publish Pose message
+    silver_fundamentals::Pose pose_msg;
+    pose_msg.row = row;
+    pose_msg.column = col;
+    pose_msg.orientation = final_orient;
+    pose_pub.publish(pose_msg);
+    ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+             pose_msg.row, pose_msg.column, pose_msg.orientation);
+
+
+    // TODO: play sound 
+
     
+    // wait for execute plan call
+    std::vector<geometry_msgs::Point> waypoints;
+    bool plan_exists_flag = false;
+    do {
+      if (!comm_client.call(comm_srv)) {
+        ROS_ERROR("localize: failed to call comm service for GET_DATA");
+        return 1;
+      }
+      plan_exists_flag = comm_srv.response.plan_exists;
+      waypoints = comm_srv.response.waypoints;
+      ros::Duration(0.1).sleep();
+    } while (ros::ok() && !plan_exists_flag);
 
-    // execute plan with loc 
-
-
-
-
-
-
-
+    // TODO: execute plan with loc 
 
 
     return 0;

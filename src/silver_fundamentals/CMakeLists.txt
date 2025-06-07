@@ -30,10 +30,11 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-# add_message_files(
-#         FILES
-# )
+## Message definitions
+add_message_files(
+  FILES
+  Pose.msg
+)
 #uncomment if you have defined services
 add_service_files(
         FILES
@@ -119,3 +120,8 @@ add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp s
 add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp)
 target_link_libraries(localize ${catkin_LIBRARIES})
 add_dependencies(localize create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+
+## Pose server node
+add_executable(pose_server src/pose_server.cpp)
+target_link_libraries(pose_server ${catkin_LIBRARIES})
+add_dependencies(pose_server silver_fundamentals_generate_messages_cpp)
