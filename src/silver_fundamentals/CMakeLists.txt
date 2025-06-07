@@ -115,6 +115,6 @@ add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_dri
 target_link_libraries(localize ${catkin_LIBRARIES})
 add_dependencies(localize create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(play_song1 lib/play_song1.cpp)
-add_dependencies(play_song1 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)
-target_link_libraries(play_song1 ${catkin_LIBRARIES})
+add_executable(play_song lib/play_song.cpp)
+target_link_libraries(play_song ${catkin_LIBRARIES})
+add_dependencies(play_song ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)
