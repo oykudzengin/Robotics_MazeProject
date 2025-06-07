@@ -157,7 +157,6 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
     } else {
     return false;
     }
-    
 }
 
 

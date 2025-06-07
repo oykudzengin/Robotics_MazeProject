@@ -49,6 +49,11 @@
 // chek if localised threshold
 #define var_threshold 0.0
 
+int col;
+int row;
+int final_orient; //  RIGHT = 0, UP = 1, LEFT = 2, DOWN = 3
+
+std::vector<geometry_msgs::Point> waypoints;
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
@@ -98,7 +103,8 @@ enum class LocalizeState {
     ALIGNING_ANGLE_ORIENT,    // final fine-angle orient
     WAIT_FOR_PLAN,   // waiting for plan input (localise without drive)
     EXECUTING_PLAN,            // carrying out received plan
-    EXECUTED_PLAN
+    EXECUTED_PLAN_FAIL,
+    EXECUTED_PLAN_SUC
 };
 
 static LocalizeState localize_state = LocalizeState::LOCALISING;
@@ -342,6 +348,28 @@ void viszualize_particles(
     marker_pub.publish(markers);
 }
 
+void approx_current_pos(double x, double y, double angle) {
+    // Each cell is 80cm = 0.8m
+    // Convert x and y to positive values before casting to int
+    col = static_cast<int>(std::round(x / 0.8));
+    row = static_cast<int>(std::round(y / 0.8));
+
+    // Normalize angle to range [-PI, PI]
+    while (angle > PI) angle -= 2 * PI;
+    while (angle <= -PI) angle += 2 * PI;
+
+    // TODO: Check that Determine orientation
+    if (angle > -PI/4 && angle <= PI/4) {
+        final_orient = 0; // RIGHT
+    } else if (angle > PI/4 && angle <= 3*PI/4) {
+        final_orient = 1; // UP
+    } else if (angle > -3*PI/4 && angle <= -PI/4) {
+        final_orient = 3; // DOWN
+    } else {
+        final_orient = 2; // LEFT
+    }
+}
+
 int main(int argc, char **argv) {
 
     // set start state 
@@ -385,192 +413,265 @@ int main(int argc, char **argv) {
     silver_fundamentals::Com comm_srv;
     comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
 
-    // localise wanderer
-    while (ros::ok() && localize_state == LocalizeState::LOCALISING) {
-        // do laser measurement
-        std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
-        compute_weights(lhf, particles, reference_measurements);
-        visualize_reference_rays(ray_pub, reference_measurements);
-        // do sampling
-        resample(lhf, particles);
-        // do drive init
-        while (!drive_data_client.call(encoder_srv))
-            ROS_ERROR("encoder service call failed");
+    // main loop 
+    while (ros::ok()) {
 
-        // do driving
-        if (count % 4 == 0) {
-        
-            geometry_msgs::Point current, goal;
-            current.x = 0; current.y = 0; current.z = 0;
-            goal.x = 0; goal.y = 1; goal.z = 0;
-            const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
-            double angle = std::atan2(field_vector.x, field_vector.y);
-            double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-            drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
-            drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
-            drive_client.call(drive_srv);
-        }
-        // do sleep
-        rate.sleep();
-        // do odometry adjustment
-        while (!drive_data_client.call(encoder_srv))
-            ROS_ERROR("encoder service call failed");
+        switch (localize_state)
+        {
+        case LocalizeState::LOCALISING:{
+            // do laser measurement
+            std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
+            compute_weights(lhf, particles, reference_measurements);
+            visualize_reference_rays(ray_pub, reference_measurements);
+            // do sampling
+            resample(lhf, particles);
+            // do drive init
+            while (!drive_data_client.call(encoder_srv))
+                ROS_ERROR("encoder service call failed");
 
-        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
-        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
-        curr_right_encoder = encoder_srv.response.right_encoder;
-        curr_left_encoder = encoder_srv.response.left_encoder;
+            // do driving
+            if (count % 4 == 0) {
+            
+                geometry_msgs::Point current, goal;
+                current.x = 0; current.y = 0; current.z = 0;
+                goal.x = 0; goal.y = 1; goal.z = 0;
+                const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                double angle = std::atan2(field_vector.x, field_vector.y);
+                double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+                drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+                drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
+                drive_client.call(drive_srv);
+            }
+            // do sleep
+            rate.sleep();
+            // do odometry adjustment
+            while (!drive_data_client.call(encoder_srv))
+                ROS_ERROR("encoder service call failed");
 
-        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+            double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+            double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+            curr_right_encoder = encoder_srv.response.right_encoder;
+            curr_left_encoder = encoder_srv.response.left_encoder;
 
-        viszualize_particles(posearray_pub, particles);
-        printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
-        count++;
+            particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
-        // Check if localised 
-            // calc variance
-        double variance = 0.0;
-        if (variance >= var_threshold) {
-            localize_state = LocalizeState::ALIGNING_ANGLE;
+            viszualize_particles(posearray_pub, particles);
+            printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+            count++;
+
+            // Check if localised 
+                // calc variance
+            double variance = 0.0;
+            if (variance >= var_threshold) {
+                localize_state = LocalizeState::ALIGNING_ANGLE;
+                break;
+            }
+            
+
+        } case LocalizeState::ALIGNING_ANGLE: {
+            // do turn to goal pos
+            // get first aligment angel (turn to align point)
+            double angle = 0.0;
+            direction dir = left;
+            driver.turn_n_degrees_async(angle, dir);
+            // check if orient is good ?
+            localize_state = LocalizeState::ALIGNING_DRIVE;
+            break;
+
+        } case LocalizeState::ALIGNING_DRIVE: {
+            // do drive to goal pos
+            // get distance to align point 
+            double dist_to_align = 0.0;
+            driver.drive_n_cm_async(dist_to_align);
+            // check if distance to aling point  is good ?
+            localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
+            break;
+            
+        } case LocalizeState::ALIGNING_ANGLE_ORIENT: {
+            // do turn for final orient
+            // get final aligment angel (turn to be correctly oriented at aling point)
+            double angle = 0.0;
+            direction dir = left;
+
+            driver.turn_n_degrees_async(angle, dir);
+
+            // check if distance to aling point  is good ?
+            localize_state = LocalizeState::WAIT_FOR_PLAN;
+            break;
+            
+        } case LocalizeState::WAIT_FOR_PLAN: {
+            // get current pos and loc and
+            // publish loc and orient to /pose 
+
+            // get current x coordiante 
+            // get current y coordiante 
+            // get current orientaion 
+
+            // aprox x to column
+            int col = 0;
+
+            // aprox y to row 
+            int row = 0;
+
+            // aprox orient to 0-3 up, ldeft, dwon --- 
+            int final_orient = 0;
+
+            // TODO: publish to o /pose 
+            // create and publish Pose message
+            silver_fundamentals::Pose pose_msg;
+            pose_msg.row = row;
+            pose_msg.column = col;
+            pose_msg.orientation = final_orient;
+            pose_pub.publish(pose_msg);
+            ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                    pose_msg.row, pose_msg.column, pose_msg.orientation);
+
+
+            // TODO: play localized sound 
+
+            
+            // wait for execute plan call
+            comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+            bool plan_exists_flag = false;
+            do {
+            if (!comm_client.call(comm_srv)) {
+                ROS_ERROR("localize: failed to call comm service for GET_DATA");
+                return 1;
+            }
+            plan_exists_flag = comm_srv.response.plan_exists;
+            waypoints = comm_srv.response.waypoints;
+            ros::Duration(0.1).sleep();
+            } while (ros::ok() && !plan_exists_flag);
+            localize_state = LocalizeState::EXECUTING_PLAN;
+            break;
+            
+        } case  LocalizeState::EXECUTING_PLAN: {
+            // TODO: execute plan with loc 
+            // for (size_t i = 0; i < waypoints.size(); ++i) {
+            //     const auto& waypoint = waypoints[i];
+            // }
+
+            for (const auto& waypoint : waypoints) {
+                do {
+                    // do laser measurement
+                    std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
+                    compute_weights(lhf, particles, reference_measurements);
+                    visualize_reference_rays(ray_pub, reference_measurements);
+                    // do sampling
+                    resample(lhf, particles);
+                    // do drive init
+                    while (!drive_data_client.call(encoder_srv))
+                        ROS_ERROR("encoder service call failed");
+
+                    // do driving
+                    if (count % 4 == 0) {
+                    
+                        geometry_msgs::Point current, goal;
+                        current.x = 0; current.y = 0; current.z = 0;
+                        goal.x = waypoint.x; goal.y = waypoint.y; goal.z = waypoint.z;
+                        const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                        double angle = std::atan2(field_vector.x, field_vector.y);
+                        double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+                        drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+                        drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
+                        drive_client.call(drive_srv);
+                    }
+                    // do sleep
+                    rate.sleep();
+                    // do odometry adjustment
+                    while (!drive_data_client.call(encoder_srv))
+                        ROS_ERROR("encoder service call failed");
+
+                    double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+                    double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+                    curr_right_encoder = encoder_srv.response.right_encoder;
+                    curr_left_encoder = encoder_srv.response.left_encoder;
+
+                    particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+
+                    viszualize_particles(posearray_pub, particles);
+                    printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+                    count++;
+
+                    // TODO: alter Check if localised 
+                        // calc variance
+                    double variance = 0.0;
+                    if (variance >= var_threshold) {
+                        localize_state = LocalizeState::ALIGNING_ANGLE; // TODO ????????
+                    }
+                } while(ros::ok() ); //&& std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > goal.z);
+                
+            }
+
+            // loop around the for loop ? 
+            do {
+
+            } while (ros::ok() && localize_state == LocalizeState::EXECUTING_PLAN);
+
+            // get current pos and loc and
+            // publish loc and orient to /pose 
+
+            // get current x coordiante 
+            // get current y coordiante 
+            // get current orientaion 
+
+            // aprox x to column
+            int col = 0;
+
+            // aprox y to row 
+            int row = 0;
+
+            // aprox orient to 0-3 up, ldeft, dwon --- 
+            int final_orient = 0;
+
+            // TODO: publish to o /pose 
+            // create and publish Pose message
+            silver_fundamentals::Pose pose_msg;
+            pose_msg.row = row;
+            pose_msg.column = col;
+            pose_msg.orientation = final_orient;
+            pose_pub.publish(pose_msg);
+            ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                    pose_msg.row, pose_msg.column, pose_msg.orientation);
+            break;
+
+        } case LocalizeState::EXECUTED_PLAN_FAIL: {
+            // play failed sound
+
+            // create empty waypoints vector;
+            std::vector<geometry_msgs::Point> empty_waypoints = {};
+            comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+            comm_srv.request.success_state = static_cast<uint8_t>(
+                                silver_fundamentals::PlanSuccessState::PLAN_FAILED);
+            comm_srv.request.plan_exists = false;
+            comm_srv.request.waypoints = empty_waypoints;
+
+            // Call the service
+            if (!comm_client.call(comm_srv)) {
+            ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+            }
+
+            localize_state == LocalizeState::WAIT_FOR_PLAN;
+            break;
+
+        } case LocalizeState::EXECUTED_PLAN_SUC: {
+            // create empty waypoints vector so we cann call set data
+            std::vector<geometry_msgs::Point> empty_waypoints = {};
+            comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+            comm_srv.request.success_state = static_cast<uint8_t>(
+                                silver_fundamentals::PlanSuccessState::PLAN_DONE);
+            comm_srv.request.plan_exists = false;
+            comm_srv.request.waypoints = empty_waypoints;
+
+            // Call the service
+            if (!comm_client.call(comm_srv)) {
+            ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+            }
+            break;
+        } default:
+            break;
         }
     }
-
-    // aligment
-    // do turn to goal pos
-
-    // get first aligment angel (turn to align point)
-    double angle = 0.0;
-    direction dir = left;
-
-    driver.turn_n_degrees_async(angle, dir);
-
-    // check if orient is good ?
-    localize_state = LocalizeState::ALIGNING_DRIVE;
-
-    // do drive to goal pos
-
-    // get distance to align point 
-    double dist_to_align = 0.0;
-    driver.drive_n_cm_async(dist_to_align);
-
-    // check if distance to aling point  is good ?
-    localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
-
-    // do turn for final orient
-
-    // get final aligment angel (turn to be correctly oriented at aling point)
-    angle = 0.0;
-    dir = left;
-
-    driver.turn_n_degrees_async(angle, dir);
-
-    // check if distance to aling point  is good ?
-    localize_state = LocalizeState::WAIT_FOR_PLAN;
-
-    // publish loc and orient to /pose 
-
-    // get current x coordiante 
-    // get current y coordiante 
-    // get current orientaion 
-
-    // aprox x to column
-    int col = 0;
-
-    // aprox y to row 
-    int row = 0;
-
-    // aprox orient to 0-3 up, ldeft, dwon --- 
-    int final_orient = 0;
-
-    // TODO: publish to o /pose 
-    // create and publish Pose message
-    silver_fundamentals::Pose pose_msg;
-    pose_msg.row = row;
-    pose_msg.column = col;
-    pose_msg.orientation = final_orient;
-    pose_pub.publish(pose_msg);
-    ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-             pose_msg.row, pose_msg.column, pose_msg.orientation);
-
-
-    // TODO: play sound 
-
-    
-    // wait for execute plan call
-    std::vector<geometry_msgs::Point> waypoints;
-    bool plan_exists_flag = false;
-    do {
-      if (!comm_client.call(comm_srv)) {
-        ROS_ERROR("localize: failed to call comm service for GET_DATA");
-        return 1;
-      }
-      plan_exists_flag = comm_srv.response.plan_exists;
-      waypoints = comm_srv.response.waypoints;
-      ros::Duration(0.1).sleep();
-    } while (ros::ok() && !plan_exists_flag);
-
-    localize_state = LocalizeState::EXECUTING_PLAN;
-
-    // TODO: execute plan with loc 
-
-    // for (size_t i = 0; i < waypoints.size(); ++i) {
-    //     const auto& waypoint = waypoints[i];
-    // }
-
-    for (const auto& waypoint : waypoints) {
-
-        
-        // do laser measurement
-        std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
-        compute_weights(lhf, particles, reference_measurements);
-        visualize_reference_rays(ray_pub, reference_measurements);
-        // do sampling
-        resample(lhf, particles);
-        // do drive init
-        while (!drive_data_client.call(encoder_srv))
-            ROS_ERROR("encoder service call failed");
-
-        // do driving
-        if (count % 4 == 0) {
-        
-            geometry_msgs::Point current, goal;
-            current.x = 0; current.y = 0; current.z = 0;
-            goal.x = waypoint.x; goal.y = waypoint.y; goal.z = waypoint.z;
-            const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
-            double angle = std::atan2(field_vector.x, field_vector.y);
-            double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-            drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
-            drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
-            drive_client.call(drive_srv);
-        }
-        // do sleep
-        rate.sleep();
-        // do odometry adjustment
-        while (!drive_data_client.call(encoder_srv))
-            ROS_ERROR("encoder service call failed");
-
-        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
-        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
-        curr_right_encoder = encoder_srv.response.right_encoder;
-        curr_left_encoder = encoder_srv.response.left_encoder;
-
-        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
-
-        viszualize_particles(posearray_pub, particles);
-        printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
-        count++;
-
-        // Check if localised 
-            // calc variance
-        double variance = 0.0;
-        if (variance >= var_threshold) {
-            localize_state = LocalizeState::ALIGNING_ANGLE;
-        }
-    }
-
-    do {
-
-    } while (ros::ok() && localize_state == LocalizeState::EXECUTING_PLAN);
 
 
     return 0;
