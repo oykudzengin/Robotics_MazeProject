@@ -110,6 +110,34 @@ void playSong2(ros::NodeHandle& nh)
         ROS_ERROR("playSong2 failed");
     }
 }
+
+/**
+ * @brief Stores and plays the Windows shutdown tone (slot 3).
+ * @param nh ROS NodeHandle used to create service clients.
+ */
+void playSong3(ros::NodeHandle& nh)
+{
+    // Windows shutdown tone notes and durations
+    // Approximate MIDI notes and durations for the Windows shutdown sound
+    constexpr uint32_t A4 = 69;
+    constexpr uint32_t G4 = 67;
+    constexpr uint32_t F4 = 65;
+    constexpr uint8_t Q = MEASURE / 4;       // quarter note
+    constexpr uint8_t H = MEASURE / 2;       // half note
+    constexpr uint8_t E = MEASURE / 8;       // eighth note
+
+    std::vector<uint32_t> song3_data = {
+        A4, H,
+        G4, H,
+        F4, Q,
+        G4, E,
+        A4, H
+    };
+
+    if (!storeAndPlaySong(nh, 3, song3_data)) {
+        ROS_ERROR("playSong3 failed");
+    }
+}
 } // namespace silver_fundamentals
 
 int main(int argc, char** argv) {
@@ -119,6 +147,8 @@ int main(int argc, char** argv) {
     // Pick which song to play; for example:
     silver_fundamentals::playSong1(nh);
     silver_fundamentals::playSong2(nh);
+    silver_fundamentals::playSong3(nh);
+    
     // or: playSong2(nh);
 
     return 0;
