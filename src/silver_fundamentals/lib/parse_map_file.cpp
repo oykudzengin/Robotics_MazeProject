@@ -11,6 +11,7 @@
 #include <config.h>
 
 #include <parse_map_file.h>
+#include <geometry_msgs/Pose2D.h>
 
 #define POW2(x) ((x)*(x))
 
@@ -175,8 +176,10 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
     std::vector<std::vector<unsigned int>> initial_map;
     parse_file_lowres(filename, initial_map);
     build_lookup_map(initial_map);
+    build_wall_tables(initial_map);
 
-    publish_high_res_walls(nh);
+    // publish_high_res_walls(nh);
+    // publish_low_res_walls(nh);
     ros::Duration(0.5).sleep();
 }
 #pragma GCC optimize ("O0")
@@ -340,6 +343,67 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
     }
 }
 
+void LikelihoodField::build_wall_tables(const std::vector<std::vector<unsigned int>> &map) {
+    horizontal_walls.clear();
+    vertical_walls.clear();
+
+    const double L = cell_size / 100.0;
+
+    //
+    // 1) Collect every single‐cell segment
+    //
+    for (int r = 0; r < row_count; ++r) {
+        double y0 = r   * L;
+        double y1 = (r+1)* L;
+        for (int c = 0; c < col_count; ++c) {
+            double x0 =  c   * L;
+            double x1 = (c+1)* L;
+            unsigned m = map[r][c];
+            if (m & TOP)    horizontal_walls .push_back({ y0, x0, x1 });
+            if (m & BOTTOM) horizontal_walls .push_back({ y1, x0, x1 });
+            if (m & LEFT)   vertical_walls   .push_back({ x0, y0, y1 });
+            if (m & RIGHT)  vertical_walls   .push_back({ x1, y0, y1 });
+        }
+    }
+
+    //
+    // 2) Merge any contiguous, collinear segments
+    //
+    auto merge_in_place = [&](std::vector<CellWallLine> &segs) {
+        if (segs.empty()) return;
+        // Sort by the constant coord, then by start
+        std::sort(segs.begin(), segs.end(),
+            [](auto &A, auto &B){
+                if (A.c != B.c) return A.c < B.c;
+                return A.start < B.start;
+            });
+
+        std::vector<CellWallLine> merged;
+        merged.reserve(segs.size());
+
+        CellWallLine cur = segs[0];
+        for (size_t i = 1; i < segs.size(); ++i) {
+            const auto &s = segs[i];
+            // same line and overlapping/touching?
+            if (std::abs(s.c - cur.c) < 1e-9 && s.start <= cur.end + 1e-9) {
+                // extend
+                cur.end = std::max(cur.end, s.end);
+            }
+            else {
+                // push & start a new one
+                merged.push_back(cur);
+                cur = s;
+            }
+        }
+        merged.push_back(cur);
+        segs.swap(merged);
+    };
+
+    merge_in_place(horizontal_walls);
+    merge_in_place(vertical_walls);
+
+}
+
 double LikelihoodField::get_field_value(const geometry_msgs::Point &global_space_point) const {
     const int real_y = -(global_space_point.y * 100) + buffer_size;
     const int real_x = -(global_space_point.x * 100) + buffer_size;
@@ -361,4 +425,45 @@ double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_
     if (real_x < 0 || real_y < 0 || real_x >= cell_size * col_count + 2 * buffer_size || real_y >= cell_size * row_count + 2 * buffer_size)
         return 0.0;
     return field[real_y][real_x];
+}
+
+double LikelihoodField::get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, geometry_msgs::Point &end_point) const {
+    const double ox = -start_point.x;
+    const double oy = -start_point.y;
+
+    const double vx = -end_point.x - ox;
+    const double vy = -end_point.y - oy;
+
+    const double len = std::hypot(vx, vy);
+    const double dx = vx / len;
+    const double dy = vy / len;
+
+    const double max_range = 1;
+
+    double best_t = max_range;
+
+    if (std::abs(dx) > 1e-6) {
+        for (const auto &w : vertical_walls) {
+            double t = (w.c - ox) / dx;
+            if (t <= 0.0 || t >= best_t) continue;
+            double y_hit = oy + t * dy;
+            if (y_hit >= w.start && y_hit <= w.end) {
+                best_t = t;
+            }
+        }
+    }
+
+    if (std::abs(dy) > 1e-6) {
+        for (const auto &w : horizontal_walls) {
+            double t = (w.c - oy) / dy;
+            if (t <= 0.0 || t >= best_t) continue;
+            double x_hit = ox + t * dx;
+            if (x_hit >= w.start && x_hit <= w.end) {
+                best_t = t;
+            }
+        }
+    }
+
+    return best_t;
+
 }

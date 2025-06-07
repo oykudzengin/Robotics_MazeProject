@@ -43,6 +43,7 @@ bool stud() {return false;}
 int main(int argc, char **argv) {
     ros::init(argc, argv, "test");
     ros::NodeHandle n;
+    printf("start\n");
     // auto driver = FeedbackDrive(3.25, 26.5, 10.0);
 
     // geometry_msgs::Point goal;
@@ -55,16 +56,17 @@ int main(int argc, char **argv) {
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
     const auto lhf = LikelihoodField(n, mapfile, 5.0);
-    for (int i = 0; i > -240; i--) {
-        for (int j = 0; j > -240; j--) {
-            geometry_msgs::Point temp;
-            temp.x = static_cast<double>(i) / 100;
-            temp.y = static_cast<double>(j) / 100;
-            temp.z = 0;
 
-            // std::cout << lhf.get_prob_field_value(temp) << " ";
-        }
-        // std::cout << std::endl;
-    }
+    geometry_msgs::Pose2D start_point;
+    geometry_msgs::Point end_point;
+    start_point.x = -0.5;
+    start_point.y = -0.7;
+
+    end_point.x = -0.9;
+    end_point.y = -0.3;
+    end_point.z = -PI/4;
+
+    printf("dist %f\n", lhf.get_ray_wall_dist(start_point, end_point));
+
     ros::spin();
 }

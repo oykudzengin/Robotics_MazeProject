@@ -107,13 +107,16 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             particle.weight = 0;
             continue;
         }
-        double weight = 1;
+        double weight = 0;
         for (auto &measurement: measurements) {
             geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
-            const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
-            weight *= ray_weight;
+            const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
+            const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
+            // const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
+            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value);
+            weight += ray_weight;
         }
-        particle.weight = -1.0/std::log2(std::min(weight, 0.9999));
+        particle.weight = std::max(0.05, std::exp(weight));
 	// particle.weight = weight;
     }
 }
