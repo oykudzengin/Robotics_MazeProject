@@ -464,9 +464,8 @@ int main(int argc, char **argv) {
             double variance = 0.0;
             if (variance >= var_threshold) {
                 localize_state = LocalizeState::ALIGNING_ANGLE;
-                break;
             }
-            
+            break;
 
         } case LocalizeState::ALIGNING_ANGLE: {
             // do turn to goal pos
