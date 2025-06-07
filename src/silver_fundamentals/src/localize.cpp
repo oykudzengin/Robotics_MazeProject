@@ -97,7 +97,8 @@ enum class LocalizeState {
     ALIGNING_DRIVE,           // driving into alignment position
     ALIGNING_ANGLE_ORIENT,    // final fine-angle orient
     WAIT_FOR_PLAN,   // waiting for plan input (localise without drive)
-    EXECUTING_PLAN            // carrying out received plan
+    EXECUTING_PLAN,            // carrying out received plan
+    EXECUTED_PLAN
 };
 
 static LocalizeState localize_state = LocalizeState::LOCALISING;
@@ -508,7 +509,68 @@ int main(int argc, char **argv) {
       ros::Duration(0.1).sleep();
     } while (ros::ok() && !plan_exists_flag);
 
+    localize_state = LocalizeState::EXECUTING_PLAN;
+
     // TODO: execute plan with loc 
+
+    // for (size_t i = 0; i < waypoints.size(); ++i) {
+    //     const auto& waypoint = waypoints[i];
+    // }
+
+    for (const auto& waypoint : waypoints) {
+
+        
+        // do laser measurement
+        std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
+        compute_weights(lhf, particles, reference_measurements);
+        visualize_reference_rays(ray_pub, reference_measurements);
+        // do sampling
+        resample(lhf, particles);
+        // do drive init
+        while (!drive_data_client.call(encoder_srv))
+            ROS_ERROR("encoder service call failed");
+
+        // do driving
+        if (count % 4 == 0) {
+        
+            geometry_msgs::Point current, goal;
+            current.x = 0; current.y = 0; current.z = 0;
+            goal.x = waypoint.x; goal.y = waypoint.y; goal.z = waypoint.z;
+            const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+            double angle = std::atan2(field_vector.x, field_vector.y);
+            double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+            drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
+            drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
+            drive_client.call(drive_srv);
+        }
+        // do sleep
+        rate.sleep();
+        // do odometry adjustment
+        while (!drive_data_client.call(encoder_srv))
+            ROS_ERROR("encoder service call failed");
+
+        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+        curr_right_encoder = encoder_srv.response.right_encoder;
+        curr_left_encoder = encoder_srv.response.left_encoder;
+
+        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+
+        viszualize_particles(posearray_pub, particles);
+        printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+        count++;
+
+        // Check if localised 
+            // calc variance
+        double variance = 0.0;
+        if (variance >= var_threshold) {
+            localize_state = LocalizeState::ALIGNING_ANGLE;
+        }
+    }
+
+    do {
+
+    } while (ros::ok() && localize_state == LocalizeState::EXECUTING_PLAN);
 
 
     return 0;

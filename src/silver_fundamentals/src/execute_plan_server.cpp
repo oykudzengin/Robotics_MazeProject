@@ -138,8 +138,7 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
     silver_fundamentals::Com get_srv;
     get_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
 
-    silver_fundamentals::PlanSuccessState status =
-    silver_fundamentals::PlanSuccessState::NONE;
+    silver_fundamentals::PlanSuccessState status = silver_fundamentals::PlanSuccessState::NONE;
 
     // Poll until comm_node reports PLAN_DONE or PLAN_FAILED
     do {
