@@ -178,9 +178,9 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
     build_lookup_map(initial_map);
     build_wall_tables(initial_map);
 
-    // publish_high_res_walls(nh);
-    // publish_low_res_walls(nh);
-    ros::Duration(0.5).sleep();
+    publish_high_res_walls(nh);
+    publish_low_res_walls(nh, lowres_pub, initial_map);
+    ros::Duration(2).sleep();
 }
 #pragma GCC optimize ("O0")
 bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map) {

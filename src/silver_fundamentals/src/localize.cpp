@@ -27,7 +27,7 @@
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
 #define AMOUNT_RANDOM_INJECTIONS 1.0
-#define PROBABILITY_RANDOM_INJECTIONS 0.005
+#define PROBABILITY_RANDOM_INJECTIONS 0.00005
 #define ALPHA1 0.2 //rotation noise
 #define ALPHA2 0.1 //rotation noise related to translation
 #define ALPHA3 0.1 //translation noise
@@ -348,6 +348,7 @@ int main(int argc, char **argv) {
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
         visualize_reference_rays(ray_pub, reference_measurements);
+        viszualize_particles(posearray_pub, particles);
         // do sampling
         resample(lhf, particles);
         // do drive init
@@ -380,7 +381,7 @@ int main(int argc, char **argv) {
 
     particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
-    viszualize_particles(posearray_pub, particles);
+
     printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
 	count++;
     }
