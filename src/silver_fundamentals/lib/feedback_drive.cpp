@@ -156,7 +156,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     laser_srv.request.start = -90.0;
     laser_srv.request.end = 90.0;
 
-    while(!laser_client.call(laser_srv)) {
+    while(!laser_client.call(laser_srv) && ros::ok()) {
         ROS_ERROR("Failed to call laser polar service");
     }
     std::vector<double> ranges = laser_srv.response.values;
@@ -172,7 +172,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             laser_srv.request.start = -90;
             laser_srv.request.end = 90;
 
-            while(!laser_client.call(laser_srv)) {
+            while(!laser_client.call(laser_srv) && ros::ok()) {
                 ROS_ERROR("Failed to call laser polar service");
             }
             ranges = laser_srv.response.values;
@@ -193,7 +193,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
             laser_srv.request.start = -90;
             laser_srv.request.end = 90;
 
-            while(!laser_client.call(laser_srv)) {
+            while(!laser_client.call(laser_srv) && ros::ok()) {
                 ROS_ERROR("Failed to call laser polar service");
             }
             ranges = laser_srv.response.values;
@@ -318,7 +318,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     laser_srv.request.lidar_sensor_offset = LIDAR_SENSOR_OFFSET/100.0;
     laser_srv.request.wall_thickness = (ROBOT_RADIUS+1)/100.0;
 
-    while (!laser_cart_offset_client.call(laser_srv))
+    while (!laser_cart_offset_client.call(laser_srv) && ros::ok())
         ROS_ERROR("Failed to call laser cart service, retrying...");
 
 

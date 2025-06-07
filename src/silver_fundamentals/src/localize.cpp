@@ -85,7 +85,7 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 
         const double current_rad_angle = (ANGLE_MIN + i * step_size + step_size / 2) / 180.0 * PI;
 
-        while (!laser_pol_client.call(laser_pol_srv))
+        while (!laser_pol_client.call(laser_pol_srv)  && ros::ok())
             ROS_ERROR("laser_pol_client.call failed");
 
         if (laser_pol_srv.response.values[0] > 1)
@@ -351,7 +351,7 @@ int main(int argc, char **argv) {
         // do sampling
         resample(lhf, particles);
         // do drive init
-        while (!drive_data_client.call(encoder_srv))
+        while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
 
         // do driving
@@ -370,7 +370,7 @@ int main(int argc, char **argv) {
     // do sleep
     rate.sleep();
     // do odometry adjustment
-    while (!drive_data_client.call(encoder_srv))
+    while (!drive_data_client.call(encoder_srv)  && ros::ok())
         ROS_ERROR("encoder service call failed");
 
     double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
@@ -384,5 +384,8 @@ int main(int argc, char **argv) {
     printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
 	count++;
     }
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
+    drive_client.call(drive_srv);
     return 0;
 }
