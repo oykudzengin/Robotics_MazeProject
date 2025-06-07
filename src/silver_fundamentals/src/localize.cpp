@@ -23,14 +23,15 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 45.0
-#define AMOUNT_OF_RAYS 20
+#define SIGMA 80.0
+#define AMOUNT_OF_RAYS 30
 #define AMOUNT_OF_PARTICLES 600
 #define AMOUNT_RANDOM_INJECTIONS 1.0
-#define PROBABILITY_RANDOM_INJECTIONS 0.00005
-#define ALPHA1 0.2 //rotation noise
-#define ALPHA2 0.1 //rotation noise related to translation
-#define ALPHA3 0.1 //translation noise
+#define PROBABILITY_RANDOM_INJECTIONS 0.00001
+#define MIN_PARTICLE_PROB 0.05
+#define ALPHA1 0.04 //rotation noise
+#define ALPHA2 0.04 //rotation noise related to translation
+#define ALPHA3 0.08 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
 #define K_ATT 10.0
@@ -50,8 +51,8 @@ struct Particle {
     double weight;
 
     static Particle random(const LikelihoodField &lhf) {
-        static std::uniform_real_distribution<double> ux(0, lhf.get_col_count() * lhf.get_cell_size() / 100.0);
-        static std::uniform_real_distribution<double> uy(0, lhf.get_row_count() * lhf.get_cell_size() / 100.0);
+        static std::uniform_real_distribution<double> ux(MINIMAL_WALL_DIST/100.0, (lhf.get_col_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
+        static std::uniform_real_distribution<double> uy(MINIMAL_WALL_DIST/100.0, (lhf.get_row_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
         static std::uniform_real_distribution<double> utheta(-PI / 2, PI / 2);
 
         Particle p;
@@ -113,10 +114,10 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
-            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value);
+            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/100.0);
             weight += ray_weight;
         }
-        particle.weight = std::max(0.05, std::exp(weight));
+        particle.weight = std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight));
 	// particle.weight = weight;
     }
 }
@@ -162,9 +163,14 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
         temp.y = p.position.y;
         temp.z = 0;
 
-        if (lhf.get_field_value(temp) < MINIMAL_WALL_DIST) {
+        if (lhf.get_field_value(temp) < MINIMAL_WALL_DIST)
             p.weight = -1;
-        }
+	else if (-p.position.x < 0 || -p.position.y < 0)
+	    p.weight = -1;
+	else if (-p.position.x * 100 > lhf.get_cell_size() * lhf.get_col_count())
+	    p.weight = -1;
+	else if (-p.position.y * 100 > lhf.get_cell_size() * lhf.get_row_count())
+	    p.weight = -1;
     }
 }
 
@@ -300,8 +306,8 @@ void viszualize_particles(
 	}
         else {
             // yellow
-            m.color.r = 1.0f;
-            m.color.g = 1.0f;
+            m.color.r = 1.0f-p.weight;
+            m.color.g = p.weight;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
         }
@@ -382,7 +388,7 @@ int main(int argc, char **argv) {
     particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
 
-    printf("Particle at %f %f heading %f %f\n", particles[0].position.x, particles[0].position.y, particles[0].position.theta*180.0/PI, particles[0].weight);
+    printf("Particle at %f %f heading %f %f\n", particles[500].position.x, particles[500].position.y, particles[500].position.theta*180.0/PI, particles[500].weight);
 	count++;
     }
     drive_srv.request.left = 0;
