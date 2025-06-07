@@ -23,12 +23,12 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 80.0
-#define AMOUNT_OF_RAYS 30
+#define SIGMA 300.0
+#define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
 #define AMOUNT_RANDOM_INJECTIONS 1.0
 #define PROBABILITY_RANDOM_INJECTIONS 0.00001
-#define MIN_PARTICLE_PROB 0.05
+#define MIN_PARTICLE_PROB 0.01
 #define ALPHA1 0.04 //rotation noise
 #define ALPHA2 0.04 //rotation noise related to translation
 #define ALPHA3 0.08 //translation noise
@@ -113,8 +113,8 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
             const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
-            // const double ray_weight = lhf.get_prob_field_value(global_ray_ending);
-            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/100.0);
+            // const double delta_dist = lhf.get_field_value(global_ray_ending);
+            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/(100*100.0));
             weight += ray_weight;
         }
         particle.weight = std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight));
@@ -388,7 +388,7 @@ int main(int argc, char **argv) {
     particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
 
-    printf("Particle at %f %f heading %f %f\n", particles[500].position.x, particles[500].position.y, particles[500].position.theta*180.0/PI, particles[500].weight);
+    printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
 	count++;
     }
     drive_srv.request.left = 0;
