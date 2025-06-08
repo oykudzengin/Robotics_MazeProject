@@ -13,10 +13,15 @@ from create_fundamentals.srv import *
 class CreateDriver:
 	def __init__(self):
 		port = rospy.get_param('/create_fundamentals/port', "/dev/ttyUSB0")
+		print("1")
 		self.create = Create(port)
+		print("1")
 		self.packetPub = rospy.Publisher('sensor_packet', SensorPacket, queue_size=1)
+		print("1")
 		self.fields = ['wheeldropCaster','wheeldropLeft','wheeldropRight','bumpLeft','bumpRight','wall','cliffLeft','cliffFronLeft','cliffFrontRight','cliffRight','virtualWall','infraredByte','advance','play','encoderLeft','encoderRight','chargingState','voltage','current','batteryTemperature','batteryCharge','batteryCapacity','wallSignal','cliffLeftSignal','cliffFrontLeftSignal','cliffFrontRightSignal','cliffRightSignal','homeBase','internalCharger','songNumber','songPlaying']
+		print("1")
 		self.create.update = self.sense
+		print("1")
 
 	def start(self):
 		self.create.start()
