@@ -519,7 +519,7 @@ int main(int argc, char **argv) {
 
                 driver.reset_encoder_base_lines();
 
-                printf("now localized at %f %f %f, aligning to %f %f with %f %f\n", current_position.x, current_position.y, current_position.theta, goal_x, goal_x, alignment.angle, alignment.dist);
+                printf("now localized at %f %f %f, aligning to %f %f with %f %f\n", current_position.x, current_position.y, current_position.theta, goal.x, goal.y, alignment.angle, alignment.dist);
             } else
                 localize_count++;
 
