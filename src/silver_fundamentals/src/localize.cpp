@@ -547,7 +547,8 @@ int main(int argc, char **argv) {
         visualize_reference_rays(ray_pub, reference_measurements);
         viszualize_particles(posearray_pub, particles);
         // do sampling
-        resample(lhf, particles);
+        if (localize_state != LocalizeState::WAIT_FOR_PLAN)
+            resample(lhf, particles);
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
