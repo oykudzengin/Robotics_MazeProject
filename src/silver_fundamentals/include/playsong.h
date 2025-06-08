@@ -29,4 +29,14 @@ void playSong1(ros::NodeHandle& nh);
  */
 void playSong2(ros::NodeHandle& nh);
 
+/**
+ * @brief Stores and plays song 3 (slot 3).
+ */
+void playSong3(ros::NodeHandle& nh);
+
+/**
+ * @brief Stores and plays song 4 (slot 4).
+ */
+void playSong4(ros::NodeHandle& nh);
+
 } // namespace silver_fundamentals

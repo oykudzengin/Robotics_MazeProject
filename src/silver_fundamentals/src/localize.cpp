@@ -25,7 +25,9 @@
 
 #include <LocalizeCommunication.h>
 #include "silver_fundamentals/Pose.h"
+
 #include <silver_fundamentals/Com.h>
+#include <playsong.h>
 
 
 #define SIGMA 45.0
@@ -487,7 +489,8 @@ int main(int argc, char **argv) {
             case LocalizeState::ALIGNING_ANGLE_ORIENT: {
                 if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir))
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
-                // TODO: Play song here
+                // Play song here
+                silver_fundamentals::playSong1(nh);
                 break;
             }
             case LocalizeState::WAIT_FOR_PLAN: {
@@ -559,7 +562,8 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {
-                // TODO: play failed sound
+                // play failed sound
+                silver_fundamentals::playSong4(nh);
 
                 // create empty waypoints vector;
                 std::vector<geometry_msgs::Point> empty_waypoints = {};
