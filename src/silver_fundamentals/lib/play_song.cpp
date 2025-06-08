@@ -138,43 +138,33 @@ void playSong3(ros::NodeHandle& nh)
         ROS_ERROR("playSong3 failed");
     }
 }
-} // namespace silver_fundamentals
 
+/**
+ * @brief Stores and plays song 4 (slot 4).
+ * @param nh ROS NodeHandle used to create service clients.
+ */
 void playSong4(ros::NodeHandle& nh)
 {
-    // MIDI note numbers
+    // MIDI note numbers for song 4
     constexpr uint32_t F5   = 77;  // F₅
     constexpr uint32_t DES5 = 73;  // D♭₅
     constexpr uint32_t AES4 = 68;  // A♭₄
     constexpr uint32_t EDS4 = 63;  // E♭₄
+    constexpr uint8_t HALF  = MEASURE / 2; // half note
 
-    // Duration constants (assumes these are defined globally as in your other songs):
-    //   Q   = MEASURE/4   (quarter)
-    //   S   = MEASURE/16  (sixteenth)
-    //   HALF= MEASURE/2   (half)
-    extern const uint8_t Q, S, HALF;
-
-    // Shutdown melody: two short notes, one short note, one long
-    std::vector<uint32_t> notes = {
+    // Song 4 data: three sixteenth notes, then a half note
+    std::vector<uint32_t> song4_data = {
         F5,   S,
         DES5, S,
         AES4, S,
         EDS4, HALF
     };
 
-    // Create a service client (reuse your PlayNote service)
-    auto client = nh.serviceClient<your_package::PlayNote>("play_note");
-    your_package::PlayNote srv;
-    for (size_t i = 0; i < notes.size(); i += 2) {
-        srv.request.note     = notes[i];
-        srv.request.duration = notes[i+1];
-        if (!client.call(srv) || !srv.response.success) {
-            ROS_ERROR("Failed to play note %u", notes[i]);
-            return;
-        }
-        // small pause if needed
+    if (!storeAndPlaySong(nh, 4, song4_data)) {
+        ROS_ERROR("playSong4 failed");
     }
 }
+} // namespace silver_fundamentals
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "play_song_node");
