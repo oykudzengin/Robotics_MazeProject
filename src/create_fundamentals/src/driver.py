@@ -13,15 +13,10 @@ from create_fundamentals.srv import *
 class CreateDriver:
 	def __init__(self):
 		port = rospy.get_param('/create_fundamentals/port', "/dev/ttyUSB0")
-		print("1")
 		self.create = Create(port)
-		print("1")
 		self.packetPub = rospy.Publisher('sensor_packet', SensorPacket, queue_size=1)
-		print("1")
 		self.fields = ['wheeldropCaster','wheeldropLeft','wheeldropRight','bumpLeft','bumpRight','wall','cliffLeft','cliffFronLeft','cliffFrontRight','cliffRight','virtualWall','infraredByte','advance','play','encoderLeft','encoderRight','chargingState','voltage','current','batteryTemperature','batteryCharge','batteryCapacity','wallSignal','cliffLeftSignal','cliffFrontLeftSignal','cliffFrontRightSignal','cliffRightSignal','homeBase','internalCharger','songNumber','songPlaying']
-		print("1")
 		self.create.update = self.sense
-		print("1")
 
 	def start(self):
 		self.create.start()
@@ -65,12 +60,9 @@ class CreateDriver:
 		return PlaySongResponse(True)
 		
 if __name__ == '__main__':
-	print("start init")
 	node = rospy.init_node('create')
-	print ("create driver start")
 	driver = CreateDriver()
-	print("start advertising")
-	
+
 	rospy.Service('reset_encoders', ResetEncoders, driver.reset_encoders)
 	rospy.Service('leds', Leds, driver.leds)
 	rospy.Service('store_song', StoreSong, driver.store_song)
