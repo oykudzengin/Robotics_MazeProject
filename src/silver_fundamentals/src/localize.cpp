@@ -23,6 +23,14 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
+#include <LocalizeCommunication.h>
+#include "silver_fundamentals/Pose.h"
+
+#include <silver_fundamentals/Com.h>
+#include <playsong.h>
+
+
+#define SIGMA 45.0
 #define SIGMA 360.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 20
@@ -46,6 +54,7 @@
 #define LOCALIZE_VAR_UPPER 0.20
 #define LOCALIZE_COUNT_THRESHOLD 20
 #define UNLOCALIZE_COUNT_THRESHOLD 10
+#define CELL_SIZE_CM 80.0
 
 
 static std::random_device rd;
@@ -68,6 +77,7 @@ struct Particle {
 
         return p;
     }
+
     static Particle zero() {
         Particle p;
         p.position.x = 0.0;
@@ -77,6 +87,30 @@ struct Particle {
         return p;
     }
 };
+
+// localaise communication to execute plan server
+namespace silver_fundamentals {
+    PlanSuccessState success_state = PlanSuccessState::NONE;
+    std::vector<geometry_msgs::Point> com_waypoints;
+    bool plan_exits = false;
+}
+
+// --- Localization state and flags ---
+static bool localized_flag = false; // true once localisation is achieved
+static bool alignment_state = false; // true once alignment step is complete
+
+enum class LocalizeState {
+    LOCALISING, // initial scanning/localising
+    ALIGNING_ANGLE, // adjusting orientation
+    ALIGNING_DRIVE, // driving into alignment position
+    ALIGNING_ANGLE_ORIENT, // final fine-angle orient
+    WAIT_FOR_PLAN, // waiting for plan input (localise without drive)
+    EXECUTING_PLAN, // carrying out received plan
+    EXECUTED_PLAN_FAIL,
+    EXECUTED_PLAN_SUC
+};
+//TODO: move down
+static LocalizeState localize_state = LocalizeState::LOCALISING;
 
 
 std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_client) {
@@ -100,7 +134,7 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
         geometry_msgs::Point ray;
         ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
         ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0] + LIDAR_SENSOR_OFFSET / 100.0;
-        ray.z = std::atan2(ray.x,  ray.y);
+        ray.z = std::atan2(ray.x, ray.y);
         laser_rays.push_back(ray);
     }
     return laser_rays;
@@ -132,7 +166,8 @@ double sample_normal(double std_dev) {
     return dist(gen);
 }
 
-void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, const double delta_right,
+void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
+                              const double delta_right,
                               const double delta_left) {
     const double delta_right_m = delta_right * WHEEL_RADIUS / 100;
     const double delta_left_m = delta_left * WHEEL_RADIUS / 100;
@@ -151,8 +186,9 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     for (auto &p: particles) {
         const double var_rot1 = ALPHA1 * pow(delta_rot1, 2) + ALPHA2 * delta_trans * delta_trans;
         const double var_trans = ALPHA3 * pow(delta_trans, 2) + ALPHA4 * (
-                                               pow(delta_rot1, 2) + pow(delta_rot2, 2));
-        const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);       // Add noise to the odometry values
+                                     pow(delta_rot1, 2) + pow(delta_rot2, 2));
+        const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);
+        // Add noise to the odometry values
 
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
         const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
@@ -204,20 +240,18 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
 }
 
 void visualize_reference_rays(const ros::Publisher ray_pub,
-    const std::vector<geometry_msgs::Point>& reference_measurements)
-{
-
+                              const std::vector<geometry_msgs::Point> &reference_measurements) {
     visualization_msgs::Marker m;
     m.header.frame_id = "map";
-    m.header.stamp    = ros::Time::now();
-    m.ns             = "laser_rays";
-    m.id             = 0;
-    m.type           = visualization_msgs::Marker::LINE_LIST;
-    m.action         = visualization_msgs::Marker::ADD;
+    m.header.stamp = ros::Time::now();
+    m.ns = "laser_rays";
+    m.id = 0;
+    m.type = visualization_msgs::Marker::LINE_LIST;
+    m.action = visualization_msgs::Marker::ADD;
 
     // Each line segment is defined by two consecutive points in m.points:
     //   [start0, end0, start1, end1, start2, end2, ...]
-    m.scale.x = 0.02;  // line thickness (meters)
+    m.scale.x = 0.02; // line thickness (meters)
 
     // Color the rays blue (or pick any color you prefer)
     m.color.r = 0.0f;
@@ -234,22 +268,22 @@ void visualize_reference_rays(const ros::Publisher ray_pub,
     start.y = 0.0;
     start.z = 0.0;
 
-    for (const auto& meas : reference_measurements) {
+    for (const auto &meas: reference_measurements) {
         end.x = -meas.y;
         end.y = -meas.x;
-        end.z = 0;  // usually 0, but copy whatever z came in
+        end.z = 0; // usually 0, but copy whatever z came in
 
         m.points.push_back(start);
         m.points.push_back(end);
     }
 
-    m.lifetime = ros::Duration(0.0);  // latched until overwritten
+    m.lifetime = ros::Duration(0.0); // latched until overwritten
     ray_pub.publish(m);
 }
+
 void viszualize_particles(
     const ros::Publisher &marker_pub,
-    const std::array<Particle, AMOUNT_OF_PARTICLES> &particles)
-{
+    const std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
     visualization_msgs::MarkerArray markers;
     markers.markers.reserve(AMOUNT_OF_PARTICLES);
 
@@ -258,11 +292,11 @@ void viszualize_particles(
 
         visualization_msgs::Marker m;
         m.header.frame_id = "map";
-        m.header.stamp    = ros::Time::now();
-        m.ns              = "particles";
-        m.id              = static_cast<int>(i);
-        m.type            = visualization_msgs::Marker::ARROW;
-        m.action          = visualization_msgs::Marker::ADD;
+        m.header.stamp = ros::Time::now();
+        m.ns = "particles";
+        m.id = static_cast<int>(i);
+        m.type = visualization_msgs::Marker::ARROW;
+        m.action = visualization_msgs::Marker::ADD;
 
         // --- POSITION ---
         // Internal: p.position.x = forward, p.position.y = left
@@ -285,8 +319,8 @@ void viszualize_particles(
         // --- SCALE (arrow length) ---
         // Make each arrow a quarter as long: 0.25 m
         m.scale.x = 0.05;   // arrow length in meters
-        m.scale.y = 0.01;   // shaft diameter
-        m.scale.z = 0.01;   // head diameter
+        m.scale.y = 0.02;   // shaft diameter
+        m.scale.z = 0.02;   // head diameter
 
         // --- COLOR (by weight) ---
         if (p.weight <= 0.0) {
@@ -295,21 +329,18 @@ void viszualize_particles(
             m.color.g = 0.0f;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
-        }
-        else if (p.weight == 10000) {
+        } else if (p.weight == 10000) {
             // green
             m.color.r = 0.0f;
             m.color.g = 1.0f;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
-        }
-	else if (p.weight > 6000) {
-	    m.color.r = 0.0f;
-	    m.color.g = 0.0f;
-	    m.color.b = 1.0f;
-	    m.color.a = 1.0f;
-	}
-        else {
+        } else if (p.weight > 6000) {
+            m.color.r = 0.0f;
+            m.color.g = 0.0f;
+            m.color.b = 1.0f;
+            m.color.a = 1.0f;
+        } else {
             // yellow
             m.color.r = 1.0f-p.weight;
             m.color.g = p.weight;
@@ -323,6 +354,37 @@ void viszualize_particles(
 
     marker_pub.publish(markers);
 }
+
+
+std::vector<int> approx_current_pos(double x, double y, double angle) {
+    // Convert meters to centimeters and reflect
+    x = -x * 100.0;
+    y = -y * 100.0;
+
+    // Convert x and y to int (row col)
+    int col = static_cast<int>(std::round(x / CELL_SIZE_CM));
+    int row = static_cast<int>(std::round(y / CELL_SIZE_CM));
+
+    angle + PI;
+    angle + PI;
+    // Normalize angle to range [-PI, PI]
+    // while (angle > PI) angle -= 2 * PI;
+    // while (angle <= -PI) angle += 2 * PI;
+    int final_orient = 4;
+
+    if (angle > -PI / 4 && angle <= PI / 4) {
+        final_orient = 0; // RIGHT
+    } else if (angle > PI / 4 && angle <= 3 * PI / 4) {
+        final_orient = 1; // UP
+    } else if (angle > -3 * PI / 4 && angle <= -PI / 4) {
+        final_orient = 3; // DOWN
+    } else {
+        final_orient = 2; // LEFT
+    }
+
+    return {col, row, final_orient};
+}
+
 
 geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_PARTICLES> &particles, geometry_msgs::Point &averages) {
     double sum_sin = 0;
@@ -368,9 +430,14 @@ int main(int argc, char **argv) {
     ros::init(argc, argv, "localize");
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
-           n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
+            n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
     static ros::Publisher ray_pub =
-        n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+            n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+
+    // Publisher for Pose messages
+    static ros::Publisher pose_pub =
+            n.advertise<silver_fundamentals::Pose>("pose", 10);
+
     auto rate = ros::Rate(10);
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
@@ -381,11 +448,13 @@ int main(int argc, char **argv) {
 
     ros::ServiceClient laser_pol_client = n.serviceClient<silver_fundamentals::Laser>("laserAngleRange");
     ros::ServiceClient drive_data_client = n.serviceClient<silver_fundamentals::DriveData>("encoder_data");
-    ros::ServiceClient drive_client =n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
+    ros::ServiceClient drive_client = n.serviceClient<create_fundamentals::DiffDrive>("diff_drive");
     silver_fundamentals::DriveData encoder_srv;
     create_fundamentals::DiffDrive drive_srv;
 
 
+    std::vector<geometry_msgs::Point> waypoints;
+    int current_waypoint = 0;
     // init particles array
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++)
@@ -394,7 +463,22 @@ int main(int argc, char **argv) {
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
-    bool localized = false;
+
+    // Prepare comm service client and request
+    ros::ServiceClient comm_client = n.serviceClient<silver_fundamentals::Com>("comm");
+    silver_fundamentals::Com comm_srv;
+    comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+
+    struct {
+        double angle;
+        direction dir;
+        double dist;
+        double orientation;
+        direction orientation_dir;
+    } alignment;
+    geometry_msgs::Pose2D current_position;
+
+    // main loop
     while (ros::ok()) {
 
         geometry_msgs::Point averages;
@@ -407,6 +491,17 @@ int main(int argc, char **argv) {
         if (localized)
             printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n", averages.x, averages.y, averages.z, variance.x, variance.y, variance.z);
 
+        // TODO: variance
+        double variance = 0.0;
+        if (variance <= var_threshold && localize_state == LocalizeState::LOCALISING) {
+            localize_state = LocalizeState::ALIGNING_ANGLE;
+            driver.reset_encoder_base_lines();
+            // TODO: compute struct for alignment
+        } else if (variance <= var_threshold && localize_state == LocalizeState::EXECUTING_PLAN) {
+            localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
+        } else if (variance > var_threshold)
+            localize_state = LocalizeState::LOCALISING;
+
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
@@ -418,31 +513,169 @@ int main(int argc, char **argv) {
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
 
-        // do driving
-	if (count % 4 == 0) {
+        // TODO: maybe update position if localized
 
-		geometry_msgs::Point current, goal;
-		current.x = 0; current.y = 0; current.z = 0;
-		goal.x = 0; goal.y = 1; goal.z = 0;
-		const geometry_msgs::Point field_vector = driver.get_potentials(current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
-		double angle = std::atan2(field_vector.x, field_vector.y);
-		double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-		drive_srv.request.left = BASE_SPEED - WHEEL_BASE/2 * rotation_rate;
-		drive_srv.request.right = BASE_SPEED + WHEEL_BASE/2 * rotation_rate;
-		drive_client.call(drive_srv);
-	}
-    // do sleep
-    rate.sleep();
-    // do odometry adjustment
-    while (!drive_data_client.call(encoder_srv)  && ros::ok())
-        ROS_ERROR("encoder service call failed");
 
-    double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
-    double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
-    curr_right_encoder = encoder_srv.response.right_encoder;
-    curr_left_encoder = encoder_srv.response.left_encoder;
+        switch (localize_state) {
+            case LocalizeState::LOCALISING: {
+                // wandering
 
-    particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+                while (!drive_data_client.call(encoder_srv))
+                    ROS_ERROR("encoder service call failed");
+
+                if (count % 4 == 0) {
+                    geometry_msgs::Point current, goal;
+                    current.x = 0;
+                    current.y = 0;
+                    current.z = 0;
+                    goal.x = 0;
+                    goal.y = 1;
+                    goal.z = 0;
+                    const geometry_msgs::Point field_vector = driver.get_potentials(
+                        current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                    double angle = std::atan2(field_vector.x, field_vector.y);
+                    double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+                    drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
+                    drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
+                    drive_client.call(drive_srv);
+                }
+                break;
+            }
+            case LocalizeState::ALIGNING_ANGLE: {
+                if (driver.turn_n_degrees_async(alignment.angle, alignment.dir))
+                    localize_state = LocalizeState::ALIGNING_DRIVE;
+                break;
+            }
+            case LocalizeState::ALIGNING_DRIVE: {
+                if (driver.drive_n_cm_async(alignment.dist))
+                    localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
+                break;
+            }
+            case LocalizeState::ALIGNING_ANGLE_ORIENT: {
+                if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir))
+                    localize_state = LocalizeState::WAIT_FOR_PLAN;
+                // Play song here
+                silver_fundamentals::playSong1(n);
+                break;
+            }
+            case LocalizeState::WAIT_FOR_PLAN: {
+
+                // convert current_pos to pose representation
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+
+                // create and publish Pose message
+                silver_fundamentals::Pose pose_msg;
+                pose_msg.column = pos[0];
+                pose_msg.row = pos[1];
+                pose_msg.orientation = pos[2];
+                pose_pub.publish(pose_msg);
+                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         pose_msg.row, pose_msg.column, pose_msg.orientation);
+
+                // wait for execute plan call
+                comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+                bool plan_exists_flag = false;
+                if (!comm_client.call(comm_srv)) {
+                    ROS_ERROR("localize: failed to call comm service for GET_DATA");
+                    return 1;
+                }
+                plan_exists_flag = comm_srv.response.plan_exists;
+                if (plan_exists_flag == true) {
+                    waypoints = comm_srv.response.waypoints;
+                    localize_state = LocalizeState::EXECUTING_PLAN;
+                }
+
+                break;
+            }
+            case LocalizeState::EXECUTING_PLAN: {
+                while (!drive_data_client.call(encoder_srv))
+                    ROS_ERROR("encoder service call failed");
+                if (count % 4 == 0) {
+                    geometry_msgs::Point current, goal;
+                    current.x = current_position.x;
+                    current.y = current_position.y;
+                    current.z = current_position.theta;
+                    goal.x = waypoints[current_waypoint].x;
+                    goal.y = waypoints[current_waypoint].y;
+                    goal.z = waypoints[current_waypoint].z;
+                    const geometry_msgs::Point field_vector = driver.get_potentials(
+                        current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                    double angle = std::atan2(field_vector.x, field_vector.y);
+                    double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+                    drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
+                    drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
+                    drive_client.call(drive_srv);
+                    if (std::sqrt(
+                            (current_position.x - goal.x) * (current_position.x - goal.x) + (
+                                current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
+                        current_waypoint++;
+                        if (waypoints.size() == current_waypoint)
+                            localize_state = LocalizeState::EXECUTED_PLAN_SUC;
+                    }
+                }
+
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+
+                // create and publish Pose message
+                silver_fundamentals::Pose pose_msg;
+                pose_msg.column = pos[0];
+                pose_msg.row = pos[1];
+                pose_msg.orientation = pos[2];
+                pose_pub.publish(pose_msg);
+                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         pose_msg.row, pose_msg.column, pose_msg.orientation);
+                break;
+            }
+            case LocalizeState::EXECUTED_PLAN_FAIL: {
+                // play failed sound
+                silver_fundamentals::playSong4(n);
+                // create empty waypoints vector;
+                std::vector<geometry_msgs::Point> empty_waypoints = {};
+                comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+                comm_srv.request.success_state = static_cast<uint8_t>(
+                    silver_fundamentals::PlanSuccessState::PLAN_FAILED);
+                comm_srv.request.plan_exists = false;
+                comm_srv.request.waypoints = empty_waypoints;
+
+                // Call the service
+                if (!comm_client.call(comm_srv)) {
+                    ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+                }
+
+                localize_state = LocalizeState::LOCALISING;
+                break;
+            }
+            case LocalizeState::EXECUTED_PLAN_SUC: {
+                std::vector<geometry_msgs::Point> empty_waypoints = {};
+                comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+                comm_srv.request.success_state = static_cast<uint8_t>(
+                    silver_fundamentals::PlanSuccessState::PLAN_DONE);
+                comm_srv.request.plan_exists = false;
+                comm_srv.request.waypoints = empty_waypoints;
+
+                // Call the service
+                if (!comm_client.call(comm_srv)) {
+                    ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+                }
+                // TODO:
+                localize_state = LocalizeState::WAIT_FOR_PLAN;
+                break;
+            }
+            default:
+                break;
+        }
+        // do sleep
+        rate.sleep();
+        // do odometry adjustment
+        while (!drive_data_client.call(encoder_srv))
+            ROS_ERROR("encoder service call failed");
+
+        double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
+        double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
+        curr_right_encoder = encoder_srv.response.right_encoder;
+        curr_left_encoder = encoder_srv.response.left_encoder;
+
+        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
 
     // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
@@ -451,5 +684,7 @@ int main(int argc, char **argv) {
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
+
+
     return 0;
 }

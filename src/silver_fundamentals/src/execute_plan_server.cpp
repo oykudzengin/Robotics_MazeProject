@@ -8,6 +8,15 @@
 // Example usage
 #include <iostream>
 #include <geometry_msgs/Point.h>
+#include <silver_fundamentals/Com.h>
+#include <LocalizeCommunication.h>
+
+// localaise communication to execute plan server 
+namespace silver_fundamentals {
+    PlanSuccessState success_state = PlanSuccessState::NONE;
+    std::vector<geometry_msgs::Point> com_waypoints;
+    bool plan_exits = false;
+}
 
 
 std::vector<geometry_msgs::Point>
@@ -102,11 +111,52 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
         ROS_ERROR("%f %f %f", waypoints[i].x, waypoints[i].y, waypoints[i].z);
     }
     ROS_ERROR("]");
-    int ret = driver.potential_field_drive(waypoints, 1000.0, 0.01, 0.2, 0.08);
-    if (ret != 0)
-        ROS_ERROR("Potential field drive failed");
-    res.success = ret == 0?true:false;
+
+    // TODO publish to topic that plan exits and waypoints 
+
+    // Create a node handle for the service client
+    ros::NodeHandle nh_comm;
+    // Use a static client to avoid recreating each call
+    static ros::ServiceClient comm_client =
+    nh_comm.serviceClient<silver_fundamentals::Com>("comm");
+
+    // Build the request
+    silver_fundamentals::Com srv;
+    srv.request.operation     = silver_fundamentals::Com::Request::SET_DATA;
+    srv.request.success_state = static_cast<uint8_t>(
+                                silver_fundamentals::PlanSuccessState::NONE);
+    srv.request.plan_exists   = true;
+    srv.request.waypoints     = waypoints;
+
+    // Call the service
+    if (!comm_client.call(srv)) {
+    ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+    }
+
+    // Go into wait loop: poll comm service until success_state != NONE
+    
+    silver_fundamentals::Com get_srv;
+    get_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+
+    silver_fundamentals::PlanSuccessState status = silver_fundamentals::PlanSuccessState::NONE;
+
+    // Poll until comm_node reports PLAN_DONE or PLAN_FAILED
+    do {
+    if (!comm_client.call(get_srv)) {
+        ROS_ERROR("execute_plan_server: failed to call comm service for GET_DATA");
+        return false;
+    }
+    status = static_cast<silver_fundamentals::PlanSuccessState>(
+        get_srv.response.success_state);
+    ros::Duration(0.1).sleep();  // avoid tight loop
+    } while (ros::ok() && status == silver_fundamentals::PlanSuccessState::NONE);
+
+    // Interpret result
+    if (status == silver_fundamentals::PlanSuccessState::PLAN_DONE) {
     return true;
+    } else {
+    return false;
+    }
 }
 
 

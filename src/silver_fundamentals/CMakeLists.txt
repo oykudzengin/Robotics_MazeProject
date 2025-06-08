@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(silver_fundamentals)
 # Load catkin and all dependencies required for this package
 find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamentals std_msgs
-        message_generation)
+        message_generation geometry_msgs)
 
 # include_directories(include ${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 # CATKIN_MIGRATION: removed during catkin migration
@@ -30,10 +30,11 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-# add_message_files(
-#         FILES
-# )
+## Message definitions
+add_message_files(
+  FILES
+  Pose.msg
+)
 #uncomment if you have defined services
 add_service_files(
         FILES
@@ -42,6 +43,7 @@ add_service_files(
         DriveData.srv
         ResetEncoders.srv
         ExecutePlan.srv
+        Com.srv
 )
 
 #common commands for building c++ executables and libraries
@@ -60,13 +62,13 @@ add_service_files(
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
-        DEPENDENCIES std_msgs create_fundamentals
+        DEPENDENCIES std_msgs create_fundamentals geometry_msgs
 )
 
 # catkin_package parameters: http://ros.org/doc/groovy/api/catkin/html/dev_guide/generated_cmake_api.html#catkin-package
 catkin_package(
         DEPENDS python-serial
-        CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime
+        CATKIN_DEPENDS roscpp rospy sensor_msgs create_fundamentals message_runtime geometry_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
@@ -95,6 +97,10 @@ add_executable(drive_server lib/drive_server.cpp)
 target_link_libraries(drive_server ${catkin_LIBRARIES})
 add_dependencies(drive_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
+add_executable(comm_node src/com_node.cpp)
+target_link_libraries(comm_node ${catkin_LIBRARIES})
+add_dependencies(comm_node create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+
 # add_executable(square_no_sensors src/square_no_sensors.cpp)
 # target_link_libraries(square_no_sensors ${catkin_LIBRARIES})
 # add_dependencies(square_no_sensors create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
@@ -111,6 +117,15 @@ add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_driv
 target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
 add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp)
+add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp lib/play_song.cpp)
 target_link_libraries(localize ${catkin_LIBRARIES})
 add_dependencies(localize create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+
+## Pose server node
+add_executable(pose_server src/pose_server.cpp)
+target_link_libraries(pose_server ${catkin_LIBRARIES})
+add_dependencies(pose_server silver_fundamentals_generate_messages_cpp)
+
+# add_executable(play_song lib/play_song.cpp)
+# target_link_libraries(play_song ${catkin_LIBRARIES})
+# add_dependencies(play_song ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)
