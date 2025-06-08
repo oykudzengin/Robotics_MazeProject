@@ -50,7 +50,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.04
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 20
+#define LOCALIZE_COUNT_THRESHOLD 15
 #define UNLOCALIZE_COUNT_THRESHOLD 10
 #define CELL_SIZE_CM 80.0
 
@@ -355,12 +355,10 @@ void viszualize_particles(
 
 std::vector<int> approx_current_pos(double x, double y, double angle) {
     // Convert meters to centimeters and reflect
-    x = -x * 100.0;
-    y = -y * 100.0;
 
     // Convert x and y to int (row col)
-    int col = static_cast<int>(std::round(x / CELL_SIZE_CM));
-    int row = static_cast<int>(std::round(y / CELL_SIZE_CM));
+    int col = static_cast<int>(-x * 100) / 80 * 80;
+    int row = static_cast<int>(-y * 100) / 80 * 80;
 
     angle =+ PI;
 
@@ -498,18 +496,24 @@ int main(int argc, char **argv) {
             if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
                 localize_state = LocalizeState::ALIGNING_ANGLE;
                 // compute alignment
-                auto result = approx_current_pos(current_position.x, current_position.y, current_position.theta);
-                double goal_x = -(result[0]*lhf.get_cell_size()/100.0+0.4);
-                double goal_y = -(result[1]*lhf.get_cell_size()/100.0+0.4);
+                geometry_msgs::Point new_pos;
 
-                double delta_x = goal_x - current_position.x;
-                double delta_y = goal_y - current_position.y;
+                new_pos.x = -static_cast<double>(static_cast<int>(-current_position.x * 100) / 80 * 80)/100.0-0.4;
+                new_pos.y = -static_cast<double>(static_cast<int>(-current_position.y * 100) / 80 * 80)/100.0-0.4;
 
-                double angle = atan2(delta_x, delta_y);
+                geometry_msgs::Point curr_as_point;
+                curr_as_point.x = current_position.x;
+                curr_as_point.y = current_position.y;
+                curr_as_point.z = current_position.theta;
+                auto goal = global_to_local(curr_as_point, new_pos);
+
+
+
+                double angle = atan2(goal.x, goal.y);
 
                 alignment.angle = std::abs(angle);
                 alignment.dir = angle>0?left:right;
-                alignment.dist = std::hypot(delta_x, delta_y);
+                alignment.dist = goal.z;
                 alignment.orientation = std::abs(-current_position.theta-angle);
                 alignment.orientation_dir = -current_position.theta-angle>0?left:right;
 
