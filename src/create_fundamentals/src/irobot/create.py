@@ -140,10 +140,14 @@ class Create:
 		self.encoderLock = Lock()
 		self.__encoder_left = 0
 		self.__encoder_right = 0
+		print("2")
 		self.port = Serial(tty, 57600, timeout= self.timeout)
+		print("2")
 		self.portLock = Lock()
 		self.update = lambda : ''
+		print ("2")
 		self.reset()
+		print("2")
 
 	def start(self):
 		"""Start the iCreate after initialization or reset."""
