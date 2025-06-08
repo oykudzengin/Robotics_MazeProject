@@ -62,6 +62,7 @@ class CreateDriver:
 if __name__ == '__main__':
 	print("start init")
 	node = rospy.init_node('create')
+	print ("create driver start")
 	driver = CreateDriver()
 	print("start advertising")
 	
