@@ -23,16 +23,17 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 270.0
+#define SIGMA 360.0
+#define GAMMA 1.00
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
-#define AMOUNT_RANDOM_INJECTIONS 1.0
-#define PROBABILITY_RANDOM_INJECTIONS 0.0001
+#define AMOUNT_RANDOM_INJECTIONS 1
+#define PROBABILITY_RANDOM_INJECTIONS 0.0005
 #define MIN_PARTICLE_PROB 0.002
-#define ALPHA1 0.04 //rotation noise
-#define ALPHA2 0.04 //rotation noise related to translation
-#define ALPHA3 0.07 //translation noise
-#define ALPHA4 0.05 //translation noise related to rotation
+#define ALPHA1 0.05 //rotation noise
+#define ALPHA2 0.05 //rotation noise related to translation
+#define ALPHA3 0.06 //translation noise
+#define ALPHA4 0.04 //translation noise related to rotation
 
 #define K_ATT 10.0
 #define K_REP 0.01
@@ -41,8 +42,10 @@
 #define BASE_SPEED 4.0
 
 #define MINIMAL_WALL_DIST 2
-#define LOCALIZE_VAR_LOWER 0.05
-#define LOCALIZE_VAR_UPPER 0.15
+#define LOCALIZE_VAR_LOWER 0.04
+#define LOCALIZE_VAR_UPPER 0.20
+#define LOCALIZE_COUNT_THRESHOLD 20
+#define UNLOCALIZE_COUNT_THRESHOLD 10
 
 
 static std::random_device rd;
@@ -119,7 +122,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/(100*100.0));
             weight += ray_weight;
         }
-        particle.weight = std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight));
+        particle.weight = std::pow(std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight)), GAMMA);
 	// particle.weight = weight;
     }
 }
@@ -180,10 +183,10 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     constexpr double injection_probability = AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS; // probably wrong
 
     std::vector<double> masses;
-    masses.reserve(AMOUNT_OF_PARTICLES);
+    masses.reserve(AMOUNT_OF_PARTICLES+1);
     for (const auto &particle: particles)
         masses.push_back(particle.weight);
-    // masses.push_back(injection_probability);
+    //masses.push_back(injection_probability);
     std::discrete_distribution<int> sampler(masses.begin(), masses.end());
     std::array<Particle, AMOUNT_OF_PARTICLES> new_particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
