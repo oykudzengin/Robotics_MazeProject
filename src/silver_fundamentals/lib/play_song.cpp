@@ -140,14 +140,51 @@ void playSong3(ros::NodeHandle& nh)
 }
 } // namespace silver_fundamentals
 
+void playSong4(ros::NodeHandle& nh)
+{
+    // MIDI note numbers
+    constexpr uint32_t F5   = 77;  // F₅
+    constexpr uint32_t DES5 = 73;  // D♭₅
+    constexpr uint32_t AES4 = 68;  // A♭₄
+    constexpr uint32_t EDS4 = 63;  // E♭₄
+
+    // Duration constants (assumes these are defined globally as in your other songs):
+    //   Q   = MEASURE/4   (quarter)
+    //   S   = MEASURE/16  (sixteenth)
+    //   HALF= MEASURE/2   (half)
+    extern const uint8_t Q, S, HALF;
+
+    // Shutdown melody: two short notes, one short note, one long
+    std::vector<uint32_t> notes = {
+        F5,   S,
+        DES5, S,
+        AES4, S,
+        EDS4, HALF
+    };
+
+    // Create a service client (reuse your PlayNote service)
+    auto client = nh.serviceClient<your_package::PlayNote>("play_note");
+    your_package::PlayNote srv;
+    for (size_t i = 0; i < notes.size(); i += 2) {
+        srv.request.note     = notes[i];
+        srv.request.duration = notes[i+1];
+        if (!client.call(srv) || !srv.response.success) {
+            ROS_ERROR("Failed to play note %u", notes[i]);
+            return;
+        }
+        // small pause if needed
+    }
+}
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "play_song_node");
     ros::NodeHandle nh;
 
     // Pick which song to play; for example:
-    silver_fundamentals::playSong1(nh);
-    silver_fundamentals::playSong2(nh);
-    silver_fundamentals::playSong3(nh);
+    // silver_fundamentals::playSong1(nh);
+    // silver_fundamentals::playSong2(nh);
+    // silver_fundamentals::playSong3(nh);
+    silver_fundamentals::playSong4(nh);
     
     // or: playSong2(nh);
 
