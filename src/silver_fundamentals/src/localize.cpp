@@ -319,6 +319,46 @@ void viszualize_particles(
     marker_pub.publish(markers);
 }
 
+geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_PARTICLES> &particles, geometry_msgs::Point &averages) {
+    double sum_sin = 0;
+    double sum_cos = 0;
+
+    averages.x = 0.0;
+    averages.y = 0.0;
+    averages.z = 0.0;
+
+    for (int i = 0; i < particles.size(); ++i) {
+        const auto &p = particles[i];
+        averages.x += p.position.x;
+        averages.y += p.position.y;
+
+        sum_cos += std::cos(p.position.theta);
+        sum_sin += std::sin(p.position.theta);
+    }
+    averages.x /= particles.size();
+    averages.y /= particles.size();
+    sum_cos /= particles.size();
+    sum_sin /= particles.size();
+    averages.z = std::atan2(sum_cos, sum_sin);
+
+    geometry_msgs::Point variance;
+    variance.x = 0.0;
+    variance.y = 0.0;
+    variance.z = 0.0;
+
+    for (int i = 0; i < particles.size(); ++i) {
+        const auto &p = particles[i];
+        variance.x += (p.position.x - averages.x) * (p.position.x - averages.x);
+        variance.y += (p.position.y - averages.y) * (p.position.y - averages.y);
+    }
+
+    variance.x /= particles.size();
+    variance.y /= particles.size();
+    variance.z = 1 - std::sqrt(sum_sin * sum_sin + sum_cos * sum_cos) / particles.size();
+
+    return variance;
+}
+
 int main(int argc, char **argv) {
     ros::init(argc, argv, "localize");
     ros::NodeHandle n;
@@ -350,6 +390,12 @@ int main(int argc, char **argv) {
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
     while (ros::ok()) {
+
+        geometry_msgs::Point averages;
+        geometry_msgs::Point variance = get_particle_variance(particles, averages);
+
+        printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n")
+
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
@@ -388,7 +434,7 @@ int main(int argc, char **argv) {
     particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
 
-    printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
+    // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
 	count++;
     }
     drive_srv.request.left = 0;
