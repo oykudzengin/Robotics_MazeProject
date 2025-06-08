@@ -41,6 +41,8 @@
 #define BASE_SPEED 4.0
 
 #define MINIMAL_WALL_DIST 2
+#define LOCALIZE_VAR_LOWER 0.05
+#define LOCALIZE_VAR_UPPER 0.15
 
 
 static std::random_device rd;
@@ -389,11 +391,17 @@ int main(int argc, char **argv) {
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
+    bool localized = false;
     while (ros::ok()) {
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
-        if (variance.x < 0.06 && variance.y < 0.06)
+        if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER)
+            localized = true;
+        else if (localized == true && (variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
+            localized = false;
+        }
+        if (localized)
             printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n", averages.x, averages.y, averages.z, variance.x, variance.y, variance.z);
 
         // do laser measurement
@@ -409,7 +417,7 @@ int main(int argc, char **argv) {
 
         // do driving
 	if (count % 4 == 0) {
-	
+
 		geometry_msgs::Point current, goal;
 		current.x = 0; current.y = 0; current.z = 0;
 		goal.x = 0; goal.y = 1; goal.z = 0;
