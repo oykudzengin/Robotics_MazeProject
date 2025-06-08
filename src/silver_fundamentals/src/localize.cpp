@@ -29,8 +29,6 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-
-#define SIGMA 45.0
 #define SIGMA 360.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 20
@@ -486,11 +484,11 @@ int main(int argc, char **argv) {
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
-        if (localize_state != LocalizeState::LOCALISING) {
-            current_position.x = averages.x;
-            current_position.y = averages.y;
-            current_position.theta = averages.z;
-        }
+
+        current_position.x = averages.x;
+        current_position.y = averages.y;
+        current_position.theta = averages.z;
+
 
         if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
             if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
