@@ -365,11 +365,11 @@ std::vector<int> approx_current_pos(double x, double y, double angle) {
     int col = static_cast<int>(std::round(x / CELL_SIZE_CM));
     int row = static_cast<int>(std::round(y / CELL_SIZE_CM));
 
-    angle + PI;
-    angle + PI;
+    angle =+ PI;
+
     // Normalize angle to range [-PI, PI]
-    // while (angle > PI) angle -= 2 * PI;
-    // while (angle <= -PI) angle += 2 * PI;
+    while (angle > PI) angle -= 2 * PI;
+    while (angle <= -PI) angle += 2 * PI;
     int final_orient = 4;
 
     if (angle > -PI / 4 && angle <= PI / 4) {
@@ -478,29 +478,62 @@ int main(int argc, char **argv) {
     } alignment;
     geometry_msgs::Pose2D current_position;
 
+    int localize_count = 0;
+    int unlocalize_count = 0;
+
     // main loop
     while (ros::ok()) {
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
-        if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER)
-            localized = true;
-        else if (localized == true && (variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
-            localized = false;
+        if (localize_state != LocalizeState::LOCALISING) {
+            current_position.x = averages.x;
+            current_position.y = averages.y;
+            current_position.theta = averages.z;
         }
-        if (localized)
-            printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n", averages.x, averages.y, averages.z, variance.x, variance.y, variance.z);
 
-        // TODO: variance
-        double variance = 0.0;
-        if (variance <= var_threshold && localize_state == LocalizeState::LOCALISING) {
-            localize_state = LocalizeState::ALIGNING_ANGLE;
-            driver.reset_encoder_base_lines();
-            // TODO: compute struct for alignment
-        } else if (variance <= var_threshold && localize_state == LocalizeState::EXECUTING_PLAN) {
-            localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
-        } else if (variance > var_threshold)
-            localize_state = LocalizeState::LOCALISING;
+        if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
+            if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
+                localize_state = LocalizeState::ALIGNING_ANGLE;
+                // compute alignment
+                auto result = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+                double goal_x = -(result[0]*lhf.get_cell_size()/100.0+0.4);
+                double goal_y = -(result[1]*lhf.get_cell_size()/100.0+0.4);
+
+                double delta_x = goal_x - current_position.x;
+                double delta_y = goal_y - current_position.y;
+
+                double angle = atan2(delta_x, delta_y);
+
+                alignment.angle = std::abs(angle);
+                alignment.dir = angle>0?left:right;
+                alignment.dist = std::hypot(delta_x, delta_y);
+                alignment.orientation = std::abs(-current_position.theta-angle);
+                alignment.orientation_dir = -current_position.theta-angle>0?left:right;
+
+                driver.reset_encoder_base_lines();
+
+                printf("now localized at %f %f %f, aligning to %f %f with %f %f\n", current_position.x, current_position.y, current_position.theta, goal_x, goal_x, alignment.angle, alignment.dist);
+            } else
+                localize_count++;
+
+
+        } else if (localize_state == LocalizeState::LOCALISING) {
+            localize_count = 0;
+        }
+        if (localize_state != LocalizeState::LOCALISING && (variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
+            if (unlocalize_count >= UNLOCALIZE_COUNT_THRESHOLD) {
+                if (localize_state == LocalizeState::EXECUTING_PLAN)
+                    localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
+                else
+                    localize_state = LocalizeState::LOCALISING;
+            } else
+                unlocalize_count++;
+
+        } else if (localize_state != LocalizeState::LOCALISING) {
+            unlocalize_count = 0;
+        }
+
 
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
@@ -512,9 +545,6 @@ int main(int argc, char **argv) {
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
-
-        // TODO: maybe update position if localized
-
 
         switch (localize_state) {
             case LocalizeState::LOCALISING: {
@@ -582,6 +612,12 @@ int main(int argc, char **argv) {
                 plan_exists_flag = comm_srv.response.plan_exists;
                 if (plan_exists_flag == true) {
                     waypoints = comm_srv.response.waypoints;
+                    for (auto &waypoint : waypoints) {
+                        waypoint.x = waypoint.x-current_position.x;
+                        waypoint.y = waypoint.y-current_position.y;
+                    }
+
+
                     localize_state = LocalizeState::EXECUTING_PLAN;
                 }
 
