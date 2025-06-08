@@ -23,15 +23,15 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#define SIGMA 300.0
+#define SIGMA 270.0
 #define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 600
 #define AMOUNT_RANDOM_INJECTIONS 1.0
-#define PROBABILITY_RANDOM_INJECTIONS 0.00001
-#define MIN_PARTICLE_PROB 0.01
+#define PROBABILITY_RANDOM_INJECTIONS 0.0001
+#define MIN_PARTICLE_PROB 0.002
 #define ALPHA1 0.04 //rotation noise
 #define ALPHA2 0.04 //rotation noise related to translation
-#define ALPHA3 0.08 //translation noise
+#define ALPHA3 0.07 //translation noise
 #define ALPHA4 0.05 //translation noise related to rotation
 
 #define K_ATT 10.0
@@ -279,9 +279,9 @@ void viszualize_particles(
 
         // --- SCALE (arrow length) ---
         // Make each arrow a quarter as long: 0.25 m
-        m.scale.x = 0.25;   // arrow length in meters
-        m.scale.y = 0.05;   // shaft diameter
-        m.scale.z = 0.05;   // head diameter
+        m.scale.x = 0.05;   // arrow length in meters
+        m.scale.y = 0.01;   // shaft diameter
+        m.scale.z = 0.01;   // head diameter
 
         // --- COLOR (by weight) ---
         if (p.weight <= 0.0) {
@@ -393,8 +393,8 @@ int main(int argc, char **argv) {
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
-
-        printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n")
+        if (variance.x < 0.06 && variance.y < 0.06)
+            printf("Average is %5f %5f %5f, Varianc is %5f %5f %5f\n", averages.x, averages.y, averages.z, variance.x, variance.y, variance.z);
 
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
