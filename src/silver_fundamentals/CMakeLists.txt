@@ -125,3 +125,7 @@ add_dependencies(localize create_fundamentals_generate_messages_cpp silver_funda
 add_executable(pose_server src/pose_server.cpp)
 target_link_libraries(pose_server ${catkin_LIBRARIES})
 add_dependencies(pose_server silver_fundamentals_generate_messages_cpp)
+
+add_executable(play_song lib/play_song.cpp)
+target_link_libraries(play_song ${catkin_LIBRARIES})
+add_dependencies(play_song ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)
