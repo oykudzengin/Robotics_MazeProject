@@ -49,6 +49,8 @@
 // chek if localised threshold
 #define var_threshold 0.0
 
+#define CELL_SIZE_CM 80.0
+
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
@@ -340,18 +342,23 @@ void viszualize_particles(
     marker_pub.publish(markers);
 }
 
-/*
-void approx_current_pos(double x, double y, double angle) {
-    // Each cell is 80cm = 0.8m
-    // Convert x and y to positive values before casting to int
-    col = static_cast<int>(std::round(x / 0.8));
-    row = static_cast<int>(std::round(y / 0.8));
 
+std::vector<int> approx_current_pos(double x, double y, double angle) {
+    // Convert meters to centimeters and reflect
+    x = -x * 100.0;
+    y = -y * 100.0;
+
+    // Convert x and y to int (row col)
+    int col = static_cast<int>(std::round(x / CELL_SIZE_CM));
+    int row = static_cast<int>(std::round(y / CELL_SIZE_CM));
+
+    angle + PI;
+    angle + PI;
     // Normalize angle to range [-PI, PI]
-    while (angle > PI) angle -= 2 * PI;
-    while (angle <= -PI) angle += 2 * PI;
+    // while (angle > PI) angle -= 2 * PI;
+    // while (angle <= -PI) angle += 2 * PI;
+    int final_orient = 4;
 
-    // TODO: Check that Determine orientation
     if (angle > -PI / 4 && angle <= PI / 4) {
         final_orient = 0; // RIGHT
     } else if (angle > PI / 4 && angle <= 3 * PI / 4) {
@@ -361,8 +368,10 @@ void approx_current_pos(double x, double y, double angle) {
     } else {
         final_orient = 2; // LEFT
     }
+
+    return {col, row, final_orient};
 }
-*/
+
 
 int main(int argc, char **argv) {
     // set start state
@@ -482,22 +491,15 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::WAIT_FOR_PLAN: {
-                //TODO: convert current_pos to pose representation
-                // aprox x to column
-                int col = 0;
 
-                // aprox y to row
-                int row = 0;
+                // convert current_pos to pose representation
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
 
-                // aprox orient to 0-3 up, ldeft, dwon ---
-                int final_orient = 0;
-
-                // TODO: publish to o /pose
                 // create and publish Pose message
                 silver_fundamentals::Pose pose_msg;
-                pose_msg.row = row;
-                pose_msg.column = col;
-                pose_msg.orientation = final_orient;
+                pose_msg.column = pos[0];
+                pose_msg.row = pos[1];
+                pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
                 ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
                          pose_msg.row, pose_msg.column, pose_msg.orientation);
@@ -544,22 +546,13 @@ int main(int argc, char **argv) {
                     }
                 }
 
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
 
-                // aprox x to column
-                int col = 0;
-
-                // aprox y to row
-                int row = 0;
-
-                // aprox orient to 0-3 up, ldeft, dwon ---
-                int final_orient = 0;
-
-                // TODO: publish to o /pose
                 // create and publish Pose message
                 silver_fundamentals::Pose pose_msg;
-                pose_msg.row = row;
-                pose_msg.column = col;
-                pose_msg.orientation = final_orient;
+                pose_msg.column = pos[0];
+                pose_msg.row = pos[1];
+                pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
                 ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
                          pose_msg.row, pose_msg.column, pose_msg.orientation);
