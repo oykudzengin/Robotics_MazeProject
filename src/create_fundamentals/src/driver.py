@@ -60,8 +60,10 @@ class CreateDriver:
 		return PlaySongResponse(True)
 		
 if __name__ == '__main__':
+	print("start init")
 	node = rospy.init_node('create')
 	driver = CreateDriver()
+	print("start advertising")
 	
 	rospy.Service('reset_encoders', ResetEncoders, driver.reset_encoders)
 	rospy.Service('leds', Leds, driver.leds)
