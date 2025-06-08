@@ -107,8 +107,7 @@ enum class LocalizeState {
     EXECUTED_PLAN_FAIL,
     EXECUTED_PLAN_SUC
 };
-//TODO: move down
-static LocalizeState localize_state = LocalizeState::LOCALISING;
+
 
 
 std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_client) {
@@ -476,6 +475,10 @@ int main(int argc, char **argv) {
     } alignment;
     geometry_msgs::Pose2D current_position;
 
+
+
+     auto localize_state = LocalizeState::LOCALISING;
+
     int localize_count = 0;
     int unlocalize_count = 0;
 
@@ -491,6 +494,7 @@ int main(int argc, char **argv) {
 
 
         if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
+            printf("within threshold, count is %d\n", localize_count);
             if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
                 localize_state = LocalizeState::ALIGNING_ANGLE;
                 // compute alignment
