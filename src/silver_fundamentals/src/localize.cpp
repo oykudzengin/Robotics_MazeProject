@@ -490,7 +490,7 @@ int main(int argc, char **argv) {
                 if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir))
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
                 // Play song here
-                silver_fundamentals::playSong1(nh);
+                silver_fundamentals::playSong1(n);
                 break;
             }
             case LocalizeState::WAIT_FOR_PLAN: {
@@ -563,8 +563,7 @@ int main(int argc, char **argv) {
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {
                 // play failed sound
-                silver_fundamentals::playSong4(nh);
-
+                silver_fundamentals::playSong4(n);
                 // create empty waypoints vector;
                 std::vector<geometry_msgs::Point> empty_waypoints = {};
                 comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;

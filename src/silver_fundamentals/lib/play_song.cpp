@@ -166,17 +166,22 @@ void playSong4(ros::NodeHandle& nh)
 }
 } // namespace silver_fundamentals
 
-int main(int argc, char** argv) {
-    ros::init(argc, argv, "play_song_node");
-    ros::NodeHandle nh;
+// For testing 
+// int main(int argc, char** argv) {
+//     ros::init(argc, argv, "play_song_node");
+//     ros::NodeHandle nh;
 
-    // Pick which song to play; for example:
-    // silver_fundamentals::playSong1(nh);
-    // silver_fundamentals::playSong2(nh);
-    // silver_fundamentals::playSong3(nh);
-    silver_fundamentals::playSong4(nh);
+//     // Pick which song to play; for example:
+//     // silver_fundamentals::playSong1(nh);
+//     // silver_fundamentals::playSong2(nh);
+//     // silver_fundamentals::playSong3(nh);
+//     silver_fundamentals::playSong4(nh);
     
-    // or: playSong2(nh);
+//     // or: playSong2(nh);
 
-    return 0;
-}
+//     return 0;
+// }
+
+// # add_executable(play_song lib/play_song.cpp)
+// # target_link_libraries(play_song ${catkin_LIBRARIES})
+// # add_dependencies(play_song ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)
