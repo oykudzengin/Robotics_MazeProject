@@ -154,6 +154,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             weight += ray_weight;
         }
         particle.weight = std::pow(std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight)), GAMMA);
+        printf("particle.weight = %f\n", particle.weight);
 	// particle.weight = weight;
     }
 }
