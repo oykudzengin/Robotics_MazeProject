@@ -468,15 +468,15 @@ bool FeedbackDrive::drive_n_cm_async(const double n) {
         drive_data_client.call(drive_data_srv);
         double left_delta = drive_data_srv.response.left_encoder - encoder_base_line_l;
         double right_delta = drive_data_srv.response.right_encoder - encoder_base_line_r;
-        double current_rad_distance = (left_delta + right_delta) / 2.0;
+        double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta)) / 2.0;
 
 
         drive_srv.request.left = speed;
         drive_srv.request.right = speed;
-        drive_client.call(drive_srv);
 
         // If not yet reached the target, keep driving
-        if (current_rad_distance < n/wheel_radius) {
+        if (current_rad_distance < n*100.0/wheel_radius) {
+            drive_client.call(drive_srv);
             return false;
         }
         // Stop the robot and clear the async flag
@@ -497,7 +497,7 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
     double right_delta = std::abs(drive_data_srv.response.right_encoder - encoder_base_line_r);
     double current_rad_distance = (left_delta + right_delta) / 2.0;
 
-    printf("current dist = %f, comparing to %f\n", current_rad_distance, (n * wheel_base * PI) / (360.0 * wheel_radius));
+    printf("current dist = %f, comparing to %f, baselines %f %f\n", current_rad_distance, (n * wheel_base * PI) / (360.0 * wheel_radius), encoder_base_line_l, encoder_base_line_r);
 
     if (d == left) {
         drive_srv.request.left = -speed;
@@ -528,6 +528,7 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
 
 bool FeedbackDrive::reset_encoder_base_lines() {
     // Read and store current encoder readings as the new baselines
+    printf("called baseline reset\n");
     drive_data_client.call(drive_data_srv);
     encoder_base_line_l = drive_data_srv.response.left_encoder;
     encoder_base_line_r = drive_data_srv.response.right_encoder;

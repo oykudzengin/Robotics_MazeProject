@@ -188,7 +188,7 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
         // Add noise to the odometry values
 
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
-        const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
+        const double delta_trans_hat = delta_trans > 0? delta_trans + sample_normal(std::sqrt(var_trans)):0;
         const double delta_rot2_hat = delta_rot2 + sample_normal(std::sqrt(var_rot2));
 
 
@@ -615,16 +615,19 @@ int main(int argc, char **argv) {
             }
             case LocalizeState::ALIGNING_ANGLE: {
                 if (driver.turn_n_degrees_async(alignment.angle, alignment.dir) == true)
+		    printf("done with first align\n");
                     localize_state = LocalizeState::ALIGNING_DRIVE;
+		    driver.reset_encoder_base_lines();
                 break;
             }
             case LocalizeState::ALIGNING_DRIVE: {
-                if (driver.drive_n_cm_async(alignment.dist))
+                if (driver.drive_n_cm_async(alignment.dist) == true)
                     localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
+		    driver.reset_encoder_base_lines();
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE_ORIENT: {
-                if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir)) {
+                if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir) == true) {
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
                     std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
                     silver_fundamentals::playSong1(n); ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
