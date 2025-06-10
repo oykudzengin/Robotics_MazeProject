@@ -29,7 +29,7 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 9.0
+#define SIGMA 12.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 600
