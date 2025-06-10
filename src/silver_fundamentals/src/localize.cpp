@@ -470,6 +470,7 @@ int main(int argc, char **argv) {
         double dist;
         double orientation;
         direction orientation_dir;
+        geometry_msgs::Point cell_center;
     } alignment;
     geometry_msgs::Pose2D current_position;
 
@@ -500,6 +501,8 @@ int main(int argc, char **argv) {
 
                 new_pos.x = -static_cast<double>(static_cast<int>(-current_position.x * 100) / 80 * 80)/100.0-0.4;
                 new_pos.y = -static_cast<double>(static_cast<int>(-current_position.y * 100) / 80 * 80)/100.0-0.4;
+
+                alignment.cell_center = new_pos;
 
                 geometry_msgs::Point curr_as_point;
                 curr_as_point.x = current_position.x;
@@ -589,10 +592,12 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE_ORIENT: {
-                if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir))
+                if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir)) {
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
-                // Play song here
-                silver_fundamentals::playSong1(n);
+                    std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+                    silver_fundamentals::playSong1(n); ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         pos[1], pos[0], pos[2]);
+                }
                 break;
             }
             case LocalizeState::WAIT_FOR_PLAN: {
@@ -606,28 +611,30 @@ int main(int argc, char **argv) {
                 pose_msg.row = pos[1];
                 pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
-                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         pose_msg.row, pose_msg.column, pose_msg.orientation);
+
 
                 // wait for execute plan call
                 comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
                 bool plan_exists_flag = false;
-                if (!comm_client.call(comm_srv)) {
+                while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
-                    return 1;
-                }
+
                 plan_exists_flag = comm_srv.response.plan_exists;
                 if (plan_exists_flag == true) {
                     waypoints = comm_srv.response.waypoints;
                     for (auto &waypoint : waypoints) {
-                        waypoint.x = waypoint.x-current_position.x;
-                        waypoint.y = waypoint.y-current_position.y;
+                        waypoint.x += alignment.cell_center.x;
+                        waypoint.y += alignment.cell_center.y;
                     }
+                    comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+                    comm_srv.request.plan_exists = false;
+                    comm_srv.request.success_state = silver_fundamentals::PlanSuccessState::NONE;
 
+                    while (!comm_client.call(comm_srv) && ros::ok())
+                        ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
                     localize_state = LocalizeState::EXECUTING_PLAN;
                 }
-
                 break;
             }
             case LocalizeState::EXECUTING_PLAN: {
