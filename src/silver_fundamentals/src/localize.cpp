@@ -29,15 +29,15 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 100.0
+#define SIGMA 1.0
 #define GAMMA 1.00
-#define AMOUNT_OF_RAYS 10
-#define AMOUNT_OF_PARTICLES 10
-#define AMOUNT_RANDOM_INJECTIONS 1
-#define PROBABILITY_RANDOM_INJECTIONS 0.00
+#define AMOUNT_OF_RAYS 40
+#define AMOUNT_OF_PARTICLES 600
+#define AMOUNT_RANDOM_INJECTIONS 30
+#define PROBABILITY_RANDOM_INJECTIONS 0.005
 #define MIN_PARTICLE_PROB 0.01
-#define ALPHA1 0.06 //rotation noise
-#define ALPHA2 0.06 //rotation noise related to translation
+#define ALPHA1 0.02 //rotation noise
+#define ALPHA2 0.02 //rotation noise related to translation
 #define ALPHA3 0.06 //translation noise
 #define ALPHA4 0.04 //translation noise related to rotation
 
@@ -48,9 +48,9 @@
 #define BASE_SPEED 4.0
 
 #define MINIMAL_WALL_DIST 2
-#define LOCALIZE_VAR_LOWER 0.04
+#define LOCALIZE_VAR_LOWER 0.06
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 350
+#define LOCALIZE_COUNT_THRESHOLD 50
 #define UNLOCALIZE_COUNT_THRESHOLD 10
 #define CELL_SIZE_CM 80.0
 
@@ -219,14 +219,14 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     masses.reserve(AMOUNT_OF_PARTICLES+1);
     for (const auto &particle: particles)
         masses.push_back(particle.weight);
-    //masses.push_back(injection_probability);
+    masses.push_back(injection_probability);
     std::discrete_distribution<int> sampler(masses.begin(), masses.end());
     std::array<Particle, AMOUNT_OF_PARTICLES> new_particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
-	if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
+	/* if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
 	    new_particles[i] = Particle::random(lhf);
             continue;
-	}
+	}*/
         const int idx = sampler(gen);
         if (idx == AMOUNT_OF_PARTICLES)
             new_particles[i] = Particle::random(lhf);
@@ -237,7 +237,7 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
 }
 
 void visualize_reference_rays(const ros::Publisher ray_pub,
-                              const std::vector<geometry_msgs::Point> &reference_measurements) {
+                              const std::vector<geometry_msgs::Point> &reference_measurements, const geometry_msgs::Point &ref) {
     visualization_msgs::Marker m;
     m.header.frame_id = "map";
     m.header.stamp = ros::Time::now();
@@ -261,8 +261,8 @@ void visualize_reference_rays(const ros::Publisher ray_pub,
 
     // For each measurement, draw a line from (0,0,0) to (px,py,0)
     geometry_msgs::Point start, end;
-    start.x = 0.0;
-    start.y = 0.0;
+    start.x = -ref.y;
+    start.y = -ref.x;
     start.z = 0.0;
 
     for (const auto &meas: reference_measurements) {
@@ -399,8 +399,6 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
     }
     averages.x /= particles.size();
     averages.y /= particles.size();
-    sum_cos /= particles.size();
-    sum_sin /= particles.size();
     averages.z = std::atan2(sum_cos, sum_sin);
 
     geometry_msgs::Point variance;
@@ -454,9 +452,9 @@ int main(int argc, char **argv) {
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
         particles[i] = Particle::random(lhf); /* particles[i] = Particle::zero(); */
-	particles[i].position.y = -2.0;
-	particles[i].position.x = -0.4;
-	particles[i].position.theta = -PI/2.0;
+	// particles[i].position.y = -2.0;
+	// particles[i].position.x = -0.4;
+	// particles[i].position.theta = -PI/2.0;
     }
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
@@ -550,7 +548,12 @@ int main(int argc, char **argv) {
         // do laser measurement
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
-        visualize_reference_rays(ray_pub, reference_measurements);
+        // visualize_reference_rays(ray_pub, reference_measurements);
+	std::vector<geometry_msgs::Point> applied_measurements;
+	for (int i = 0; i < reference_measurements.size(); i++) {
+		applied_measurements.push_back(local_to_global(averages, reference_measurements[i]));
+	}
+	visualize_reference_rays(ray_pub, applied_measurements, averages);
         viszualize_particles(posearray_pub, particles);
 	
 
@@ -559,7 +562,7 @@ int main(int argc, char **argv) {
 		sum += particle.weight;
 	ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
         // do sampling
-        if (localize_state != LocalizeState::WAIT_FOR_PLAN)
+        //if (localize_state != LocalizeState::WAIT_FOR_PLAN)
             resample(lhf, particles);
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())

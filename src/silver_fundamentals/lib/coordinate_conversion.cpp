@@ -25,7 +25,7 @@ geometry_msgs::Point local_to_global(geometry_msgs::Point &relative_center, geom
     double lx = to_convert.x;
     double ly = to_convert.y;
 
-    double yaw = to_convert.z;
+    double yaw = relative_center.z;
     double c = std::cos(yaw);
     double s = std::sin(yaw);
 
