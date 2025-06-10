@@ -29,7 +29,7 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 1.0
+#define SIGMA 9.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 600
@@ -488,9 +488,21 @@ int main(int argc, char **argv) {
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
 
+        double max_weight = 0.0;
+        Particle &best_particle = particles[0];
+
+        for (int i = 0; i < particles.size(); ++i) {
+            const auto &p = particles[i];
+            if (p.weight > max_weight) {
+                max_weight = p.weight;
+                best_particle = p;
+            }
+
+        }
+
         current_position.x = averages.x;
         current_position.y = averages.y;
-        current_position.theta = averages.z;
+        current_position.theta = best_particle.position.theta;
 
 
         if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
