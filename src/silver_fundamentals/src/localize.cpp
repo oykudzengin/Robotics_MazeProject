@@ -36,10 +36,10 @@
 #define AMOUNT_RANDOM_INJECTIONS 30
 #define PROBABILITY_RANDOM_INJECTIONS 0.005
 #define MIN_PARTICLE_PROB 0.01
-#define ALPHA1 0.02 //rotation noise
-#define ALPHA2 0.02 //rotation noise related to translation
-#define ALPHA3 0.06 //translation noise
-#define ALPHA4 0.04 //translation noise related to rotation
+#define ALPHA1 0.01 //rotation noise
+#define ALPHA2 0.01 //rotation noise related to translation
+#define ALPHA3 0.01 //translation noise
+#define ALPHA4 0.01 //translation noise related to rotation
 
 #define K_ATT 10.0
 #define K_REP 0.01
@@ -570,8 +570,8 @@ int main(int argc, char **argv) {
 	    geometry_msgs::Point p;
 	    p.x = averages.x;
 	    p.y = averages.y;
-	    p.z = averages.z+PI;
-		applied_measurements.push_back(local_to_global(averages, reference_measurements[i]));
+	    p.z = current_position.theta;
+		applied_measurements.push_back(local_to_global(p, reference_measurements[i]));
 	}
 	visualize_reference_rays(ray_pub, applied_measurements, averages);
         viszualize_particles(posearray_pub, particles);
@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
 	double sum = 0;
 	for (auto &particle: particles)
 		sum += particle.weight;
-	ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
+	// ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
         // do sampling
         //if (localize_state != LocalizeState::WAIT_FOR_PLAN)
             resample(lhf, particles);
