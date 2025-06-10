@@ -29,15 +29,15 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 360.0
+#define SIGMA 100.0
 #define GAMMA 1.00
-#define AMOUNT_OF_RAYS 20
-#define AMOUNT_OF_PARTICLES 600
+#define AMOUNT_OF_RAYS 10
+#define AMOUNT_OF_PARTICLES 10
 #define AMOUNT_RANDOM_INJECTIONS 1
-#define PROBABILITY_RANDOM_INJECTIONS 0.0005
-#define MIN_PARTICLE_PROB 0.002
-#define ALPHA1 0.05 //rotation noise
-#define ALPHA2 0.05 //rotation noise related to translation
+#define PROBABILITY_RANDOM_INJECTIONS 0.00
+#define MIN_PARTICLE_PROB 0.01
+#define ALPHA1 0.06 //rotation noise
+#define ALPHA2 0.06 //rotation noise related to translation
 #define ALPHA3 0.06 //translation noise
 #define ALPHA4 0.04 //translation noise related to rotation
 
@@ -50,7 +50,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.04
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 15
+#define LOCALIZE_COUNT_THRESHOLD 350
 #define UNLOCALIZE_COUNT_THRESHOLD 10
 #define CELL_SIZE_CM 80.0
 
@@ -452,9 +452,12 @@ int main(int argc, char **argv) {
     int current_waypoint = 0;
     // init particles array
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
-    for (int i = 0; i < AMOUNT_OF_PARTICLES; i++)
+    for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
         particles[i] = Particle::random(lhf); /* particles[i] = Particle::zero(); */
-
+	particles[i].position.y = -2.0;
+	particles[i].position.x = -0.4;
+	particles[i].position.theta = -PI/2.0;
+    }
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
     unsigned int count = 0;
@@ -549,6 +552,12 @@ int main(int argc, char **argv) {
         compute_weights(lhf, particles, reference_measurements);
         visualize_reference_rays(ray_pub, reference_measurements);
         viszualize_particles(posearray_pub, particles);
+	
+
+	double sum = 0;
+	for (auto &particle: particles)
+		sum += particle.weight;
+	ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
         // do sampling
         if (localize_state != LocalizeState::WAIT_FOR_PLAN)
             resample(lhf, particles);
@@ -628,7 +637,7 @@ int main(int argc, char **argv) {
                     }
                     comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                     comm_srv.request.plan_exists = false;
-                    comm_srv.request.success_state = silver_fundamentals::PlanSuccessState::NONE;
+                    comm_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
 
                     while (!comm_client.call(comm_srv) && ros::ok())
                         ROS_ERROR("localize: failed to call comm service for GET_DATA");

@@ -157,7 +157,7 @@ void laserCallback(const sensor_msgs::LaserScan::ConstPtr& msg)
     std::copy(msg->ranges.begin() + 44, msg->ranges.end(), laser_data.ranges.begin());
 
     count++;
-    if (count % 100 == 0)
+    if (count % 1000 == 0)
     {
         std::stringstream ss;
         for (const double range : laser_data.ranges)
