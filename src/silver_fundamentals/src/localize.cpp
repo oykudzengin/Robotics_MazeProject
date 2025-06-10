@@ -614,7 +614,7 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE: {
-                if (driver.turn_n_degrees_async(alignment.angle, alignment.dir))
+                if (driver.turn_n_degrees_async(alignment.angle, alignment.dir) == true)
                     localize_state = LocalizeState::ALIGNING_DRIVE;
                 break;
             }

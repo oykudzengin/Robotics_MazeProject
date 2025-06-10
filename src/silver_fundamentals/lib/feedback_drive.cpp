@@ -491,12 +491,13 @@ bool FeedbackDrive::drive_n_cm_async(const double n) {
 
 
 bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
-
     // Subsequent calls: check encoder deltas
     drive_data_client.call(drive_data_srv);
     double left_delta = std::abs(drive_data_srv.response.left_encoder - encoder_base_line_l);
     double right_delta = std::abs(drive_data_srv.response.right_encoder - encoder_base_line_r);
     double current_rad_distance = (left_delta + right_delta) / 2.0;
+
+    printf("current dist = %f, comparing to %f\n", current_rad_distance, (n * wheel_base * PI) / (360.0 * wheel_radius));
 
     if (d == left) {
         drive_srv.request.left = -speed;
@@ -510,8 +511,10 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
     }
 
 
+
     // If not yet reached the target, keep turning
-    if (current_rad_distance <  (n * wheel_base * PI) / (360.0 * wheel_radius)) {
+    if (current_rad_distance <  (n * wheel_base) / (2.0 * wheel_radius)) {
+        drive_client.call(drive_srv);
         return false;
     }
     // Stop the robot and clear the async flag
