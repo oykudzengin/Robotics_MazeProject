@@ -146,11 +146,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
         }
         double weight = 0;
         for (auto &measurement: measurements) {
-            geometry_msgs::Point p;
-            p.x = particle.position.x;
-            p.y = particle.position.y;
-            p.z = particle.position.theta+PI;
-            geometry_msgs::Point global_ray_ending = local_to_global(p, measurement);
+            geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
             const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
