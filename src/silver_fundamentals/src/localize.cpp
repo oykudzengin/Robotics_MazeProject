@@ -493,7 +493,7 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < particles.size(); ++i) {
             const auto &p = particles[i];
-            if (p.weight > max_weight) {
+            if (p.weight > max_weight && p.weight < 2.0) {
                 max_weight = p.weight;
                 best_particle = p;
             }
@@ -508,7 +508,7 @@ int main(int argc, char **argv) {
         if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
             printf("within threshold, count is %d\n", localize_count);
             if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
-                localize_state = LocalizeState::WAIT_FOR_PLAN;
+                localize_state = LocalizeState::ALIGNING_ANGLE;
                 // compute alignment
                 geometry_msgs::Point new_pos;
 
@@ -520,8 +520,8 @@ int main(int argc, char **argv) {
                 geometry_msgs::Point curr_as_point;
                 curr_as_point.x = current_position.x;
                 curr_as_point.y = current_position.y;
-                //curr_as_point.z = current_position.theta;
-                curr_as_point.z = particles[0].position.theta;
+                curr_as_point.z = current_position.theta;
+                //curr_as_point.z = particles[0].position.theta;
                 auto goal = global_to_local(curr_as_point, new_pos);
 
 
@@ -566,14 +566,14 @@ int main(int argc, char **argv) {
         compute_weights(lhf, particles, reference_measurements);
         // visualize_reference_rays(ray_pub, reference_measurements);
 	std::vector<geometry_msgs::Point> applied_measurements;
-	for (int i = 0; i < reference_measurements.size(); i++) {
 	    geometry_msgs::Point p;
 	    p.x = averages.x;
 	    p.y = averages.y;
 	    p.z = current_position.theta;
+	for (int i = 0; i < reference_measurements.size(); i++) {
 		applied_measurements.push_back(local_to_global(p, reference_measurements[i]));
 	}
-	visualize_reference_rays(ray_pub, applied_measurements, averages);
+	visualize_reference_rays(ray_pub, applied_measurements, p);
         viszualize_particles(posearray_pub, particles);
 	
 
