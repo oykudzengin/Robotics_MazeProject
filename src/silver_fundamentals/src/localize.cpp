@@ -29,7 +29,7 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 1.0
+#define SIGMA 8.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 600
@@ -152,7 +152,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
             const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/(100*100.0));
             weight += ray_weight;
-            printf("got some ray\n");
+            printf("got some ray %f\n", ray_weight);
         }
         particle.weight = std::pow(std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight)), GAMMA);
         printf("particle.weight = %f\n", particle.weight);
