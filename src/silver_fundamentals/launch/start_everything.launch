@@ -13,6 +13,7 @@
   <!-- Run laser_server -->
   <node pkg="silver_fundamentals" type="laser_server" name="laser_server" output="screen" />
 
+  <node pkg="silver_fundamentals" type="comm_node" name="comm_node" output="screen" />
 
 </launch>
 
