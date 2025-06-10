@@ -614,16 +614,19 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE: {
-                if (driver.turn_n_degrees_async(alignment.angle, alignment.dir) == true)
-		    printf("done with first align\n");
+                if (driver.turn_n_degrees_async(alignment.angle, alignment.dir) == true) {
+                    printf("done with first align\n");
                     localize_state = LocalizeState::ALIGNING_DRIVE;
-		    driver.reset_encoder_base_lines();
+                    driver.reset_encoder_base_lines();
+                }
                 break;
             }
             case LocalizeState::ALIGNING_DRIVE: {
-                if (driver.drive_n_cm_async(alignment.dist) == true)
+                if (driver.drive_n_cm_async(alignment.dist) == true) {
                     localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
-		    driver.reset_encoder_base_lines();
+                    driver.reset_encoder_base_lines();
+                }
+
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE_ORIENT: {
