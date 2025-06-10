@@ -1,0 +1,19 @@
+<launch>
+
+
+  <!-- Run drive_server -->
+  <node pkg="silver_fundamentals" type="drive_server" name="drive_server" output="screen" />
+
+  <!-- Run laser_server -->
+  <node pkg="silver_fundamentals" type="laser_server" name="laser_server" output="screen" />
+
+  <!-- Run pose_server -->
+  <node pkg="silver_fundamentals" type="pose_server" name="pose_server" output="screen" />
+
+   <!-- Run localization node -->
+   <node pkg="silver_fundamentals" type="localize" name="localize" output="screen" />
+
+   <!-- Run comm node -->
+   <node pkg="silver_fundamentals" type="comm_node" name="comm_node" output="screen" />
+
+</launch>
