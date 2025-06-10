@@ -497,7 +497,6 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
     double right_delta = std::abs(drive_data_srv.response.right_encoder - encoder_base_line_r);
     double current_rad_distance = (left_delta + right_delta) / 2.0;
 
-    printf("current dist = %f, comparing to %f, baselines %f %f\n", current_rad_distance, (n * wheel_base * PI) / (360.0 * wheel_radius), encoder_base_line_l, encoder_base_line_r);
 
     if (d == left) {
         drive_srv.request.left = -speed;
@@ -528,7 +527,6 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
 
 bool FeedbackDrive::reset_encoder_base_lines() {
     // Read and store current encoder readings as the new baselines
-    printf("called baseline reset\n");
     drive_data_client.call(drive_data_srv);
     encoder_base_line_l = drive_data_srv.response.left_encoder;
     encoder_base_line_r = drive_data_srv.response.right_encoder;
