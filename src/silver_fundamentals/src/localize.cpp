@@ -364,8 +364,8 @@ std::vector<int> approx_current_pos(double x, double y, double angle) {
     angle += PI;
 
     // Normalize angle to range [-PI, PI]
-    while (angle > PI) angle -= 2 * PI;
-    while (angle <= -PI) angle += 2 * PI;
+    while (angle > PI && ros::ok()) angle -= 2 * PI;
+    while (angle <= -PI && ros::ok()) angle += 2 * PI;
     int final_orient = 4;
 
     if (angle > -PI / 4 && angle <= PI / 4) {
@@ -606,7 +606,7 @@ int main(int argc, char **argv) {
             case LocalizeState::LOCALISING: {
                 // wandering
 
-                while (!drive_data_client.call(encoder_srv))
+                while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
 
                 if (count % 4 == 0) {
@@ -689,7 +689,7 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::EXECUTING_PLAN: {
-                while (!drive_data_client.call(encoder_srv))
+                while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
                 if (count % 4 == 0) {
                     geometry_msgs::Point current, goal;
@@ -770,7 +770,7 @@ int main(int argc, char **argv) {
         // do sleep
         rate.sleep();
         // do odometry adjustment
-        while (!drive_data_client.call(encoder_srv))
+        while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
 
         double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
