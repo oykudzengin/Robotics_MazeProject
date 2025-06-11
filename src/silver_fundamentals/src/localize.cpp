@@ -641,11 +641,8 @@ int main(int argc, char **argv) {
             }
             case LocalizeState::ALIGNING_DRIVE: {
                 if (driver.drive_n_cm_async(alignment.dist) == true) {
-                    localize_state = LocalizeState::WAIT_FOR_PLAN;
+                    localize_state = LocalizeState::ALIGNING_ANGLE_ORIENT;
                     driver.reset_encoder_base_lines();
-                    std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
-                    silver_fundamentals::playSong1(n); ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         pos[1], pos[0], pos[2]);
                 }
 
                 break;
@@ -653,6 +650,10 @@ int main(int argc, char **argv) {
             case LocalizeState::ALIGNING_ANGLE_ORIENT: {
                 if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir) == true) {
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
+                    driver.reset_encoder_base_lines();
+                    std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+                    silver_fundamentals::playSong1(n); ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         pos[1], pos[0], pos[2]);
                 }
                 break;
             }
