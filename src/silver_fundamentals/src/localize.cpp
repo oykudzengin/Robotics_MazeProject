@@ -481,6 +481,7 @@ int main(int argc, char **argv) {
 
     int localize_count = 0;
     int unlocalize_count = 0;
+    bool first_execution = false;
 
     // main loop
     while (ros::ok()) {
@@ -671,6 +672,7 @@ int main(int argc, char **argv) {
                         ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
                     localize_state = LocalizeState::EXECUTING_PLAN;
+                    first_execution = true;
                 }
                 break;
             }
@@ -696,8 +698,14 @@ int main(int argc, char **argv) {
                             (current_position.x - goal.x) * (current_position.x - goal.x) + (
                                 current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
                         current_waypoint++;
-                        if (waypoints.size() == current_waypoint)
+                        if (waypoints.size() == current_waypoint) {
                             localize_state = LocalizeState::EXECUTED_PLAN_SUC;
+                            current_waypoint = 0;
+                        }
+                    }
+                    if (first_execution == true) {
+                        first_execution = false;
+                        ros::Duration(0.1).sleep();                    
                     }
                 }
 
@@ -746,8 +754,9 @@ int main(int argc, char **argv) {
                 }
                 // TODO:
                 localize_state = LocalizeState::LOCALISING;
-		localize_count = 0;
-		unlocalize_count = 0;
+		        localize_count = 0;
+		        unlocalize_count = 0;
+                current_waypoint = 0;
                 break;
             }
             default:
