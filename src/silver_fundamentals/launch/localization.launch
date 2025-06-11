@@ -11,7 +11,7 @@
   <node pkg="silver_fundamentals" type="pose_server" name="pose_server" output="screen" />
 
    <!-- Run localization node -->
-   <node pkg="silver_fundamentals" type="localize" name="localize" output="screen" />
+   <!-- <node pkg="silver_fundamentals" type="localize" name="localize" output="screen" /> -->
 
    <!-- Run comm node -->
    <node pkg="silver_fundamentals" type="comm_node" name="comm_node" output="screen" />

@@ -18,6 +18,7 @@
 #include <parse_map_file.h>
 #include <cmath>
 
+#include <signal_handler.h>
 #include <coordinate_conversion.h>
 #include <geometry_msgs/Pose.h>
 #include <visualization_msgs/Marker.h>
@@ -363,8 +364,8 @@ std::vector<int> approx_current_pos(double x, double y, double angle) {
     angle += PI;
 
     // Normalize angle to range [-PI, PI]
-    while (angle > PI) angle -= 2 * PI;
-    while (angle <= -PI) angle += 2 * PI;
+    while (angle > PI && ros::ok()) angle -= 2 * PI;
+    while (angle <= -PI && ros::ok()) angle += 2 * PI;
     int final_orient = 4;
 
     if (angle > -PI / 4 && angle <= PI / 4) {
@@ -420,7 +421,10 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "localize");
+    // ros::init(argc, argv, "localize");
+    ros::init(argc, argv, "localize",
+        ros::init_options::NoSigintHandler);
+    initSignalHandler();
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
             n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
@@ -485,6 +489,16 @@ int main(int argc, char **argv) {
 
     // main loop
     while (ros::ok()) {
+
+        if (isShutdownRequested()) {
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            ROS_INFO("SIGINT: Stopped robot motors.");
+            ROS_INFO("SIGINT: Shutting Down ...");
+            ros::shutdown();
+            break;
+        }
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
@@ -593,7 +607,7 @@ int main(int argc, char **argv) {
             case LocalizeState::LOCALISING: {
                 // wandering
 
-                while (!drive_data_client.call(encoder_srv))
+                while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
 
                 if (count % 4 == 0) {
@@ -677,7 +691,7 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::EXECUTING_PLAN: {
-                while (!drive_data_client.call(encoder_srv))
+                while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
                 if (count % 4 == 0) {
                     geometry_msgs::Point current, goal;
@@ -705,7 +719,7 @@ int main(int argc, char **argv) {
                     }
                     if (first_execution == true) {
                         first_execution = false;
-                        ros::Duration(0.1).sleep();                    
+                        ros::Duration(0.1).sleep();
                     }
                 }
 
@@ -765,7 +779,7 @@ int main(int argc, char **argv) {
         // do sleep
         rate.sleep();
         // do odometry adjustment
-        while (!drive_data_client.call(encoder_srv))
+        while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
 
         double right_encoder_delta = encoder_srv.response.right_encoder - curr_right_encoder;
