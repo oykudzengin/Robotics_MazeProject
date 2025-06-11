@@ -51,7 +51,7 @@
 #define LOCALIZE_VAR_LOWER 0.06
 #define LOCALIZE_VAR_UPPER 0.20
 #define LOCALIZE_COUNT_THRESHOLD 50
-#define UNLOCALIZE_COUNT_THRESHOLD 10
+#define UNLOCALIZE_COUNT_THRESHOLD 12
 #define CELL_SIZE_CM 80.0
 
 
@@ -357,10 +357,10 @@ std::vector<int> approx_current_pos(double x, double y, double angle) {
     // Convert meters to centimeters and reflect
 
     // Convert x and y to int (row col)
-    int col = static_cast<int>(-x * 100) / 80 * 80;
-    int row = static_cast<int>(-y * 100) / 80 * 80;
+    int col = static_cast<int>(-x * 100) / 80;
+    int row = static_cast<int>(-y * 100) / 80;
 
-    angle =+ PI;
+    angle += PI;
 
     // Normalize angle to range [-PI, PI]
     while (angle > PI) angle -= 2 * PI;
@@ -745,7 +745,9 @@ int main(int argc, char **argv) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
                 // TODO:
-                localize_state = LocalizeState::WAIT_FOR_PLAN;
+                localize_state = LocalizeState::LOCALIZING;
+		localize_count = 0;
+		unlocalize_count = 0;
                 break;
             }
             default:
