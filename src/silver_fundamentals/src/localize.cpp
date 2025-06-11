@@ -29,7 +29,7 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 12.0
+#define SIGMA 11.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 600
@@ -187,9 +187,9 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
         const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);
         // Add noise to the odometry values
 
-        const double delta_rot1_hat = delta_rot1 > 0? delta_rot1 + sample_normal(std::sqrt(var_rot1)):0;
-        const double delta_trans_hat = delta_trans > 0? delta_trans + sample_normal(std::sqrt(var_trans)):0;
-        const double delta_rot2_hat = delta_rot2 > 0? delta_rot2 + sample_normal(std::sqrt(var_rot2)):0;
+        const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
+        const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
+        const double delta_rot2_hat =  delta_rot2 + sample_normal(std::sqrt(var_rot2));
 
 
         p.position.x += delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat);
