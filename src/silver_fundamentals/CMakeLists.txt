@@ -117,7 +117,7 @@ add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_driv
 target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
 add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp lib/play_song.cpp)
+add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp lib/play_song.cpp lib/signal_handler.cpp)
 target_link_libraries(localize ${catkin_LIBRARIES})
 add_dependencies(localize create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 

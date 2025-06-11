@@ -18,6 +18,7 @@
 #include <parse_map_file.h>
 #include <cmath>
 
+#include <signal_handler.h>
 #include <coordinate_conversion.h>
 #include <geometry_msgs/Pose.h>
 #include <visualization_msgs/Marker.h>
@@ -420,7 +421,10 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
 }
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "localize");
+    // ros::init(argc, argv, "localize");
+    ros::init(argc, argv, "localize",
+        ros::init_options::NoSigintHandler);
+    initSignalHandler();
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
             n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
@@ -484,6 +488,16 @@ int main(int argc, char **argv) {
 
     // main loop
     while (ros::ok()) {
+
+        if (isShutdownRequested()) {
+            drive_srv.request.left = 0;
+            drive_srv.request.right = 0;
+            drive_client.call(drive_srv);
+            ROS_INFO("SIGINT: Stopped robot motors.");
+            ROS_INFO("SIGINT: Shutting Down ...");
+            ros::shutdown();
+            break;
+        }
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
@@ -745,7 +759,7 @@ int main(int argc, char **argv) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
                 // TODO:
-                localize_state = LocalizeState::LOCALIZING;
+                localize_state = LocalizeState::LOCALISING;
 		localize_count = 0;
 		unlocalize_count = 0;
                 break;
