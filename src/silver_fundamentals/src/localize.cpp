@@ -745,7 +745,7 @@ int main(int argc, char **argv) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
                 // TODO:
-                localize_state = LocalizeState::LOCALIZING;
+                localize_state = LocalizeState::LOCALISING;
 		localize_count = 0;
 		unlocalize_count = 0;
                 break;
