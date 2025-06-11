@@ -173,7 +173,9 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     double delta_trans = (delta_right_m + delta_left_m) / 2.0;
     if (delta_trans < 10e-6)
         delta_trans = 0;
-    const double delta_rot = (delta_right_m - delta_left_m) / (WHEEL_BASE / 100);
+    double delta_rot = (delta_right_m - delta_left_m) / (WHEEL_BASE / 100);
+    if (delta_rot < 10e-6)
+        delta_rot = 0;
 
     const double local_dx = delta_trans * std::sin(delta_rot / 2.0);
     const double local_dy = delta_trans * std::cos(delta_rot / 2.0);
