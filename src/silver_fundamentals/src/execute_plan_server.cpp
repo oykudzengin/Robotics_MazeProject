@@ -153,9 +153,13 @@ bool executePlan(silver_fundamentals::ExecutePlan::Request &req,
 
     // Interpret result
     if (status == silver_fundamentals::PlanSuccessState::PLAN_DONE) {
-    return true;
+        res.success = true;
+        return true;
+    } else if (status == silver_fundamentals::PlanSuccessState::PLAN_FAILED) {
+        res.success = false;
+        return true;
     } else {
-    return false;
+        return false;
     }
 }
 
