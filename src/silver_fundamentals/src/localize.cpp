@@ -72,7 +72,7 @@ struct Particle {
         p.position.x = -ux(gen);
         p.position.y = -uy(gen);
         p.position.theta = utheta(gen);
-        p.weight = 10000;
+        p.weight = 0;
 
         return p;
     }
