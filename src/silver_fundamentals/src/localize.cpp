@@ -64,8 +64,10 @@ struct Particle {
     double weight;
 
     static Particle random(const LikelihoodField &lhf) {
-        static std::uniform_real_distribution<double> ux(MINIMAL_WALL_DIST/100.0, (lhf.get_col_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
-        static std::uniform_real_distribution<double> uy(MINIMAL_WALL_DIST/100.0, (lhf.get_row_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
+        static std::uniform_real_distribution<double> ux(
+            MINIMAL_WALL_DIST / 100.0, (lhf.get_col_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
+        static std::uniform_real_distribution<double> uy(
+            MINIMAL_WALL_DIST / 100.0, (lhf.get_row_count() * lhf.get_cell_size() + MINIMAL_WALL_DIST) / 100.0);
         static std::uniform_real_distribution<double> utheta(-PI / 2, PI / 2);
 
         Particle p;
@@ -110,7 +112,6 @@ enum class LocalizeState {
 };
 
 
-
 std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_client) {
     silver_fundamentals::Laser laser_pol_srv;
 
@@ -123,7 +124,7 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 
         const double current_rad_angle = (ANGLE_MIN + i * step_size + step_size / 2) / 180.0 * PI;
 
-        while (!laser_pol_client.call(laser_pol_srv)  && ros::ok())
+        while (!laser_pol_client.call(laser_pol_srv) && ros::ok())
             ROS_ERROR("laser_pol_client.call failed");
 
         if (laser_pol_srv.response.values[0] > 1)
@@ -151,11 +152,12 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
-            const double ray_weight = -delta_dist * delta_dist / (2*lhf.sigma_value*lhf.sigma_value/(100*100.0));
+            const double ray_weight = -delta_dist * delta_dist / (
+                                          2 * lhf.sigma_value * lhf.sigma_value / (100 * 100.0));
             weight += ray_weight;
         }
         particle.weight = std::pow(std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight)), GAMMA);
-	// particle.weight = weight;
+        // particle.weight = weight;
     }
 }
 
@@ -194,12 +196,18 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
 
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
         const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
-        const double delta_rot2_hat =  delta_rot2 + sample_normal(std::sqrt(var_rot2));
+        const double delta_rot2_hat = delta_rot2 + sample_normal(std::sqrt(var_rot2));
 
 
         p.position.x += delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat);
         p.position.y += delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat);
         p.position.theta += delta_rot1_hat + delta_rot2_hat;
+
+        const double dist = std::hypot(delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat), delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat));
+
+        if (dist > 0.1) {
+            ROS_WARN("Particle moved by %f", dist);
+        }
 
         geometry_msgs::Point temp;
         temp.x = p.position.x;
@@ -208,12 +216,12 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
 
         if (lhf.get_field_value(temp) < MINIMAL_WALL_DIST)
             p.weight = -1;
-	else if (-p.position.x < 0 || -p.position.y < 0)
-	    p.weight = -1;
-	else if (-p.position.x * 100 > lhf.get_cell_size() * lhf.get_col_count())
-	    p.weight = -1;
-	else if (-p.position.y * 100 > lhf.get_cell_size() * lhf.get_row_count())
-	    p.weight = -1;
+        else if (-p.position.x < 0 || -p.position.y < 0)
+            p.weight = -1;
+        else if (-p.position.x * 100 > lhf.get_cell_size() * lhf.get_col_count())
+            p.weight = -1;
+        else if (-p.position.y * 100 > lhf.get_cell_size() * lhf.get_row_count())
+            p.weight = -1;
     }
 }
 
@@ -221,17 +229,17 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     constexpr double injection_probability = AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS; // probably wrong
 
     std::vector<double> masses;
-    masses.reserve(AMOUNT_OF_PARTICLES+1);
+    masses.reserve(AMOUNT_OF_PARTICLES + 1);
     for (const auto &particle: particles)
         masses.push_back(particle.weight);
     masses.push_back(injection_probability);
     std::discrete_distribution<int> sampler(masses.begin(), masses.end());
     std::array<Particle, AMOUNT_OF_PARTICLES> new_particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
-	/* if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
-	    new_particles[i] = Particle::random(lhf);
-            continue;
-	}*/
+        /* if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
+            new_particles[i] = Particle::random(lhf);
+                continue;
+        }*/
         const int idx = sampler(gen);
         if (idx == AMOUNT_OF_PARTICLES)
             new_particles[i] = Particle::random(lhf);
@@ -242,7 +250,8 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
 }
 
 void visualize_reference_rays(const ros::Publisher ray_pub,
-                              const std::vector<geometry_msgs::Point> &reference_measurements, const geometry_msgs::Point &ref) {
+                              const std::vector<geometry_msgs::Point> &reference_measurements,
+                              const geometry_msgs::Point &ref) {
     visualization_msgs::Marker m;
     m.header.frame_id = "map";
     m.header.stamp = ros::Time::now();
@@ -320,9 +329,9 @@ void viszualize_particles(
 
         // --- SCALE (arrow length) ---
         // Make each arrow a quarter as long: 0.25 m
-        m.scale.x = 0.05;   // arrow length in meters
-        m.scale.y = 0.02;   // shaft diameter
-        m.scale.z = 0.02;   // head diameter
+        m.scale.x = 0.05; // arrow length in meters
+        m.scale.y = 0.02; // shaft diameter
+        m.scale.z = 0.02; // head diameter
 
         // --- COLOR (by weight) ---
         if (p.weight <= 0.0) {
@@ -344,7 +353,7 @@ void viszualize_particles(
             m.color.a = 1.0f;
         } else {
             // yellow
-            m.color.r = 1.0f-p.weight;
+            m.color.r = 1.0f - p.weight;
             m.color.g = p.weight;
             m.color.b = 0.0f;
             m.color.a = 1.0f;
@@ -386,7 +395,8 @@ std::vector<int> approx_current_pos(double x, double y, double angle) {
 }
 
 
-geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_PARTICLES> &particles, geometry_msgs::Point &averages) {
+geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
+                                           geometry_msgs::Point &averages) {
     double sum_sin = 0;
     double sum_cos = 0;
 
@@ -427,7 +437,7 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
 int main(int argc, char **argv) {
     // ros::init(argc, argv, "localize");
     ros::init(argc, argv, "localize",
-        ros::init_options::NoSigintHandler);
+              ros::init_options::NoSigintHandler);
     initSignalHandler();
     ros::NodeHandle n;
     static ros::Publisher posearray_pub =
@@ -460,9 +470,9 @@ int main(int argc, char **argv) {
     std::array<Particle, AMOUNT_OF_PARTICLES> particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
         particles[i] = Particle::random(lhf); /* particles[i] = Particle::zero(); */
-	// particles[i].position.y = -2.0;
-	// particles[i].position.x = -0.4;
-	// particles[i].position.theta = -PI/2.0;
+        // particles[i].position.y = -2.0;
+        // particles[i].position.x = -0.4;
+        // particles[i].position.theta = -PI/2.0;
     }
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
@@ -484,8 +494,7 @@ int main(int argc, char **argv) {
     geometry_msgs::Pose2D current_position;
 
 
-
-     auto localize_state = LocalizeState::LOCALISING;
+    auto localize_state = LocalizeState::LOCALISING;
 
     int localize_count = 0;
     int unlocalize_count = 0;
@@ -493,7 +502,6 @@ int main(int argc, char **argv) {
 
     // main loop
     while (ros::ok()) {
-
         if (isShutdownRequested()) {
             drive_srv.request.left = 0;
             drive_srv.request.right = 0;
@@ -516,7 +524,6 @@ int main(int argc, char **argv) {
                 max_weight = p.weight;
                 best_particle = p;
             }
-
         }
 
         current_position.x = averages.x;
@@ -524,15 +531,16 @@ int main(int argc, char **argv) {
         current_position.theta = best_particle.position.theta;
 
 
-        if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state == LocalizeState::LOCALISING) {
+        if (variance.x < LOCALIZE_VAR_LOWER && variance.y < LOCALIZE_VAR_LOWER && localize_state ==
+            LocalizeState::LOCALISING) {
             printf("within threshold, count is %d\n", localize_count);
             if (localize_count >= LOCALIZE_COUNT_THRESHOLD) {
                 localize_state = LocalizeState::ALIGNING_ANGLE;
                 // compute alignment
                 geometry_msgs::Point new_pos;
 
-                new_pos.x = -static_cast<double>(static_cast<int>(-current_position.x * 100) / 80 * 80)/100.0-0.4;
-                new_pos.y = -static_cast<double>(static_cast<int>(-current_position.y * 100) / 80 * 80)/100.0-0.4;
+                new_pos.x = -static_cast<double>(static_cast<int>(-current_position.x * 100) / 80 * 80) / 100.0 - 0.4;
+                new_pos.y = -static_cast<double>(static_cast<int>(-current_position.y * 100) / 80 * 80) / 100.0 - 0.4;
 
                 alignment.cell_center = new_pos;
 
@@ -544,29 +552,28 @@ int main(int argc, char **argv) {
                 auto goal = global_to_local(curr_as_point, new_pos);
 
 
-
                 double angle = atan2(goal.x, goal.y);
 
                 alignment.angle = std::abs(angle);
-                alignment.dir = angle>0?left:right;
+                alignment.dir = angle > 0 ? left : right;
                 alignment.dist = goal.z;
-                alignment.orientation = std::abs(-current_position.theta-angle);
-                alignment.orientation_dir = -current_position.theta-angle>0?left:right;
+                alignment.orientation = std::abs(-current_position.theta - angle);
+                alignment.orientation_dir = -current_position.theta - angle > 0 ? left : right;
 
                 driver.reset_encoder_base_lines();
                 drive_srv.request.left = 0;
                 drive_srv.request.right = 0;
                 drive_client.call(drive_srv);
 
-                printf("now localized at %f %f %f, aligning to %f %f with %f %f\n", current_position.x, current_position.y, current_position.theta, goal.x, goal.y, alignment.angle, alignment.dist);
+                printf("now localized at %f %f %f, aligning to %f %f with %f %f\n", current_position.x,
+                       current_position.y, current_position.theta, goal.x, goal.y, alignment.angle, alignment.dist);
             } else
                 localize_count++;
-
-
         } else if (localize_state == LocalizeState::LOCALISING) {
             localize_count = 0;
         }
-        if (localize_state != LocalizeState::LOCALISING && (variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
+        if (localize_state != LocalizeState::LOCALISING && (
+                variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
             if (unlocalize_count >= UNLOCALIZE_COUNT_THRESHOLD) {
                 if (localize_state == LocalizeState::EXECUTING_PLAN)
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
@@ -574,7 +581,6 @@ int main(int argc, char **argv) {
                     localize_state = LocalizeState::LOCALISING;
             } else
                 unlocalize_count++;
-
         } else if (localize_state != LocalizeState::LOCALISING) {
             unlocalize_count = 0;
         }
@@ -584,25 +590,25 @@ int main(int argc, char **argv) {
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
         // visualize_reference_rays(ray_pub, reference_measurements);
-	std::vector<geometry_msgs::Point> applied_measurements;
-	    geometry_msgs::Point p;
-	    p.x = averages.x;
-	    p.y = averages.y;
-	    p.z = current_position.theta;
-	for (int i = 0; i < reference_measurements.size(); i++) {
-		applied_measurements.push_back(local_to_global(p, reference_measurements[i]));
-	}
-	visualize_reference_rays(ray_pub, applied_measurements, p);
+        std::vector<geometry_msgs::Point> applied_measurements;
+        geometry_msgs::Point p;
+        p.x = averages.x;
+        p.y = averages.y;
+        p.z = current_position.theta;
+        for (int i = 0; i < reference_measurements.size(); i++) {
+            applied_measurements.push_back(local_to_global(p, reference_measurements[i]));
+        }
+        visualize_reference_rays(ray_pub, applied_measurements, p);
         viszualize_particles(posearray_pub, particles);
-	
 
-	double sum = 0;
-	for (auto &particle: particles)
-		sum += particle.weight;
-	// ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
+
+        double sum = 0;
+        for (auto &particle: particles)
+            sum += particle.weight;
+        // ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
         // do sampling
         //if (localize_state != LocalizeState::WAIT_FOR_PLAN)
-            resample(lhf, particles);
+        resample(lhf, particles);
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
@@ -651,16 +657,18 @@ int main(int argc, char **argv) {
                 if (driver.turn_n_degrees_async(alignment.orientation, alignment.orientation_dir) == true) {
                     localize_state = LocalizeState::WAIT_FOR_PLAN;
                     driver.reset_encoder_base_lines();
-                    std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
-                    silver_fundamentals::playSong1(n); ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         pos[1], pos[0], pos[2]);
+                    std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
+                                                              current_position.theta);
+                    silver_fundamentals::playSong1(n);
+                    ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                             pos[1], pos[0], pos[2]);
                 }
                 break;
             }
             case LocalizeState::WAIT_FOR_PLAN: {
-
                 // convert current_pos to pose representation
-                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
+                                                          current_position.theta);
 
                 // create and publish Pose message
                 silver_fundamentals::Pose pose_msg;
@@ -679,9 +687,10 @@ int main(int argc, char **argv) {
                 plan_exists_flag = comm_srv.response.plan_exists;
                 if (plan_exists_flag == true) {
                     waypoints = comm_srv.response.waypoints;
-                    for (auto &waypoint : waypoints) {
+                    for (auto &waypoint: waypoints) {
                         waypoint.x += alignment.cell_center.x;
                         waypoint.y += alignment.cell_center.y;
+                        ROS_INFO("Waypoint at %f %f %f\n", waypoint.x, waypoint.y, waypoint.z);
                     }
                     comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                     comm_srv.request.plan_exists = false;
@@ -728,7 +737,8 @@ int main(int argc, char **argv) {
                     }
                 }
 
-                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y, current_position.theta);
+                std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
+                                                          current_position.theta);
 
                 // create and publish Pose message
                 silver_fundamentals::Pose pose_msg;
@@ -773,8 +783,8 @@ int main(int argc, char **argv) {
                 }
                 // TODO:
                 localize_state = LocalizeState::LOCALISING;
-		        localize_count = 0;
-		        unlocalize_count = 0;
+                localize_count = 0;
+                unlocalize_count = 0;
                 current_waypoint = 0;
                 break;
             }
@@ -795,8 +805,8 @@ int main(int argc, char **argv) {
         particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
 
-    // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
-	count++;
+        // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
+        count++;
     }
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
