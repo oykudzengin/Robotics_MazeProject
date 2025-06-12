@@ -13,6 +13,35 @@
 #include <parse_map_file.h>
 #include <geometry_msgs/Pose2D.h>
 
+// Navigation Graph & Lookup Map
+// -----------------------
+
+#include <queue>
+#include <map>
+#include <vector>
+#include <utility>
+
+// Alias for a grid cell (row, col)
+using Cell = std::pair<int, int>;
+
+// Cell wall bit definitions (must match LikelihoodField private enum)
+static constexpr unsigned int CW_TOP    = 1u << 0;
+static constexpr unsigned int CW_RIGHT  = 1u << 1;
+static constexpr unsigned int CW_BOTTOM = 1u << 2;
+static constexpr unsigned int CW_LEFT   = 1u << 3;
+
+// Directions in the low-res map: bit mask, row delta, col delta
+struct Dir { unsigned int bit; int dr, dc; };
+static const Dir DIRS_LOWRES[] = {
+    { CW_TOP,    -1,  0 },
+    { CW_BOTTOM,  1,  0 },
+    { CW_LEFT,     0, -1 },
+    { CW_RIGHT,    0,  1 },
+};
+
+// Forward declaration for lookup map builder
+std::map<Cell, std::map<Cell, std::vector<Cell>>> buildLookupMapGrid(const std::vector<std::vector<unsigned int>>& map);
+
 #define POW2(x) ((x)*(x))
 
 void LikelihoodField::publish_low_res_walls(ros::NodeHandle &nh,
@@ -241,6 +270,8 @@ bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector
 
 #pragma GCC optimize ("O3")
 void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned int> > &map) {
+    // Tabelle der kürzesten Pfade aufbauen
+    lookup_map_ = buildLookupMapGrid(map);
     row_count = map.size();
     col_count = map[0].size();
 
@@ -341,6 +372,27 @@ void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned in
             dist_field[current_row][current_col] = closest_wall_dist;
         }
     }
+}
+
+// Liefert kürzesten Pfad als Points (x=row, y=col, z=0.4)
+std::vector<geometry_msgs::Point>
+LikelihoodField::getPath(int start_r, int start_c, int target_r, int target_c) const
+{
+    using Cell = std::pair<int,int>;
+    Cell start{start_r, start_c}, target{target_r, target_c};
+    std::vector<geometry_msgs::Point> result;
+    auto it_start = lookup_map_.find(start);
+    if (it_start == lookup_map_.end()) return result;
+    auto it_target = it_start->second.find(target);
+    if (it_target == it_start->second.end()) return result;
+    for (const Cell &cell : it_target->second) {
+        geometry_msgs::Point p;
+        p.x = cell.first;   // row
+        p.y = cell.second;  // col
+        p.z = 0.4;          // feste Radius-Angabe
+        result.push_back(p);
+    }
+    return result;
 }
 
 void LikelihoodField::build_wall_tables(const std::vector<std::vector<unsigned int>> &map) {
@@ -507,3 +559,88 @@ double LikelihoodField::get_ray_wall_dist(const geometry_msgs::Pose2D &start_poi
     return best_t;
 
 }
+
+
+
+/**
+ * @brief Build an adjacency list graph from a low-res map.
+ * @param map Vector of rows×cols cell masks.
+ * @return map from each Cell to its list of neighbor Cells.
+ */
+std::map<Cell, std::vector<Cell>> buildGridGraph(const std::vector<std::vector<unsigned int>>& map) {
+    std::map<Cell, std::vector<Cell>> graph;
+    int rows = map.size();
+    int cols = map.empty() ? 0 : map[0].size();
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            Cell node{r, c};
+            std::vector<Cell> neighbors;
+            for (const auto& d : DIRS_LOWRES) {
+                int nr = r + d.dr;
+                int nc = c + d.dc;
+                // Check bounds
+                if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) continue;
+                // If there's no wall in this direction, add neighbor
+                if ((map[r][c] & d.bit) == 0) {
+                    neighbors.emplace_back(nr, nc);
+                }
+            }
+            graph[node] = std::move(neighbors);
+        }
+    }
+    return graph;
+}
+
+/**
+ * @brief Perform BFS from a start cell to compute shortest paths to all reachable cells.
+ * @param graph Adjacency list of the grid graph.
+ * @param start Starting cell.
+ * @return map from each reachable Cell to the vector of Cells representing the shortest path.
+ */
+std::map<Cell, std::vector<Cell>> bfsAllPaths(
+    const std::map<Cell, std::vector<Cell>>& graph,
+    const Cell& start)
+{
+    std::map<Cell, std::vector<Cell>> paths;
+    std::queue<Cell> queue;
+    paths[start] = { start };
+    queue.push(start);
+
+    while (!queue.empty()) {
+        Cell current = queue.front();
+        queue.pop();
+        for (const Cell& nbr : graph.at(current)) {
+            if (paths.find(nbr) == paths.end()) {
+                // Extend path
+                std::vector<Cell> newPath = paths[current];
+                newPath.push_back(nbr);
+                paths[nbr] = std::move(newPath);
+                queue.push(nbr);
+            }
+        }
+    }
+    return paths;
+}
+
+/**
+ * @brief Build a full lookup map of shortest paths between all pairs of cells.
+ * @param map Vector of rows×cols cell masks.
+ * @return Nested map: lookup[start][target] = shortest-path vector of Cells.
+ */
+std::map<Cell, std::map<Cell, std::vector<Cell>>> buildLookupMapGrid(
+    const std::vector<std::vector<unsigned int>>& map)
+{
+    auto graph = buildGridGraph(map);
+    std::map<Cell, std::map<Cell, std::vector<Cell>>> lookup;
+    for (const auto& kv : graph) {
+        lookup[kv.first] = bfsAllPaths(graph, kv.first);
+    }
+    return lookup;
+}
+
+// Example usage (append after parsing low-res map):
+//
+// std::vector<std::vector<unsigned int>> lowres_map;
+// parse_file_lowres(filename, lowres_map);
+// auto lookup = buildLookupMapGrid(lowres_map);
+// Now lookup[{r1,c1}][{r2,c2}] gives the shortest path.

@@ -6,9 +6,14 @@
 #include <string>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose2D.h>
+#include <map>
+#include <utility>
 
 class LikelihoodField {
 public:
+    // Typen für Pfad-Lookup
+    using Cell = std::pair<int,int>;
+    using LookupMap = std::map<Cell, std::map<Cell, std::vector<Cell>>>;
     ~LikelihoodField() = default;
 
     void publish_low_res_walls(ros::NodeHandle &nh, const ros::Publisher &lowres_wall_pub,
@@ -21,6 +26,10 @@ public:
     static bool parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map);
     void build_wall_tables(const std::vector<std::vector<unsigned int>> &map);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
+    /**
+     * Liefert kürzesten Pfad als Liste von Points (x=row, y=col, z=Radius).
+     */
+    std::vector<geometry_msgs::Point> getPath(int start_r, int start_c, int target_r, int target_c) const;
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;
 
@@ -33,6 +42,8 @@ public:
 
     double sigma_value;
 private:
+    // All-Pairs-Pfad-Lookup
+    LookupMap lookup_map_;
     enum CellWall {
         TOP = 1 << 0, RIGHT = 1 << 1, BOTTOM = 1 << 2, LEFT = 1 << 3
     };
