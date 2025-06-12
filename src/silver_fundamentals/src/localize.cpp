@@ -624,7 +624,7 @@ int main(int argc, char **argv) {
         }
         viszualize_particles(posearray_pub, particles);
         visualize_reference_rays(ray_pub, in_range_measurements, p, false);
-        visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
+        // visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
 
 
         double sum = 0;
