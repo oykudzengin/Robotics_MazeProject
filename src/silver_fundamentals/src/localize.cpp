@@ -621,7 +621,7 @@ int main(int argc, char **argv) {
 
         for (int i = 0; i < reference_measurements.size(); i++) {
             in_range_measurements.push_back(local_to_global(p,reference_measurements[i]));
-
+        }
         viszualize_particles(posearray_pub, particles);
         visualize_reference_rays(ray_pub, in_range_measurements, p, false);
         visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
