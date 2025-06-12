@@ -614,7 +614,7 @@ int main(int argc, char **argv) {
 
         geometry_msgs::Point lidar_offset;
         lidar_offset.x = 0;
-        lidar_offset.y = LIDAR_SENSOR_OFFSET;
+        lidar_offset.y = LIDAR_SENSOR_OFFSET/100.0;
         lidar_offset.z = 0;
 
         geometry_msgs::Point p = local_to_global(p, lidar_offset);
