@@ -48,7 +48,7 @@
 #define ROT_RATE 0.03
 #define BASE_SPEED 4.0
 
-#define LASER_OUT_OF_RANGE_DIST_VALUE 1.1
+#define LASER_OUT_OF_RANGE_DIST_VALUE 1.2
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
@@ -129,15 +129,17 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
             ROS_ERROR("laser_pol_client.call failed");
 
         geometry_msgs::Point ray;
-        if (laser_pol_srv.response.values[0] > 1) {
-            ray.x = sin(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
-	    ray.y = cos(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE + LIDAR_SENSOR_OFFSET / 100.0;
-	    ray.z = std::atan2(ray.x, ray.y);
-	} else {
+
 		ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
 		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0] + LIDAR_SENSOR_OFFSET / 100.0;
 		ray.z = std::atan2(ray.x, ray.y);
-	}
+
+        if (std::hypot(ray.x, ray.y) > LASER_OUT_OF_RANGE_DIST_VALUE) {
+            const double scaling = LASER_OUT_OF_RANGE_DIST_VALUE/std::hypot(ray.x, ray.y);
+            ray.x *= scaling;
+            ray.y *= scaling;
+        }
+
         laser_rays.push_back(ray);
     }
     return laser_rays;
@@ -255,7 +257,7 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
 
 void visualize_reference_rays(const ros::Publisher ray_pub,
                               const std::vector<geometry_msgs::Point> &reference_measurements,
-                              const geometry_msgs::Point &ref) {
+                              const geometry_msgs::Point &ref, bool out_of_range) {
     visualization_msgs::Marker m;
     m.header.frame_id = "map";
     m.header.stamp = ros::Time::now();
@@ -269,10 +271,17 @@ void visualize_reference_rays(const ros::Publisher ray_pub,
     m.scale.x = 0.02; // line thickness (meters)
 
     // Color the rays blue (or pick any color you prefer)
-    m.color.r = 0.0f;
-    m.color.g = 0.0f;
-    m.color.b = 1.0f;
-    m.color.a = 1.0f;
+    if (out_of_range) {
+        m.color.r = 1.0f;
+        m.color.g = 0.0f;
+        m.color.b = 0.0f;
+        m.color.a = 1.0f;
+    } else {
+        m.color.r = 0.0f;
+        m.color.g = 1.0f;
+        m.color.b = 0.0f;
+        m.color.a = 1.0f;
+    }
 
     m.points.clear();
     m.points.reserve(reference_measurements.size() * 2);
@@ -448,6 +457,8 @@ int main(int argc, char **argv) {
             n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
     static ros::Publisher ray_pub =
             n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+    static ros::Publisher ray_pub2 =
+            n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
 
     // Publisher for Pose messages
     static ros::Publisher pose_pub =
@@ -594,16 +605,21 @@ int main(int argc, char **argv) {
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
         // visualize_reference_rays(ray_pub, reference_measurements);
-        std::vector<geometry_msgs::Point> applied_measurements;
+        std::vector<geometry_msgs::Point> in_range_measurements;
+        std::vector<geometry_msgs::Point> out_of_range_measurements;
         geometry_msgs::Point p;
         p.x = averages.x;
         p.y = averages.y;
         p.z = current_position.theta;
         for (int i = 0; i < reference_measurements.size(); i++) {
-            applied_measurements.push_back(local_to_global(p, reference_measurements[i]));
+            if (std::hypot(reference_measurements[i].x, reference_measurements[i].y) < LASER_OUT_OF_RANGE_DIST_VALUE)
+                in_range_measurements.push_back(reference_measurements[i]);
+            else
+                out_of_range_measurements.push_back(reference_measurements[i]);
         }
-        visualize_reference_rays(ray_pub, applied_measurements, p);
         viszualize_particles(posearray_pub, particles);
+        visualize_reference_rays(ray_pub, in_range_measurements, p, false);
+        visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
 
 
         double sum = 0;
