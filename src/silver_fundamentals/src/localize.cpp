@@ -30,12 +30,12 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 11.0
+#define SIGMA 12.0
 #define GAMMA 1.00
-#define AMOUNT_OF_RAYS 40
-#define AMOUNT_OF_PARTICLES 600
-#define AMOUNT_RANDOM_INJECTIONS 30
-#define PROBABILITY_RANDOM_INJECTIONS 0.005
+#define AMOUNT_OF_RAYS 50
+#define AMOUNT_OF_PARTICLES 1000
+#define AMOUNT_RANDOM_INJECTIONS 5
+#define PROBABILITY_RANDOM_INJECTIONS 0.01
 #define MIN_PARTICLE_PROB 0.01
 #define ALPHA1 0.01 //rotation noise
 #define ALPHA2 0.01 //rotation noise related to translation
@@ -48,8 +48,9 @@
 #define ROT_RATE 0.03
 #define BASE_SPEED 4.0
 
+#define LASER_OUT_OF_RANGE_DIST_VALUE 1.1
 #define MINIMAL_WALL_DIST 2
-#define LOCALIZE_VAR_LOWER 0.06
+#define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
 #define LOCALIZE_COUNT_THRESHOLD 50
 #define UNLOCALIZE_COUNT_THRESHOLD 12
@@ -127,13 +128,16 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
         while (!laser_pol_client.call(laser_pol_srv) && ros::ok())
             ROS_ERROR("laser_pol_client.call failed");
 
-        if (laser_pol_srv.response.values[0] > 1)
-            continue;
-
         geometry_msgs::Point ray;
-        ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
-        ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0] + LIDAR_SENSOR_OFFSET / 100.0;
-        ray.z = std::atan2(ray.x, ray.y);
+        if (laser_pol_srv.response.values[0] > 1) {
+            ray.x = sin(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
+	    ray.y = cos(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE + LIDAR_SENSOR_OFFSET / 100.0;
+	    ray.z = std::atan2(ray.x, ray.y);
+	} else {
+		ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
+		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0] + LIDAR_SENSOR_OFFSET / 100.0;
+		ray.z = std::atan2(ray.x, ray.y);
+	}
         laser_rays.push_back(ray);
     }
     return laser_rays;
@@ -149,7 +153,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
         double weight = 0;
         for (auto &measurement: measurements) {
             geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
-            const double ray_wall_dist = lhf.get_ray_wall_dist(particle.position, global_ray_ending);
+            const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle.position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
             const double ray_weight = -delta_dist * delta_dist / (
@@ -236,10 +240,10 @@ void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICL
     std::discrete_distribution<int> sampler(masses.begin(), masses.end());
     std::array<Particle, AMOUNT_OF_PARTICLES> new_particles;
     for (int i = 0; i < AMOUNT_OF_PARTICLES; i++) {
-        /* if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
+         /* if (i < (double) AMOUNT_OF_PARTICLES * injection_probability) {
             new_particles[i] = Particle::random(lhf);
                 continue;
-        }*/
+        } */
         const int idx = sampler(gen);
         if (idx == AMOUNT_OF_PARTICLES)
             new_particles[i] = Particle::random(lhf);
@@ -806,7 +810,7 @@ int main(int argc, char **argv) {
 
 
         // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
-        count++;
+        // count++;
     }
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
