@@ -617,7 +617,7 @@ int main(int argc, char **argv) {
         lidar_offset.y = LIDAR_SENSOR_OFFSET/100.0;
         lidar_offset.z = 0;
 
-        geometry_msgs::Point p = local_to_global(p, lidar_offset);
+        geometry_msgs::Point p = local_to_global(current_position, lidar_offset);
 
         for (int i = 0; i < reference_measurements.size(); i++) {
             if (std::hypot(reference_measurements[i].x, reference_measurements[i].y) < LASER_OUT_OF_RANGE_DIST_VALUE)
