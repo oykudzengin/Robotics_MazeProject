@@ -620,11 +620,8 @@ int main(int argc, char **argv) {
         geometry_msgs::Point p = local_to_global(current_position, lidar_offset);
 
         for (int i = 0; i < reference_measurements.size(); i++) {
-            if (std::hypot(reference_measurements[i].x, reference_measurements[i].y) < LASER_OUT_OF_RANGE_DIST_VALUE)
-                in_range_measurements.push_back(reference_measurements[i]);
-            else
-                out_of_range_measurements.push_back(reference_measurements[i]);
-        }
+            in_range_measurements.push_back(local_to_global(p,reference_measurements[i]));
+
         viszualize_particles(posearray_pub, particles);
         visualize_reference_rays(ray_pub, in_range_measurements, p, false);
         visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
