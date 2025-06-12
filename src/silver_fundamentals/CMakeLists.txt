@@ -22,6 +22,15 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamen
 set(ROS_BUILD_TYPE RelWithDebInfo)
 set(CMAKE_CXX_FLAGS "-O1")
 
+
+option(ENABLE_ASAN False)
+
+if(ENABLE_ASAN)
+    add_compile_options(-fsanitize=address,undefined)
+    add_link_options(-fsanitize=address,undefined)
+endif ()
+
+
 # CATKIN_MIGRATION: removed during catkin migration
 # rosbuild_init()
 
