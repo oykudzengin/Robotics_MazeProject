@@ -134,8 +134,8 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
         geometry_msgs::Point ray;
 		ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
 		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0]; /* + LIDAR_SENSOR_OFFSET / 100.0;*/
-		ray.z = std::atan2(ray.x, ray.y);
-        // ray.z = current_rad_angle;
+		// ray.z = std::atan2(ray.x, ray.y);
+        ray.z = current_rad_angle;
 
         laser_rays.push_back(ray);
     }
@@ -618,6 +618,7 @@ int main(int argc, char **argv) {
         lidar_offset.z = 0;
 
         geometry_msgs::Point p = local_to_global(current_position, lidar_offset);
+        p.z = current_position.theta;
 
         for (int i = 0; i < reference_measurements.size(); i++) {
             in_range_measurements.push_back(local_to_global(p,reference_measurements[i]));
