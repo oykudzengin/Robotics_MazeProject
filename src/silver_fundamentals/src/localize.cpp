@@ -128,17 +128,14 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
         while (!laser_pol_client.call(laser_pol_srv) && ros::ok())
             ROS_ERROR("laser_pol_client.call failed");
 
+        if (laser_pol_srv.response.values[0] > 1)
+            continue;
+
         geometry_msgs::Point ray;
-
 		ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
-		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0] + LIDAR_SENSOR_OFFSET / 100.0;
-		ray.z = std::atan2(ray.x, ray.y);
-
-        if (std::hypot(ray.x, ray.y) > LASER_OUT_OF_RANGE_DIST_VALUE) {
-            const double scaling = LASER_OUT_OF_RANGE_DIST_VALUE/std::hypot(ray.x, ray.y);
-            ray.x *= scaling;
-            ray.y *= scaling;
-        }
+		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0]; /* + LIDAR_SENSOR_OFFSET / 100.0;*/
+		//ray.z = std::atan2(ray.x, ray.y);
+        ray.z = current_rad_angle;
 
         laser_rays.push_back(ray);
     }
@@ -147,15 +144,22 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 
 void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
                      std::vector<geometry_msgs::Point> &measurements) {
+    geometry_msgs::Point lidar_offset_point;
+    lidar_offset_point.x = 0.0;
+    lidar_offset_point.y = LIDAR_SENSOR_OFFSET/100.0;
+
     for (auto &particle: particles) {
         if (particle.weight < 0) {
             particle.weight = 0;
             continue;
         }
+        geometry_msgs::Point particle_lidar_position = local_to_global(particle.position, lidar_offset_point);
+        particle_lidar_position.z = particle.position.theta;
+
         double weight = 0;
         for (auto &measurement: measurements) {
-            geometry_msgs::Point global_ray_ending = local_to_global(particle.position, measurement);
-            const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle.position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
+            geometry_msgs::Point global_ray_ending = local_to_global(particle_lidar_position, measurement);
+            const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle_lidar_position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
             const double ray_weight = -delta_dist * delta_dist / (
@@ -607,10 +611,14 @@ int main(int argc, char **argv) {
         // visualize_reference_rays(ray_pub, reference_measurements);
         std::vector<geometry_msgs::Point> in_range_measurements;
         std::vector<geometry_msgs::Point> out_of_range_measurements;
-        geometry_msgs::Point p;
-        p.x = averages.x;
-        p.y = averages.y;
-        p.z = current_position.theta;
+
+        geometry_msgs::Point lidar_offset;
+        lidar_offset.x = 0;
+        lidar_offset.y = LIDAR_SENSOR_OFFSET;
+        lidar_offset.z = 0;
+
+        geometry_msgs::Point p = local_to_global(p, lidar_offset);
+
         for (int i = 0; i < reference_measurements.size(); i++) {
             if (std::hypot(reference_measurements[i].x, reference_measurements[i].y) < LASER_OUT_OF_RANGE_DIST_VALUE)
                 in_range_measurements.push_back(reference_measurements[i]);

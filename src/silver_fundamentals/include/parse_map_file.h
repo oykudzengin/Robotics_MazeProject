@@ -24,7 +24,8 @@ public:
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;
 
-    double get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, geometry_msgs::Point &end_point) const;
+    double get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, const geometry_msgs::Point &end_point) const;
+    double get_ray_wall_dist(const geometry_msgs::Point &start_point, const geometry_msgs::Point &end_point) const;
 
     int get_row_count() const {return row_count;};
     int get_col_count() const {return col_count;};

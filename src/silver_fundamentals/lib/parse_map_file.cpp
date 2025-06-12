@@ -427,7 +427,47 @@ double LikelihoodField::get_prob_field_value(const geometry_msgs::Point &global_
     return field[real_y][real_x];
 }
 
-double LikelihoodField::get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, geometry_msgs::Point &end_point) const {
+double LikelihoodField::get_ray_wall_dist(const geometry_msgs::Point &start_point, const geometry_msgs::Point &end_point) const {
+    const double ox = -start_point.x;
+    const double oy = -start_point.y;
+
+    const double vx = -end_point.x - ox;
+    const double vy = -end_point.y - oy;
+
+    const double len = std::hypot(vx, vy);
+    const double dx = vx / len;
+    const double dy = vy / len;
+
+    const double max_range = 1;
+
+    double best_t = max_range;
+
+    if (std::abs(dx) > 1e-6) {
+        for (const auto &w : vertical_walls) {
+            double t = (w.c - ox) / dx;
+            if (t <= 0.0 || t >= best_t) continue;
+            double y_hit = oy + t * dy;
+            if (y_hit >= w.start && y_hit <= w.end) {
+                best_t = t;
+            }
+        }
+    }
+
+    if (std::abs(dy) > 1e-6) {
+        for (const auto &w : horizontal_walls) {
+            double t = (w.c - oy) / dy;
+            if (t <= 0.0 || t >= best_t) continue;
+            double x_hit = ox + t * dx;
+            if (x_hit >= w.start && x_hit <= w.end) {
+                best_t = t;
+            }
+        }
+    }
+
+    return best_t;
+
+}
+double LikelihoodField::get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, const geometry_msgs::Point &end_point) const {
     const double ox = -start_point.x;
     const double oy = -start_point.y;
 
