@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <map>
+#include <queue>
 #include <geometry_msgs/Point.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <visualization_msgs/Marker.h>
@@ -175,6 +177,7 @@ LikelihoodField::LikelihoodField(ros::NodeHandle &nh, const std::string &filenam
 
     std::vector<std::vector<unsigned int>> initial_map;
     parse_file_lowres(filename, initial_map);
+    build_graph(initial_map); //building the graph
     build_lookup_map(initial_map);
     build_wall_tables(initial_map);
 
@@ -242,6 +245,88 @@ bool LikelihoodField::parse_file_lowres(const std::string &filename, std::vector
     }
     return true;
 }
+
+CellGraph LikelihoodField::build_graph(const std::vector<std::vector<unsigned int>> &map) {
+    CellGraph graph;
+
+    int rows = map.size();
+    int cols = map[0].size();
+
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            Cell current = {r, c};
+            unsigned int cell_mask = map[r][c];
+
+            // Yukarı komşu (r-1, c) — sadece üst duvar yoksa
+            if (r > 0 && !(cell_mask & TOP)) {
+                if (!(map[r-1][c] & BOTTOM)) {
+                    graph[current].push_back({r-1, c});
+                }
+            }
+
+            // Aşağı komşu (r+1, c)
+            if (r+1 < rows && !(cell_mask & BOTTOM)) {
+                if (!(map[r+1][c] & TOP)) {
+                    graph[current].push_back({r+1, c});
+                }
+            }
+
+            // Sol komşu (r, c-1)
+            if (c > 0 && !(cell_mask & LEFT)) {
+                if (!(map[r][c-1] & RIGHT)) {
+                    graph[current].push_back({r, c-1});
+                }
+            }
+
+            // Sağ komşu (r, c+1)
+            if (c+1 < cols && !(cell_mask & RIGHT)) {
+                if (!(map[r][c+1] & LEFT)) {
+                    graph[current].push_back({r, c+1});
+                }
+            }
+        }
+    }
+
+    return graph;
+}
+
+//bfs for path finding
+std::vector<Cell> LikelihoodField::bfs(CellGraph &graph, const Cell &start, const Cell &goal) {
+    std::queue<Cell> q;
+    std::map<Cell, Cell> parent;
+    std::set<Cell> visited;
+
+    q.push(start);
+    visited.insert(start);
+
+    while (!q.empty()) {
+        Cell current = q.front();
+        q.pop();
+
+        if (current == goal) break;
+
+        for (Cell neighbor : graph[current]) {
+            if (!visited.count(neighbor)) {
+                visited.insert(neighbor);
+                parent[neighbor] = current;
+                q.push(neighbor);
+            }
+        }
+    }
+
+    // 
+    std::vector<Cell> path;
+    if (!parent.count(goal)) return path; // path not found
+
+    for (Cell at = goal; at != start; at = parent[at]) {
+        path.push_back(at);
+    }
+    path.push_back(start);
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
 
 #pragma GCC optimize ("O3")
 void LikelihoodField::build_lookup_map(const std::vector<std::vector<unsigned int> > &map) {

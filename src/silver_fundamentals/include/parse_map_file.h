@@ -4,8 +4,14 @@
 
 #include <vector>
 #include <string>
+#include <map>
+#include <queue>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Pose2D.h>
+
+typedef std::pair<int, int> Cell;
+typedef std::map<Cell, std::vector<Cell>> CellGraph;
+
 
 class LikelihoodField {
 public:
@@ -23,6 +29,10 @@ public:
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;
+
+    //graph
+    CellGraph build_graph(const std::vector<std::vector<unsigned int>> &map);
+    std::vector<Cell> bfs(CellGraph &graph, const Cell &start, const Cell &goal);
 
     double get_ray_wall_dist(const geometry_msgs::Pose2D &start_point, const geometry_msgs::Point &end_point) const;
     double get_ray_wall_dist(const geometry_msgs::Point &start_point, const geometry_msgs::Point &end_point) const;
