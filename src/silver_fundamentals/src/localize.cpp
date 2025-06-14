@@ -37,10 +37,14 @@
 #define AMOUNT_RANDOM_INJECTIONS 5
 #define PROBABILITY_RANDOM_INJECTIONS 0.01
 #define MIN_PARTICLE_PROB 0.01
+
 #define ALPHA1 0.01 //rotation noise
 #define ALPHA2 0.01 //rotation noise related to translation
 #define ALPHA3 0.01 //translation noise
 #define ALPHA4 0.01 //translation noise related to rotation
+
+#define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
+#define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
 
 #define K_ATT 10.0
 #define K_REP 0.01
@@ -183,12 +187,12 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     const double delta_left_m = delta_left * WHEEL_RADIUS / 100;
 
     double delta_trans = (delta_right_m + delta_left_m) / 2.0;
+    double delta_rot = (delta_right_m - delta_left_m) / (WHEEL_BASE / 100);
+
     if (delta_trans < 10e-6)
         delta_trans = 0;
-    double delta_rot = (delta_right_m - delta_left_m) / (WHEEL_BASE / 100);
-    if (delta_rot < 10e-6 && delta_rot > -10e-6)
-        delta_rot = 0;
-
+    if (std::abs(delta_rot) < 10e-6)
+	    delta_rot = 0;
     const double local_dx = delta_trans * std::sin(delta_rot / 2.0);
     const double local_dy = delta_trans * std::cos(delta_rot / 2.0);
 
@@ -198,11 +202,20 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     // printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
 
     for (auto &p: particles) {
-        const double var_rot1 = ALPHA1 * pow(delta_rot1, 2) + ALPHA2 * delta_trans * delta_trans;
-        const double var_trans = ALPHA3 * pow(delta_trans, 2) + ALPHA4 * (
-                                     pow(delta_rot1, 2) + pow(delta_rot2, 2));
-        const double var_rot2 = ALPHA1 * pow(delta_rot2, 2) + ALPHA2 * pow(delta_trans, 2);
+        double var_rot1 = ALPHA1 * pow(delta_rot1, 2);
+        double var_trans = ALPHA3 * pow(delta_trans, 2); 
+        double var_rot2 = ALPHA1 * pow(delta_rot2, 2);
+	/* if (delta_trans > 0 && delta_rot > 0 && std::abs(delta_rot/delta_trans) < ROT_OVER_TRANS_RATIO_THRESHOLD) {
+		// ROS_WARN("rot over trans is %f", delta_rot/delta_trans);
+	}*/
+	/* if (delta_trans > 0 && delta_rot > 0 && std::abs(delta_trans/delta_rot) < TRANS_OVER_ROT_RATIO_THRESHOLD) {
+		// ROS_WARN("trans over rot is %f",delta_trans/delta_rot); 
+	}*/
         // Add noise to the odometry values
+
+	var_trans += ALPHA4 * (pow(delta_rot1, 2) + pow(delta_rot2, 2));
+	var_rot1 += ALPHA2 * pow(delta_trans, 2);
+	var_rot2 +=  ALPHA2 * pow(delta_trans, 2);
 
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
         const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
@@ -215,7 +228,7 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
 
         const double dist = std::hypot(delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat), delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat));
 
-        if (dist > 0.1) {
+        if (dist > 0.05) {
             ROS_WARN("Particle moved by %f", dist);
         }
 
