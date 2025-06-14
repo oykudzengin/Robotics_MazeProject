@@ -712,12 +712,29 @@ int main(int argc, char **argv) {
 
                 plan_exists_flag = comm_srv.response.plan_exists;
                 if (plan_exists_flag == true) {
+                    
                     waypoints = comm_srv.response.waypoints;
                     for (auto &waypoint: waypoints) {
                         waypoint.x += alignment.cell_center.x;
                         waypoint.y += alignment.cell_center.y;
                         ROS_INFO("Waypoint at %f %f %f\n", waypoint.x, waypoint.y, waypoint.z);
                     }
+                    // Start-Zelle ermitteln
+                    std::vector<int> start_pos = approx_current_pos(current_position.x, current_position.y,
+                                                                    current_position.theta);
+                    // Goal-Zelle aus letztem Waypoint ermitteln
+                    const auto &goal_point = waypoints.back();  // letzter Punkt in der Liste
+                    std::vector<int> goal_pos = approx_current_pos(goal_point.x, goal_point.y, goal_point.z);
+                    // Kürzesten Pfad aus Lookup-Map holen (getPath expects row, col)
+                    std::vector<geometry_msgs::Point> shortest_path =
+                        lhf.getPath(start_pos[1], start_pos[0], goal_pos[1], goal_pos[0]);
+                    // Log the shortest path points
+                    for (size_t i = 0; i < shortest_path.size(); ++i) {
+                        const auto &p = shortest_path[i];
+                        ROS_INFO("Path point [%zu]: row=%.0f, col=%.0f, radius=%.2f",
+                                i, p.x, p.y, p.z);
+                    }
+                    waypoints = shortest_path;
                     comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                     comm_srv.request.plan_exists = false;
                     comm_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
@@ -731,6 +748,13 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::EXECUTING_PLAN: {
+
+                // Log all waypoints for debugging
+                for (size_t i = 0; i < waypoints.size(); ++i) {
+                    const auto &wp = waypoints[i];
+                    ROS_INFO("Waypoint[%zu]: x=%.2f, y=%.2f, z=%.2f", i, wp.x, wp.y, wp.z);
+                }
+
                 while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
                 if (count % 4 == 0) {
