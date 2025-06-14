@@ -469,7 +469,7 @@ int main(int argc, char **argv) {
             n.advertise<silver_fundamentals::Pose>("pose", 10);
 
     auto rate = ros::Rate(10);
-    const std::string pkg_path = "src/silver_fundamentals";
+    const std::string pkg_path = "/home/silver/silver_ws/src/robiticsfundamentalssilver/src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
 
     auto driver = FeedbackDrive(3.25, 26.5, 2.0);
