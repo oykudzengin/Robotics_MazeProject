@@ -257,28 +257,28 @@ CellGraph LikelihoodField::build_graph(const std::vector<std::vector<unsigned in
             Cell current = {r, c};
             unsigned int cell_mask = map[r][c];
 
-            // Yukarı komşu (r-1, c) — sadece üst duvar yoksa
+            // upper neihgbor (r-1, c) — top wall doesnt exist
             if (r > 0 && !(cell_mask & TOP)) {
                 if (!(map[r-1][c] & BOTTOM)) {
                     graph[current].push_back({r-1, c});
                 }
             }
 
-            // Aşağı komşu (r+1, c)
+            // bottom neighbor (r+1, c)
             if (r+1 < rows && !(cell_mask & BOTTOM)) {
                 if (!(map[r+1][c] & TOP)) {
                     graph[current].push_back({r+1, c});
                 }
             }
 
-            // Sol komşu (r, c-1)
+            // left neighbor (r, c-1)
             if (c > 0 && !(cell_mask & LEFT)) {
                 if (!(map[r][c-1] & RIGHT)) {
                     graph[current].push_back({r, c-1});
                 }
             }
 
-            // Sağ komşu (r, c+1)
+            // right neighbor (r, c+1)
             if (c+1 < cols && !(cell_mask & RIGHT)) {
                 if (!(map[r][c+1] & LEFT)) {
                     graph[current].push_back({r, c+1});
