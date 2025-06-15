@@ -643,8 +643,13 @@ int main(int argc, char **argv) {
 
 
         // do laser measurement
+        t0 = ros::Time::now();
         std::vector<geometry_msgs::Point> reference_measurements = get_laser_rays(laser_pol_client);
         compute_weights(lhf, particles, reference_measurements);
+        t1 = ros::Time::now();
+        stats.weight_time += (t1 - t0).toSec();
+
+        t0 = ros::Time::now();
         // visualize_reference_rays(ray_pub, reference_measurements);
         std::vector<geometry_msgs::Point> in_range_measurements;
         std::vector<geometry_msgs::Point> out_of_range_measurements;
@@ -663,15 +668,17 @@ int main(int argc, char **argv) {
         viszualize_particles(posearray_pub, particles);
         visualize_reference_rays(ray_pub, in_range_measurements, p, false);
         // visualize_reference_rays(ray_pub2, out_of_range_measurements, p, true);
+       t1 = ros::Time::now();
+        stats.viz_time += (t1 - t0).toSec();
 
-
-        double sum = 0;
-        for (auto &particle: particles)
-            sum += particle.weight;
-        // ROS_INFO("Average confidence is %f", sum/ (double) AMOUNT_OF_PARTICLES);
         // do sampling
-        //if (localize_state != LocalizeState::WAIT_FOR_PLAN)
+        t0 = ros::Time::now();
         resample(lhf, particles);
+        t1 = ros::Time::now();
+        stats.resamp_time += (t1 - t0).toSec();
+
+        t0 = ros::Time::now();
+
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
@@ -850,9 +857,14 @@ int main(int argc, char **argv) {
             default:
                 break;
         }
+
+        t1 = ros::Time::now();
+        stats.drive_time += (t1-t0).toSec();
         // do sleep
         rate.sleep();
         // do odometry adjustment
+
+        t0 = ros::Time::now();
         while (!drive_data_client.call(encoder_srv) && ros::ok())
             ROS_ERROR("encoder service call failed");
 
@@ -860,8 +872,13 @@ int main(int argc, char **argv) {
         double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
         curr_right_encoder = encoder_srv.response.right_encoder;
         curr_left_encoder = encoder_srv.response.left_encoder;
+        t1 = ros::Time::now();
+        stats.drive_time += (t1-t0).toSec();
 
+        t0 = ros::Time::now();
         particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+        t1 = ros::Time::now();
+        stats.odo_time += (t1-t0).toSec();
 
     }
     drive_srv.request.left = 0;
