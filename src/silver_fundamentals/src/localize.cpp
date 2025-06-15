@@ -61,6 +61,7 @@
 #define CELL_SIZE_CM 80.0
 
 
+
 static std::random_device rd;
 static std::mt19937 gen(rd());
 
@@ -121,23 +122,32 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
     silver_fundamentals::Laser laser_pol_srv;
 
     std::vector<geometry_msgs::Point> laser_rays;
-    double step_size = ANGLE_SPAN / static_cast<double>(AMOUNT_OF_RAYS);
+    constexpr int step_size = LIDAR_POINTS / AMOUNT_OF_RAYS;
+    constexpr int starting_offset = LIDAR_POINTS / (2*AMOUNT_OF_RAYS);
+
+    laser_pol_srv.request.start = ANGLE_MIN;
+    laser_pol_srv.request.end = ANGLE_MAX;
+
+    while (!laser_pol_client.call(laser_pol_srv) && ros::ok())
+        ROS_ERROR("laser_pol_client.call failed");
 
     for (int i = 0; i < AMOUNT_OF_RAYS; i++) {
-        laser_pol_srv.request.start = ANGLE_MIN + i * step_size + step_size / 2;
-        laser_pol_srv.request.end = ANGLE_MIN + i * step_size + step_size / 2;
+        const int current_idx = starting_offset + i * step_size;
+        const double current_val = laser_pol_srv.response.values[current_idx];
+        const double current_rad_angle = (double) (ANGLE_MIN + current_idx * ANGLE_STEP)/180.0*PI;
 
-        const double current_rad_angle = (ANGLE_MIN + i * step_size + step_size / 2) / 180.0 * PI;
-
-        while (!laser_pol_client.call(laser_pol_srv) && ros::ok())
-            ROS_ERROR("laser_pol_client.call failed");
-
-        if (laser_pol_srv.response.values[0] > 1)
-            continue;
 
         geometry_msgs::Point ray;
-		ray.x = sin(current_rad_angle) * laser_pol_srv.response.values[0];
-		ray.y = cos(current_rad_angle) * laser_pol_srv.response.values[0]; /* + LIDAR_SENSOR_OFFSET / 100.0;*/
+        if (current_val > 1) {
+            ray.x = sin(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
+            ray.y = cos(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
+            ray.z = current_rad_angle;
+            laser_rays.push_back(ray);
+            continue;
+        }
+
+		ray.x = sin(current_rad_angle) * current_val;
+		ray.y = cos(current_rad_angle) * current_val; /* + LIDAR_SENSOR_OFFSET / 100.0;*/
 		// ray.z = std::atan2(ray.x, ray.y);
         ray.z = current_rad_angle;
 
@@ -166,6 +176,8 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle_lidar_position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
+            if (delta_dist == 0)
+                continue;
             const double ray_weight = -delta_dist * delta_dist / (
                                           2 * lhf.sigma_value * lhf.sigma_value / (100 * 100.0));
             weight += ray_weight;
@@ -508,8 +520,7 @@ int main(int argc, char **argv) {
     }
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
-    unsigned int count = 0;
-
+    stats.loops = 0;
     // Prepare comm service client and request
     ros::ServiceClient comm_client = n.serviceClient<silver_fundamentals::Com>("comm");
     silver_fundamentals::Com comm_srv;
@@ -540,9 +551,22 @@ int main(int argc, char **argv) {
             drive_client.call(drive_srv);
             ROS_INFO("SIGINT: Stopped robot motors.");
             ROS_INFO("SIGINT: Shutting Down ...");
+
+            ROS_INFO("Loops: %d", stats.loops);
+            if (stats.loops > 0) {
+                ROS_INFO("  meas avg:   %.3f ms", 1e3 * stats.meas_time   / stats.loops);
+                ROS_INFO("  weight avg: %.3f ms", 1e3 * stats.weight_time / stats.loops);
+                ROS_INFO("  resamp avg: %.3f ms", 1e3 * stats.resamp_time / stats.loops);
+                ROS_INFO("  odo avg:    %.3f ms", 1e3 * stats.odo_time    / stats.loops);
+                ROS_INFO("  viz avg:    %.3f ms", 1e3 * stats.viz_time    / stats.loops);
+                ROS_INFO("  drive avg: %.3f ms", 1e3 * stats.drive_time    / stats.loops)
+            }
+
             ros::shutdown();
             break;
         }
+
+        ros::Time t0, t1;
 
         geometry_msgs::Point averages;
         geometry_msgs::Point variance = get_particle_variance(particles, averages);
@@ -659,7 +683,6 @@ int main(int argc, char **argv) {
                 while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
 
-                if (count % 4 == 0) {
                     geometry_msgs::Point current, goal;
                     current.x = 0;
                     current.y = 0;
@@ -674,7 +697,6 @@ int main(int argc, char **argv) {
                     drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
                     drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                     drive_client.call(drive_srv);
-                }
                 break;
             }
             case LocalizeState::ALIGNING_ANGLE: {
@@ -746,7 +768,6 @@ int main(int argc, char **argv) {
             case LocalizeState::EXECUTING_PLAN: {
                 while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
-                if (count % 4 == 0) {
                     geometry_msgs::Point current, goal;
                     current.x = current_position.x;
                     current.y = current_position.y;
@@ -774,7 +795,6 @@ int main(int argc, char **argv) {
                         first_execution = false;
                         ros::Duration(0.1).sleep();
                     }
-                }
 
                 std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
                                                           current_position.theta);
@@ -843,13 +863,12 @@ int main(int argc, char **argv) {
 
         particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
 
-
-        // printf("Particle at %f %f heading %f %f\n", particles[50].position.x, particles[50].position.y, particles[50].position.theta*180.0/PI, particles[50].weight);
-        // count++;
     }
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
+
+    stats.loops++;
 
 
     return 0;
