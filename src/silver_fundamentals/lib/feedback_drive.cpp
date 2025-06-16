@@ -23,17 +23,17 @@ inline double threshold_for_angle(double theta,
                                   double half_length) {
     const double cx = std::cos(theta);
     const double sy = std::sin(theta);
-    const double eps = 1e-8;  // guard against division by zero
+    const double eps = 1e-8; // guard against division by zero
 
     // distance to x-slab (|x| = half_length)
     double dx = (std::fabs(cx) > eps)
-              ? half_length / std::fabs(cx)
-              : std::numeric_limits<double>::infinity();
+                    ? half_length / std::fabs(cx)
+                    : std::numeric_limits<double>::infinity();
 
     // distance to y-slab (|y| = half_width)
     double dy = (std::fabs(sy) > eps)
-              ? half_width  / std::fabs(sy)
-              : std::numeric_limits<double>::infinity();
+                    ? half_width / std::fabs(sy)
+                    : std::numeric_limits<double>::infinity();
     double d = std::min(dx, dy);
     return std::isfinite(d) ? d : 0.0;
 }
@@ -52,7 +52,6 @@ FeedbackDrive::FeedbackDrive(double wr, double wb, double s) {
     reset_encoders_client = n.serviceClient<silver_fundamentals::ResetEncoders>("wrap_reset_encoders");
     laser_cart_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesian");
     laser_cart_offset_client = n.serviceClient<silver_fundamentals::LaserCartesian>("laserAngleRangeCartesianOffset");
-
 }
 
 
@@ -60,7 +59,7 @@ void FeedbackDrive::drive_n_cm(double n) {
     ROS_INFO("Drive n CM %f", n);
     drive_srv.request.left = speed;
     drive_srv.request.right = speed;
-    double distance_in_rad = n/wheel_radius;
+    double distance_in_rad = n / wheel_radius;
 
     // reset_encoders_client.call(reset_encoders_srv);
     drive_data_client.call(drive_data_srv);
@@ -74,7 +73,7 @@ void FeedbackDrive::drive_n_cm(double n) {
         double left_delta = drive_data_srv.response.left_encoder - base_line_left;
         double right_delta = drive_data_srv.response.right_encoder - base_line_right;
         ROS_INFO("%f %f", left_delta, right_delta);
-        double current_rad_distance = (left_delta + right_delta)/2.0;
+        double current_rad_distance = (left_delta + right_delta) / 2.0;
         if (current_rad_distance > distance_in_rad)
             break;
 
@@ -108,7 +107,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
             break;
         }
     }
-    double distance_in_rad = (n*wheel_base*PI)/(360.0*wheel_radius);
+    double distance_in_rad = (n * wheel_base * PI) / (360.0 * wheel_radius);
 
     //reset_encoders_client.call(reset_encoders_srv);
     drive_data_client.call(drive_data_srv);
@@ -119,7 +118,7 @@ void FeedbackDrive::turn_n_degrees(double n, direction d) {
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
         double left_delta = drive_data_srv.response.left_encoder - base_line_left;
         double right_delta = drive_data_srv.response.right_encoder - base_line_right;
-        double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta))/2.0;
+        double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta)) / 2.0;
         if (current_rad_distance > distance_in_rad)
             break;
 
@@ -157,7 +156,7 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
     laser_srv.request.start = -90.0;
     laser_srv.request.end = 90.0;
 
-    while(!laser_client.call(laser_srv) && ros::ok()) {
+    while (!laser_client.call(laser_srv) && ros::ok()) {
         ROS_ERROR("Failed to call laser polar service");
     }
     std::vector<double> ranges = laser_srv.response.values;
@@ -167,13 +166,13 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
         // drive back until window_intersect says drive forward
         drive_srv.request.left = -speed;
         drive_srv.request.right = -speed;
-        while(ros::ok() && window_intersects_box(ranges, -90.0, 90.0)) {
+        while (ros::ok() && window_intersects_box(ranges, -90.0, 90.0)) {
             drive_client.call(drive_srv);
             //rate.sleep();
             laser_srv.request.start = -90;
             laser_srv.request.end = 90;
 
-            while(!laser_client.call(laser_srv) && ros::ok()) {
+            while (!laser_client.call(laser_srv) && ros::ok()) {
                 ROS_ERROR("Failed to call laser polar service");
             }
             ranges = laser_srv.response.values;
@@ -188,13 +187,13 @@ void FeedbackDrive::distance_to_wall(double should_distance) {
         // drive forward until window_intersect says drive backwards
         drive_srv.request.left = speed;
         drive_srv.request.right = speed;
-        while(ros::ok() && !window_intersects_box(ranges, -90.0, 90.0)) {
+        while (ros::ok() && !window_intersects_box(ranges, -90.0, 90.0)) {
             drive_client.call(drive_srv);
             //rate.sleep();
             laser_srv.request.start = -90;
             laser_srv.request.end = 90;
 
-            while(!laser_client.call(laser_srv) && ros::ok()) {
+            while (!laser_client.call(laser_srv) && ros::ok()) {
                 ROS_ERROR("Failed to call laser polar service");
             }
             ranges = laser_srv.response.values;
@@ -220,7 +219,8 @@ void FeedbackDrive::compute_hitbox(double width, double distance) {
     }
 }
 
-bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle, const double max_angle) const {
+bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, const double min_angle,
+                                          const double max_angle) const {
     if (min_angle >= max_angle) return false;
 
     int idx_start = static_cast<int>(
@@ -230,7 +230,7 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
 
 
     for (int i = idx_start; i <= idx_end; ++i) {
-        const double r = ranges[i-idx_start];
+        const double r = ranges[i - idx_start];
         const double thr = hitbox[i];
         if (r <= thr) {
             return true;
@@ -238,22 +238,20 @@ bool FeedbackDrive::window_intersects_box(const std::vector<double> &ranges, con
     }
 
     return false;
-
-
-
 }
 
 int FeedbackDrive::turn(const double angle, direction dir, const double radius, const double speed) {
     const double angle_rad = angle * PI / (180.0 * wheel_radius);
-    const double dist_from_inner_wheel = radius - WHEEL_BASE/2;
-    const double dist_from_outer_wheel = radius + WHEEL_BASE/2;
+    const double dist_from_inner_wheel = radius - WHEEL_BASE / 2;
+    const double dist_from_outer_wheel = radius + WHEEL_BASE / 2;
     const double inner_driving_dist = angle_rad * dist_from_inner_wheel;
     const double outer_driving_dist = angle_rad * dist_from_outer_wheel;
 
-    ROS_INFO("angle is %f, meaning inner_dist of %f, outer dist of %f", angle_rad, inner_driving_dist, outer_driving_dist);
+    ROS_INFO("angle is %f, meaning inner_dist of %f, outer dist of %f", angle_rad, inner_driving_dist,
+             outer_driving_dist);
 
-    volatile double inner_driving_speed = speed * (radius - WHEEL_BASE/2) / radius;
-    volatile double outer_driving_speed = speed * (radius + WHEEL_BASE/2) / radius;
+    volatile double inner_driving_speed = speed * (radius - WHEEL_BASE / 2) / radius;
+    volatile double outer_driving_speed = speed * (radius + WHEEL_BASE / 2) / radius;
 
     switch (dir) {
         case none: {
@@ -275,13 +273,17 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
     }
 
     drive_data_client.call(drive_data_srv);
-    double base_line_inner = dir == left ? drive_data_srv.response.left_encoder:drive_data_srv.response.right_encoder;
-    double base_line_outer = dir == left ? drive_data_srv.response.right_encoder:drive_data_srv.response.left_encoder;
+    double base_line_inner = dir == left ? drive_data_srv.response.left_encoder : drive_data_srv.response.right_encoder;
+    double base_line_outer = dir == left ? drive_data_srv.response.right_encoder : drive_data_srv.response.left_encoder;
 
     drive_client.call(drive_srv);
     while (ros::ok() && drive_data_client.call(drive_data_srv)) {
-        double inner_delta = (dir == left ? drive_data_srv.response.left_encoder: drive_data_srv.response.right_encoder) - base_line_inner;
-        double outer_delta = (dir == left ? drive_data_srv.response.right_encoder: drive_data_srv.response.left_encoder) - base_line_outer;
+        double inner_delta =
+                (dir == left ? drive_data_srv.response.left_encoder : drive_data_srv.response.right_encoder) -
+                base_line_inner;
+        double outer_delta =
+                (dir == left ? drive_data_srv.response.right_encoder : drive_data_srv.response.left_encoder) -
+                base_line_outer;
 
         if (abs(inner_delta) > abs(inner_driving_dist) || abs(outer_delta) > abs(outer_driving_dist))
             break;
@@ -296,101 +298,93 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
 }
 
 // x is right-left
-geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left) {
-    double delta_right_m = delta_right*wheel_radius/100;
-    double delta_left_m = delta_left*wheel_radius/100;
-    double delta_trans = (delta_right_m + delta_left_m)/2.0;
-    double delta_rot = (delta_right_m - delta_left_m)/(2.0*wheel_base/100);
-    current_pos.x += delta_trans * std::sin(current_pos.z+delta_rot);
-    current_pos.y += delta_trans * std::cos(current_pos.z+delta_rot);
-    current_pos.z += 2.0*delta_rot;
+geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right,
+                                                    double delta_left) {
+    double delta_right_m = delta_right * wheel_radius / 100;
+    double delta_left_m = delta_left * wheel_radius / 100;
+    double delta_trans = (delta_right_m + delta_left_m) / 2.0;
+    double delta_rot = (delta_right_m - delta_left_m) / (2.0 * wheel_base / 100);
+    current_pos.x += delta_trans * std::sin(current_pos.z + delta_rot);
+    current_pos.y += delta_trans * std::cos(current_pos.z + delta_rot);
+    current_pos.z += 2.0 * delta_rot;
 
     return current_pos;
 }
 
 
-
-geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r) {
+geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal,
+                                                   double k_att, double k_rep, double r) {
     // init and call laser srv
     silver_fundamentals::LaserCartesian laser_srv;
     laser_srv.request.start = -120.0;
     laser_srv.request.end = 120.0;
     laser_srv.request.max_dist = 100.0;
-    laser_srv.request.lidar_sensor_offset = LIDAR_SENSOR_OFFSET/100.0;
-    laser_srv.request.wall_thickness = (ROBOT_RADIUS+1)/100.0;
+    laser_srv.request.lidar_sensor_offset = LIDAR_SENSOR_OFFSET / 100.0;
+    laser_srv.request.wall_thickness = (ROBOT_RADIUS + 1) / 100.0;
 
     while (!laser_cart_offset_client.call(laser_srv) && ros::ok())
         ROS_ERROR("Failed to call laser cart service, retrying...");
 
 
     // world view distances
-	geometry_msgs::Point local_goal_pos = global_to_local(current_pos, goal);
+    geometry_msgs::Point local_goal_pos = global_to_local(current_pos, goal);
 
     double local_dx = local_goal_pos.x;
     double local_dy = local_goal_pos.y;
 
     // length of force vector
     double force_vector_dist = local_goal_pos.z;
-	double x_att = 1e-6;
+    double x_att = 1e-6;
     double y_att = 1e-6;
 
     if (force_vector_dist > 1e-6) {
-        x_att = k_att*local_dx/force_vector_dist;
-        y_att = k_att*local_dy/force_vector_dist;
+        x_att = k_att * local_dx / force_vector_dist;
+        y_att = k_att * local_dy / force_vector_dist;
     }
 
     // ROS_INFO("x_force: %f current_x: %f goal_x: %f", x_force, current_pos.x, goal.x);
-	double x_rep = 0.0;
+    double x_rep = 0.0;
     double y_rep = 0.0;
 
-    double r_inv    = 1.0/r;
-    double coef     = k_rep * 0.5;
+    double r_inv = 1.0 / r;
+    double coef = k_rep * 0.5;
     double r2_thresh = r * r;
 
-    #pragma omp parallel
-    {
-        double lx = 0, ly = 0;
-        #pragma omp for nowait
-        for (auto &pt : laser_srv.response.values) {
-            double real_x = pt.y;
-            double real_y = pt.x;
-            double dist2 = real_x*real_x + real_y*real_y;
-            double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
+    #pragma omp parallel for reduction(+:x_rep,y_rep) schedule(static)
+    for (int i = 0; i < LIDAR_POINTS; i++) {
+        auto &pt = laser_srv.response.values[i];
+        double real_x = pt.y;
+        double real_y = pt.x;
+        double dist2 = real_x * real_x + real_y * real_y;
+        double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
 
-            if (dist2 > r2_thresh)
-                continue;
-            if (dist2 < 1e-12) {
-                ly += -1e9;
-                lx += 0;
-                continue;
-            }
-            double invd  = 1.0 / std::sqrt(dist2);      // one sqrt
-            double term  = (invd - r_inv) * (invd * invd * invd);
-            double common = coef * term;
+        if (dist2 > r2_thresh)
+            continue;
+        if (dist2 < 1e-12) {
+            y_rep += -1e9;
+            x_rep += 0;
+            continue;
+        }
+        double invd = 1.0 / std::sqrt(dist2); // one sqrt
+        double term = (invd - r_inv) * (invd * invd * invd);
+        double common = coef * term;
 
-            lx += -real_x * common;
-            ly += -real_y * common;
-        }
-        #pragma omp critical
-        {
-            x_rep += lx;
-            y_rep += ly;
-        }
+        x_rep += -real_x * common;
+        y_rep += -real_y * common;
     }
 
 
-
-    double dot = x_att*x_rep + y_att*y_rep;
+    double dot = x_att * x_rep + y_att * y_rep;
     double m_att = std::hypot(x_att, y_att);
     double m_rep = std::hypot(x_rep, y_rep);
 
     double angle_between = 0.0;
     if (m_rep > 1e10 && m_att > 1e-6 && m_rep)
-        angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0 )));
+        angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0)));
 
     geometry_msgs::Point result;
-    result.x = x_att+x_rep;
-    result.y = y_att+y_rep;
+    result.x = x_att + x_rep;
+    result.y = y_att + y_rep;
     result.z = angle_between;
 
     // ROS_WARN("attx: %f, atty: %f, repx: %f, repy: %f, angle: %f %f", x_att, y_att, x_rep, y_rep, angle_between, current_pos.z);
@@ -398,12 +392,13 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     return result;
 }
 
-int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate) {
-    double min_turning_angle = 6.0/180.0*PI;
-    double max_turning_angle = 120.0/180.0*PI;
+int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r,
+                                         double rot_rate) {
+    double min_turning_angle = 6.0 / 180.0 * PI;
+    double max_turning_angle = 120.0 / 180.0 * PI;
 
 
-	auto sleep_rate = ros::Rate(100);
+    auto sleep_rate = ros::Rate(100);
     silver_fundamentals::DriveData encoder_srv;
 
     drive_data_client.call(encoder_srv);
@@ -424,48 +419,51 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
 
     for (int goal_idx = 0; goal_idx < goals.size(); goal_idx++) {
         auto &goal = goals[goal_idx];
-    	do {
-
+        do {
             // get potential field forces
-    	    const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
-   		    double angle = std::atan2(field_vector.x, field_vector.y);
+            const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
+            double angle = std::atan2(field_vector.x, field_vector.y);
 
             // check exit condition
-            if (std::abs(field_vector.z)*180.0/PI > 170.0) {
+            if (std::abs(field_vector.z) * 180.0 / PI > 170.0) {
                 drive_srv.request.left = 0;
-    			drive_srv.request.right = 0;
-    			drive_client.call(drive_srv);
+                drive_srv.request.right = 0;
+                drive_client.call(drive_srv);
                 return 1;
             }
 
-        	// clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
-        	if (std::abs(angle) < min_turning_angle)
-            	angle = 0.0;
+            // clip angle to always be smaller max_turning_angle and ignore it if smaller min_turning_angle
+            if (std::abs(angle) < min_turning_angle)
+                angle = 0.0;
 
-        	if (angle > 170/180.0*PI)
-            	angle -= 2.0*PI;
+            if (angle > 170 / 180.0 * PI)
+                angle -= 2.0 * PI;
 
-        	//ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
+            //ROS_INFO("Field vector x is %f, y is %f, angle is %f Current pos is %f %f %f", field_vector.x, field_vector.y, angle/PI*180.0, current_pos.x, current_pos.y, current_pos.z/PI*180.);
 
             // compute turning radius
-        	double rotation_rate = angle * rot_rate * base_speed;
-        	drive_srv.request.left = base_speed - wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
-        	drive_srv.request.right = base_speed + wheel_base/2 * rotation_rate - (base_speed * std::min(-1.0, std::max(1.0, angle/170.0)));
-        	drive_client.call(drive_srv);
+            double rotation_rate = angle * rot_rate * base_speed;
+            drive_srv.request.left = base_speed - wheel_base / 2 * rotation_rate - (
+                                         base_speed * std::min(-1.0, std::max(1.0, angle / 170.0)));
+            drive_srv.request.right = base_speed + wheel_base / 2 * rotation_rate - (
+                                          base_speed * std::min(-1.0, std::max(1.0, angle / 170.0)));
+            drive_client.call(drive_srv);
 
-        	sleep_rate.sleep();
+            sleep_rate.sleep();
 
-        	base_line_left = current_encoder_left;
-        	base_line_right = current_encoder_right;
-        	drive_data_client.call(encoder_srv);
-        	current_encoder_left = encoder_srv.response.left_encoder;
-        	current_encoder_right = encoder_srv.response.right_encoder;
+            base_line_left = current_encoder_left;
+            base_line_right = current_encoder_right;
+            drive_data_client.call(encoder_srv);
+            current_encoder_left = encoder_srv.response.left_encoder;
+            current_encoder_right = encoder_srv.response.right_encoder;
 
             // update position
-        	current_pos = position_update(current_pos, current_encoder_right-base_line_right, current_encoder_left-base_line_left);
-        	//ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
-
-    	} while (ros::ok() && std::sqrt((current_pos.x-goal.x) * (current_pos.x-goal.x) + (current_pos.y-goal.y) * (current_pos.y-goal.y)) > goal.z);
+            current_pos = position_update(current_pos, current_encoder_right - base_line_right,
+                                          current_encoder_left - base_line_left);
+            //ROS_INFO("Current pos is %f %f %f", current_pos.x, current_pos.y, current_pos.z/PI*180.0);
+        } while (ros::ok() && std::sqrt(
+                     (current_pos.x - goal.x) * (current_pos.x - goal.x) + (current_pos.y - goal.y) * (
+                         current_pos.y - goal.y)) > goal.z);
 
         //ros::Duration(0.5).sleep();
 #ifndef DOTASK2
@@ -486,29 +484,28 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
 }
 
 bool FeedbackDrive::drive_n_cm_async(const double n) {
-        // Subsequent calls: check encoder deltas
-        drive_data_client.call(drive_data_srv);
-        double left_delta = drive_data_srv.response.left_encoder - encoder_base_line_l;
-        double right_delta = drive_data_srv.response.right_encoder - encoder_base_line_r;
-        double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta)) / 2.0;
+    // Subsequent calls: check encoder deltas
+    drive_data_client.call(drive_data_srv);
+    double left_delta = drive_data_srv.response.left_encoder - encoder_base_line_l;
+    double right_delta = drive_data_srv.response.right_encoder - encoder_base_line_r;
+    double current_rad_distance = (std::abs(left_delta) + std::abs(right_delta)) / 2.0;
 
 
-        drive_srv.request.left = speed;
-        drive_srv.request.right = speed;
+    drive_srv.request.left = speed;
+    drive_srv.request.right = speed;
 
-        // If not yet reached the target, keep driving
-        if (current_rad_distance < n*100.0/wheel_radius) {
-            drive_client.call(drive_srv);
-            return false;
-        }
-        // Stop the robot and clear the async flag
-        drive_srv.request.left = 0;
-        drive_srv.request.right = 0;
+    // If not yet reached the target, keep driving
+    if (current_rad_distance < n * 100.0 / wheel_radius) {
         drive_client.call(drive_srv);
-        async_moving = false;
-        // Motion complete
-        return true;
-
+        return false;
+    }
+    // Stop the robot and clear the async flag
+    drive_srv.request.left = 0;
+    drive_srv.request.right = 0;
+    drive_client.call(drive_srv);
+    async_moving = false;
+    // Motion complete
+    return true;
 }
 
 
@@ -532,9 +529,8 @@ bool FeedbackDrive::turn_n_degrees_async(const double n, const direction d) {
     }
 
 
-
     // If not yet reached the target, keep turning
-    if (current_rad_distance <  (n * wheel_base) / (2.0 * wheel_radius)) {
+    if (current_rad_distance < (n * wheel_base) / (2.0 * wheel_radius)) {
         drive_client.call(drive_srv);
         return false;
     }
