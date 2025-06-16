@@ -138,7 +138,6 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 
         geometry_msgs::Point ray;
         if (current_val > 1) {
-            continue;
             ray.x = sin(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
             ray.y = cos(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
             ray.z = current_rad_angle;
@@ -176,8 +175,6 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
             const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle_lidar_position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
-            if (delta_dist == 0)
-                continue;
             const double ray_weight = -delta_dist * delta_dist / (
                                           2 * lhf.sigma_value * lhf.sigma_value / (100 * 100.0));
             weight += ray_weight;
