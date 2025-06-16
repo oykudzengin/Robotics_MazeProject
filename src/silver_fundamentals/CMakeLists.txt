@@ -20,7 +20,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy sensor_msgs create_fundamen
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 set(ROS_BUILD_TYPE RelWithDebInfo)
-set(CMAKE_CXX_FLAGS "-O2")
+set(CMAKE_CXX_FLAGS "-O2 -fopenmp")
 
 
 option(ENABLE_ASAN False)

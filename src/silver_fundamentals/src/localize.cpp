@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <iostream>
 #include "ros/ros.h"
 #include <feedback_drive.h>
@@ -56,7 +57,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 50
+#define LOCALIZE_COUNT_THRESHOLD 100
 #define UNLOCALIZE_COUNT_THRESHOLD 12
 #define CELL_SIZE_CM 80.0
 
@@ -173,7 +174,7 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
     geometry_msgs::Point lidar_offset_point;
     lidar_offset_point.x = 0.0;
     lidar_offset_point.y = LIDAR_SENSOR_OFFSET/100.0;
-
+    #pragma omp parallel for schedule(static)
     for (auto &particle: particles) {
         if (particle.weight < 0) {
             particle.weight = 0;
@@ -571,6 +572,12 @@ int main(int argc, char **argv) {
                 ROS_INFO("  viz avg:    %.3f ms", 1e3 * stats.viz_time    / stats.loops);
                 ROS_INFO("  drive avg: %.3f ms", 1e3 * stats.drive_time    / stats.loops);
             }
+#ifdef _OPENMP
+	        std::cout << "OpenMP is supported; max threads = "
+			              << omp_get_max_threads() << "\n";
+#else
+		    std::cout << "OpenMP *not* supported\n";
+#endif
 
             ros::shutdown();
             break;
