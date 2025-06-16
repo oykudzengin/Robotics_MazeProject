@@ -559,7 +559,7 @@ int main(int argc, char **argv) {
                 ROS_INFO("  resamp avg: %.3f ms", 1e3 * stats.resamp_time / stats.loops);
                 ROS_INFO("  odo avg:    %.3f ms", 1e3 * stats.odo_time    / stats.loops);
                 ROS_INFO("  viz avg:    %.3f ms", 1e3 * stats.viz_time    / stats.loops);
-                ROS_INFO("  drive avg: %.3f ms", 1e3 * stats.drive_time    / stats.loops)
+                ROS_INFO("  drive avg: %.3f ms", 1e3 * stats.drive_time    / stats.loops);
             }
 
             ros::shutdown();
