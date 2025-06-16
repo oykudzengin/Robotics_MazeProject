@@ -498,9 +498,9 @@ int main(int argc, char **argv) {
     static ros::Publisher posearray_pub =
             n.advertise<visualization_msgs::MarkerArray>("particle_poses", 1, true);
     static ros::Publisher ray_pub =
-            n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+            n.advertise<visualization_msgs::Marker>("reference_rays_in", 1, true);
     static ros::Publisher ray_pub2 =
-            n.advertise<visualization_msgs::Marker>("reference_rays", 1, true);
+            n.advertise<visualization_msgs::Marker>("reference_rays_out", 1, true);
 
     // Publisher for Pose messages
     static ros::Publisher pose_pub =
