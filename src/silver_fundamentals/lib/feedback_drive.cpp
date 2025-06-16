@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <feedback_drive.h>
 #include <cmath>
 #include "silver_fundamentals/Laser.h"
@@ -342,19 +343,29 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 	double x_rep = 0.0;
     double y_rep = 0.0;
 
+    double r_inv    = 1.0/r;
+    double coef     = k_rep * 0.5;
+    double r2_thresh = r * r;
+
     for (auto &pt : laser_srv.response.values) {
         double real_x = pt.y;
         double real_y = pt.x;
+        double dist2 = real_x*real_x + real_y*real_y;
         double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
-        if (d_zero > r)
+
+        if (dist2 > r2_thresh)
             continue;
-        if (d_zero < 1e-6) {
+        if (dist2 < 1e-12) {
             y_rep += -1e9;
             x_rep += 0;
-        } else {
-        	x_rep += k_rep * (1/d_zero - 1/r) * -real_x / (d_zero * d_zero * d_zero * 2.0);
-        	y_rep += k_rep * (1/d_zero - 1/r) * -real_y / (d_zero * d_zero * d_zero * 2.0);
+            continue;
         }
+        double invd  = 1.0 / std::sqrt(dist2);      // one sqrt
+        double term  = (invd - r_inv) * (invd * invd * invd);
+        double common = coef * term;
+
+        x_rep += -real_x * common;
+        y_rep += -real_y * common;
     }
 
 
