@@ -14,7 +14,9 @@ struct TimingStats {
     double drive_time   = 0.0;
     // counters
     int loops          = 0;
-} stats;
+};
+
+extern TimingStats stats;
 
 void initSignalHandler();
 bool isShutdownRequested();

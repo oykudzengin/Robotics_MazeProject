@@ -2,6 +2,8 @@
 #include <signal.h>
 #include <atomic>
 
+
+TimingStats stats;
 static std::atomic_bool shutdown_requested(false);
 
 void onSigint(int) {
