@@ -574,12 +574,6 @@ int main(int argc, char **argv) {
                 ROS_INFO("  viz avg:    %.3f ms", 1e3 * stats.viz_time    / stats.loops);
                 ROS_INFO("  drive avg: %.3f ms", 1e3 * stats.drive_time    / stats.loops);
             }
-#ifdef _OPENMP
-	        std::cout << "OpenMP is supported; max threads = "
-			              << omp_get_max_threads() << "\n";
-#else
-		    std::cout << "OpenMP *not* supported\n";
-#endif
 
             ros::shutdown();
             break;
@@ -696,7 +690,7 @@ int main(int argc, char **argv) {
         t1 = ros::Time::now();
         stats.resamp_time += (t1 - t0).toSec();
 
-        t0 = ros::Time::now();
+
 
         // do drive init
         while (!drive_data_client.call(encoder_srv) && ros::ok())
@@ -716,10 +710,13 @@ int main(int argc, char **argv) {
                     goal.x = 0;
                     goal.y = 1;
                     goal.z = 0;
+                    t0 = ros::Time::now();
                     const geometry_msgs::Point field_vector = driver.get_potentials(
                         current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                     double angle = std::atan2(field_vector.x, field_vector.y);
                     double rotation_rate = angle * ROT_RATE * BASE_SPEED;
+                    t1 = ros::Time::now();
+                    stats.drive_time += (t1-t0).toSec();
                     drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
                     drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                     drive_client.call(drive_srv);
@@ -891,8 +888,7 @@ int main(int argc, char **argv) {
         double left_encoder_delta = encoder_srv.response.left_encoder - curr_left_encoder;
         curr_right_encoder = encoder_srv.response.right_encoder;
         curr_left_encoder = encoder_srv.response.left_encoder;
-        t1 = ros::Time::now();
-        stats.drive_time += (t1-t0).toSec();
+
 
         t0 = ros::Time::now();
         particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
