@@ -138,6 +138,7 @@ std::vector<geometry_msgs::Point> get_laser_rays(ros::ServiceClient &laser_pol_c
 
         geometry_msgs::Point ray;
         if (current_val > 1) {
+            continue;
             ray.x = sin(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
             ray.y = cos(current_rad_angle) * LASER_OUT_OF_RANGE_DIST_VALUE;
             ray.z = current_rad_angle;
@@ -476,6 +477,7 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
 }
 
 int main(int argc, char **argv) {
+    stats.loops = 0;
     // ros::init(argc, argv, "localize");
     ros::init(argc, argv, "localize",
               ros::init_options::NoSigintHandler);
@@ -519,7 +521,7 @@ int main(int argc, char **argv) {
     }
     double curr_right_encoder = encoder_srv.response.right_encoder;
     double curr_left_encoder = encoder_srv.response.left_encoder;
-    stats.loops = 0;
+
     // Prepare comm service client and request
     ros::ServiceClient comm_client = n.serviceClient<silver_fundamentals::Com>("comm");
     silver_fundamentals::Com comm_srv;
