@@ -174,6 +174,9 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
     geometry_msgs::Point lidar_offset_point;
     lidar_offset_point.x = 0.0;
     lidar_offset_point.y = LIDAR_SENSOR_OFFSET/100.0;
+
+    constexpr double min_prob = std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS);
+
     #pragma omp parallel for schedule(static)
     for (auto &particle: particles) {
         if (particle.weight < 0) {
@@ -184,17 +187,16 @@ void compute_weights(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_
         particle_lidar_position.z = particle.position.theta;
 
         double weight = 0;
+        constexpr double gaussian_const = -2.0 * SIGMA * SIGMA / (100.0 * 100.0);
         for (auto &measurement: measurements) {
             geometry_msgs::Point global_ray_ending = local_to_global(particle_lidar_position, measurement);
             const double ray_wall_dist = std::min(lhf.get_ray_wall_dist(particle_lidar_position, global_ray_ending), LASER_OUT_OF_RANGE_DIST_VALUE);
             const double delta_dist = std::abs(std::hypot(measurement.x, measurement.y) - ray_wall_dist);
             // const double delta_dist = lhf.get_field_value(global_ray_ending);
-            const double ray_weight = -delta_dist * delta_dist / (
-                                          2 * lhf.sigma_value * lhf.sigma_value / (100 * 100.0));
+            const double ray_weight = delta_dist * delta_dist / gaussian_const;
             weight += ray_weight;
         }
-        particle.weight = std::pow(std::max(std::pow(MIN_PARTICLE_PROB, AMOUNT_OF_RAYS), std::exp(weight)), GAMMA);
-        // particle.weight = weight;
+        particle.weight = std::pow(std::max(min_prob, std::exp(weight)), GAMMA);
     }
 }
 
