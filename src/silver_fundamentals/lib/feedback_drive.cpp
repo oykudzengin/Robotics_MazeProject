@@ -347,26 +347,37 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double coef     = k_rep * 0.5;
     double r2_thresh = r * r;
 
-    for (auto &pt : laser_srv.response.values) {
-        double real_x = pt.y;
-        double real_y = pt.x;
-        double dist2 = real_x*real_x + real_y*real_y;
-        double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
+    #pragma omp parallel
+    {
+        double lx = 0, ly = 0;
+        #pragma omp for nowait
+        for (auto &pt : laser_srv.response.values) {
+            double real_x = pt.y;
+            double real_y = pt.x;
+            double dist2 = real_x*real_x + real_y*real_y;
+            double d_zero = std::sqrt(real_x * real_x + real_y * real_y);
 
-        if (dist2 > r2_thresh)
-            continue;
-        if (dist2 < 1e-12) {
-            y_rep += -1e9;
-            x_rep += 0;
-            continue;
+            if (dist2 > r2_thresh)
+                continue;
+            if (dist2 < 1e-12) {
+                ly += -1e9;
+                lx += 0;
+                continue;
+            }
+            double invd  = 1.0 / std::sqrt(dist2);      // one sqrt
+            double term  = (invd - r_inv) * (invd * invd * invd);
+            double common = coef * term;
+
+            lx += -real_x * common;
+            ly += -real_y * common;
         }
-        double invd  = 1.0 / std::sqrt(dist2);      // one sqrt
-        double term  = (invd - r_inv) * (invd * invd * invd);
-        double common = coef * term;
-
-        x_rep += -real_x * common;
-        y_rep += -real_y * common;
+        #pragma omp critical
+        {
+            x_rep += lx;
+            y_rep += ly;
+        }
     }
+
 
 
     double dot = x_att*x_rep + y_att*y_rep;
