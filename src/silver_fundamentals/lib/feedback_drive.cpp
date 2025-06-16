@@ -299,7 +299,7 @@ int FeedbackDrive::turn(const double angle, direction dir, const double radius, 
 
 // x is right-left
 geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current_pos, double delta_right,
-                                                    double delta_left) {
+                                                    double delta_left) const {
     double delta_right_m = delta_right * wheel_radius / 100;
     double delta_left_m = delta_left * wheel_radius / 100;
     double delta_trans = (delta_right_m + delta_left_m) / 2.0;
@@ -350,11 +350,11 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double coef = k_rep * 0.5;
     double r2_thresh = r * r;
 
-#pragma omp parallel
+// #pragma omp parallel
     {
         double lx = 0, ly = 0;
-#pragma omp for nowait
-        for (int i = 0; i < laser_srv.response.values.size(); i+=4) {
+// #pragma omp for nowait
+        for (int i = 0; i < laser_srv.response.values.size(); i+=1) {
             auto &pt = laser_srv.response.values[i];
             double real_x = pt.y;
             double real_y = pt.x;
@@ -375,7 +375,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
             lx += -real_x * common;
             ly += -real_y * common;
         }
-#pragma omp critical
+// #pragma omp critical
         {
             x_rep += lx;
             y_rep += ly;
