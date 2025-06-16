@@ -60,7 +60,6 @@
 #define UNLOCALIZE_COUNT_THRESHOLD 12
 #define CELL_SIZE_CM 80.0
 
-TimingStats stats;
 
 static std::random_device rd;
 static std::mt19937 gen(rd());
