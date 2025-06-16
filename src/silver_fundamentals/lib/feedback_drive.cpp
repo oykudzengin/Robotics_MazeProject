@@ -354,7 +354,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     {
         double lx = 0, ly = 0;
 #pragma omp for nowait
-        for (int i = 0; i < LIDAR_POINTS; i+=4) {
+        for (int i = 0; i < laser_srv.response.values.size(); i+=4) {
             auto &pt = laser_srv.response.values[i];
             double real_x = pt.y;
             double real_y = pt.x;
