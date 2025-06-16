@@ -32,7 +32,7 @@
 
 #define SIGMA 12.0
 #define GAMMA 1.00
-#define AMOUNT_OF_RAYS 50
+#define AMOUNT_OF_RAYS 20
 #define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 5
 #define PROBABILITY_RANDOM_INJECTIONS 0.01
@@ -487,7 +487,6 @@ geometry_msgs::Point get_particle_variance(const std::array<Particle, AMOUNT_OF_
 }
 
 int main(int argc, char **argv) {
-    stats.loops = 0;
     // ros::init(argc, argv, "localize");
     ros::init(argc, argv, "localize",
               ros::init_options::NoSigintHandler);
@@ -891,12 +890,13 @@ int main(int argc, char **argv) {
         t1 = ros::Time::now();
         stats.odo_time += (t1-t0).toSec();
 
+        stats.loops++;
     }
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
 
-    stats.loops++;
+
 
 
     return 0;
