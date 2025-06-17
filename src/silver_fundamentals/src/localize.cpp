@@ -724,7 +724,7 @@ int main(int argc, char **argv) {
                         
 
                     // shortest path from Lookup-Map
-                    // yes start ahs cól, row order and goal has row, col order 
+                    // yes start ahs col, row order and goal has row, col order 
                     //TODO: approx_current_pos should also return row,col
                     std::vector<geometry_msgs::Point> shortest_path =
                         lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
