@@ -350,10 +350,10 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double coef = k_rep * 0.5;
     double r2_thresh = r * r;
 
-// #pragma omp parallel
+    // #pragma omp parallel
     {
         double lx = 0, ly = 0;
-// #pragma omp for nowait
+        // #pragma omp for nowait
         for (int i = 0; i < laser_srv.response.values.size(); i+=1) {
             auto &pt = laser_srv.response.values[i];
             double real_x = pt.y;
@@ -375,7 +375,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
             lx += -real_x * common;
             ly += -real_y * common;
         }
-// #pragma omp critical
+        // #pragma omp critical
         {
             x_rep += lx;
             y_rep += ly;
@@ -383,7 +383,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     }
 
 
-    double dot = x_att * x_rep + y_att * y_rep;
+    double dot = x_att * x_rep * 1e3 + y_att * y_rep * 1e3;
     double m_att = std::hypot(x_att, y_att);
     double m_rep = std::hypot(x_rep, y_rep);
 
@@ -391,7 +391,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
     double angle_between = 0.0;
     if (m_rep > 1e2 && m_att > 1e-6 && m_rep)
         // angle_between = PI;
-        angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep * 1e8), 1.0)));
+        angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0)));
 
     geometry_msgs::Point result;
     result.x = x_att + x_rep;
