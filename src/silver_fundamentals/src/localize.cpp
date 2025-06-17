@@ -797,8 +797,8 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-
-                if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
+		ROS_INFO("Angle is %f", std::abs(field_vector.z) * 180.0/ PI);
+                if (std::abs(field_vector.z) * 180.0 / PI > 165.0) {
                     ROS_ERROR("Plan failed");
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
                     break;
@@ -831,8 +831,8 @@ int main(int argc, char **argv) {
                 pose_msg.row = pos[1];
                 pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
-                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         pose_msg.row, pose_msg.column, pose_msg.orientation);
+                // ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         // pose_msg.row, pose_msg.column, pose_msg.orientation);
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {

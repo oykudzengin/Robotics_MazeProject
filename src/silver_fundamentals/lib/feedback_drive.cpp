@@ -389,9 +389,9 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 
     double angle_between = 0.0;
-    if (m_rep > 1e9 && m_att > 1e-6 && m_rep)
-        angle_between = 1;
-        //angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0)));
+    if (m_rep > 1e2 && m_att > 1e-6 && m_rep)
+        // angle_between = PI;
+        angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep * 1e8), 1.0)));
 
     geometry_msgs::Point result;
     result.x = x_att + x_rep;
