@@ -36,13 +36,13 @@
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 5
-#define PROBABILITY_RANDOM_INJECTIONS 0.01
+#define PROBABILITY_RANDOM_INJECTIONS 0.0005
 #define MIN_PARTICLE_PROB 0.01
 
-#define ALPHA1 0.05 //rotation noise
-#define ALPHA2 0.00 //rotation noise related to translation
+#define ALPHA1 0.03 //rotation noise
+#define ALPHA2 0.01 //rotation noise related to translation
 #define ALPHA3 0.01 //translation noise
-#define ALPHA4 0.006 //translation noise related to rotation
+#define ALPHA4 0.01 //translation noise related to rotation
 
 #define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
 #define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
@@ -256,7 +256,7 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
                                        delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat));
 
         if (dist > 0.05) {
-            ROS_WARN("Particle moved by %f", dist);
+            // ROS_WARN("Particle moved by %f", dist);
         }
 
         geometry_msgs::Point temp;
@@ -597,6 +597,7 @@ int main(int argc, char **argv) {
                 best_particle = p;
             }
         }
+	// ROS_INFO("max_weight is %f", max_weight);
 
         current_position.x = averages.x;
         current_position.y = averages.y;
@@ -770,7 +771,7 @@ int main(int argc, char **argv) {
                     for (auto &waypoint: waypoints) {
                         waypoint.x += alignment.cell_center.x;
                         waypoint.y += alignment.cell_center.y;
-                        ROS_INFO("Waypoint at %f %f %f\n", waypoint.x, waypoint.y, waypoint.z);
+                        ROS_INFO("Waypoint at %f %f %f, from cell %f %f\n", waypoint.x, waypoint.y, waypoint.z, alignment.cell_center.x, alignment.cell_center.y);
                     }
                     comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                     comm_srv.request.plan_exists = false;
@@ -797,8 +798,8 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-		ROS_INFO("Angle is %f", std::abs(field_vector.z) * 180.0/ PI);
-                if (std::abs(field_vector.z) * 180.0 / PI > 165.0) {
+		// ROS_INFO("Angle is %f", std::abs(field_vector.z) * 180.0/ PI);
+                if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
                     ROS_ERROR("Plan failed");
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
                     break;
@@ -837,6 +838,10 @@ int main(int argc, char **argv) {
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {
                 // play failed sound
+
+		drive_srv.request.left = 0;
+		drive_srv.request.right = 0;
+		drive_client.call(drive_srv);
                 silver_fundamentals::playSong4(n);
                 // create empty waypoints vector;
                 std::vector<geometry_msgs::Point> empty_waypoints = {};
@@ -852,6 +857,7 @@ int main(int argc, char **argv) {
                 }
 
                 localize_state = LocalizeState::LOCALISING;
+		localize_count = 0;
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_SUC: {
@@ -900,10 +906,10 @@ int main(int argc, char **argv) {
 
         stats.loops++;
     }
+
     drive_srv.request.left = 0;
     drive_srv.request.right = 0;
     drive_client.call(drive_srv);
-
 
     return 0;
 }
