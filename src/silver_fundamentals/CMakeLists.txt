@@ -44,6 +44,7 @@ add_service_files(
         ResetEncoders.srv
         ExecutePlan.srv
         Com.srv
+        MoveToPosition.srv
 )
 
 #common commands for building c++ executables and libraries
@@ -113,9 +114,9 @@ add_executable(test lib/feedback_drive.cpp lib/coordinate_conversion.cpp src/tes
 target_link_libraries(test ${catkin_LIBRARIES})
 add_dependencies(test create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
-add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp)
-target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
-add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
+# add_executable(execute_plan_server src/execute_plan_server.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp)
+# target_link_libraries(execute_plan_server ${catkin_LIBRARIES})
+# add_dependencies(execute_plan_server create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
 add_executable(localize src/localize.cpp lib/parse_map_file.cpp lib/feedback_drive.cpp lib/coordinate_conversion.cpp lib/ransac.cpp lib/play_song.cpp lib/signal_handler.cpp)
 target_link_libraries(localize ${catkin_LIBRARIES})
@@ -125,6 +126,11 @@ add_dependencies(localize create_fundamentals_generate_messages_cpp silver_funda
 add_executable(pose_server src/pose_server.cpp)
 target_link_libraries(pose_server ${catkin_LIBRARIES})
 add_dependencies(pose_server silver_fundamentals_generate_messages_cpp)
+
+## move to point node
+add_executable(move_to_point lib/move_to_point_server.cpp)
+target_link_libraries(move_to_point ${catkin_LIBRARIES})
+add_dependencies(move_to_point create_fundamentals_generate_messages_cpp silver_fundamentals_generate_messages_cpp)
 
 # add_executable(play_song lib/play_song.cpp)
 # target_link_libraries(play_song ${catkin_LIBRARIES})

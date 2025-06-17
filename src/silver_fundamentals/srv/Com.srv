@@ -2,10 +2,10 @@ uint8 GET_DATA=0
 uint8 SET_DATA=1
 uint8 operation
 uint8 success_state
-geometry_msgs/Point[] waypoints
-bool plan_exists
+uint8[] goal
+bool goal_exists
 ---
 uint8 success_state
-geometry_msgs/Point[] waypoints
-bool plan_exists
+uint8[] goal
+bool goal_exists
 bool success

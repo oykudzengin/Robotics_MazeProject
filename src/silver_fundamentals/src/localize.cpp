@@ -706,28 +706,29 @@ int main(int argc, char **argv) {
 
                 // wait for execute plan call
                 comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
-                bool plan_exists_flag = false;
+                bool goal_exists_flag = false;
                 while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
-                plan_exists_flag = comm_srv.response.plan_exists;
-                if (plan_exists_flag == true) {
-                    
-                    waypoints = comm_srv.response.waypoints;
-                    for (auto &waypoint: waypoints) {
-                        waypoint.x += alignment.cell_center.x;
-                        waypoint.y += alignment.cell_center.y;
-                        ROS_INFO("Waypoint at %f %f %f\n", waypoint.x, waypoint.y, waypoint.z);
-                    }
-                    // Start-Zelle ermitteln
+                goal_exists_flag = comm_srv.response.goal_exists;
+                if (goal_exists_flag == true) {
                     std::vector<int> start_pos = approx_current_pos(current_position.x, current_position.y,
                                                                     current_position.theta);
                     // Goal-Zelle aus letztem Waypoint ermitteln
-                    const auto &goal_point = waypoints.back();  // letzter Punkt in der Liste
-                    std::vector<int> goal_pos = approx_current_pos(goal_point.x, goal_point.y, goal_point.z);
-                    // Kürzesten Pfad aus Lookup-Map holen (getPath expects row, col)
+                    std::vector<uint8_t> goal_point = comm_srv.response.goal; 
+                    
+                    //TODO: security check if goal point is empty (one goal point reached goal set to empty)
+                    if (goal_point.size() == 0) {
+                        break;
+                    }
+                        
+
+                    // shortest path from Lookup-Map
+                    // yes start ahs cól, row order and goal has row, col order 
+                    //TODO: approx_current_pos should also return row,col
                     std::vector<geometry_msgs::Point> shortest_path =
-                        lhf.getPath(start_pos[1], start_pos[0], goal_pos[1], goal_pos[0]);
+                        lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
+                    ROS_INFO("Shortest Pth: ");
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
                         const auto &p = shortest_path[i];
@@ -735,13 +736,13 @@ int main(int argc, char **argv) {
                                 i, p.x, p.y, p.z);
                     }
                     waypoints = shortest_path;
+
                     comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
-                    comm_srv.request.plan_exists = false;
+                    comm_srv.request.goal_exists = true;
                     comm_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
-
                     while (!comm_client.call(comm_srv) && ros::ok())
-                        ROS_ERROR("localize: failed to call comm service for GET_DATA");
-
+                        ROS_ERROR("localize: failed to call comm service for SET_DATA");
+                    
                     localize_state = LocalizeState::EXECUTING_PLAN;
                     first_execution = true;
                 }
@@ -803,15 +804,17 @@ int main(int argc, char **argv) {
             case LocalizeState::EXECUTED_PLAN_FAIL: {
                 // play failed sound
                 silver_fundamentals::playSong4(n);
-                // create empty waypoints vector;
-                std::vector<geometry_msgs::Point> empty_waypoints = {};
+
                 comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                 comm_srv.request.success_state = static_cast<uint8_t>(
                     silver_fundamentals::PlanSuccessState::PLAN_FAILED);
-                comm_srv.request.plan_exists = false;
-                comm_srv.request.waypoints = empty_waypoints;
+                comm_srv.request.goal_exists = true;
+                //TODO set last goal (waypoint9) point 
+                // current_waypoint
+                comm_srv.request.goal = std::vector<uint8_t>{ 1, 0 };
+                
 
-                // Call the service
+                // TODO Call the service
                 if (!comm_client.call(comm_srv)) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
@@ -820,12 +823,12 @@ int main(int argc, char **argv) {
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_SUC: {
-                std::vector<geometry_msgs::Point> empty_waypoints = {};
                 comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
                 comm_srv.request.success_state = static_cast<uint8_t>(
                     silver_fundamentals::PlanSuccessState::PLAN_DONE);
-                comm_srv.request.plan_exists = false;
-                comm_srv.request.waypoints = empty_waypoints;
+                comm_srv.request.goal_exists = false;
+                //TODO set emtpy goal point (need to check for that)
+                comm_srv.request.goal = {};
 
                 // Call the service
                 if (!comm_client.call(comm_srv)) {
