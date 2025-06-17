@@ -31,7 +31,7 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 12.0
+#define SIGMA 13.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 1000
@@ -39,10 +39,10 @@
 #define PROBABILITY_RANDOM_INJECTIONS 0.01
 #define MIN_PARTICLE_PROB 0.01
 
-#define ALPHA1 0.01 //rotation noise
-#define ALPHA2 0.01 //rotation noise related to translation
+#define ALPHA1 0.05 //rotation noise
+#define ALPHA2 0.00 //rotation noise related to translation
 #define ALPHA3 0.01 //translation noise
-#define ALPHA4 0.01 //translation noise related to rotation
+#define ALPHA4 0.006 //translation noise related to rotation
 
 #define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
 #define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
@@ -273,8 +273,8 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     }
 }
 
-void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles) {
-    constexpr double injection_probability = AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS; // probably wrong
+void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, bool do_injections) {
+    const double injection_probability = do_injections?AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS:0.0; // probably wrong
 
     std::vector<double> masses;
     masses.reserve(AMOUNT_OF_PARTICLES + 1);
@@ -643,16 +643,20 @@ int main(int argc, char **argv) {
         }
         if (localize_state != LocalizeState::LOCALISING && (
                 variance.x > LOCALIZE_VAR_UPPER || variance.y > LOCALIZE_VAR_UPPER)) {
-            if (unlocalize_count >= UNLOCALIZE_COUNT_THRESHOLD) {
+            // if (unlocalize_count >= UNLOCALIZE_COUNT_THRESHOLD) {
+	    if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
+		ROS_ERROR("Plan failed");
                 if (localize_state == LocalizeState::EXECUTING_PLAN)
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
                 else
                     localize_state = LocalizeState::LOCALISING;
-            } else
-                unlocalize_count++;
-        } else if (localize_state != LocalizeState::LOCALISING) {
-            unlocalize_count = 0;
-        }
+	    }
+	}
+            // } else
+                // unlocalize_count++;
+        // } else if (localize_state != LocalizeState::LOCALISING) {
+            // unlocalize_count = 0;
+        // }
 
 
         // do laser measurement
@@ -689,7 +693,10 @@ int main(int argc, char **argv) {
 
         // do sampling
         t0 = ros::Time::now();
-        resample(lhf, particles);
+        if (localize_state == LocalizeState::LOCALISING)
+		resample(lhf, particles, true);
+	else
+		resample(lhf, particles, false);
         t1 = ros::Time::now();
         stats.resamp_time += (t1 - t0).toSec();
 
