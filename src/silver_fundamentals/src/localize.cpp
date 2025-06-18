@@ -31,16 +31,16 @@
 #include <silver_fundamentals/Com.h>
 #include <playsong.h>
 
-#define SIGMA 13.0
+#define SIGMA 12.0
 #define GAMMA 1.00
 #define AMOUNT_OF_RAYS 40
 #define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 5
-#define PROBABILITY_RANDOM_INJECTIONS 0.0005
+#define PROBABILITY_RANDOM_INJECTIONS 0.0001
 #define MIN_PARTICLE_PROB 0.01
 
 #define ALPHA1 0.03 //rotation noise
-#define ALPHA2 0.01 //rotation noise related to translation
+#define ALPHA2 0.015 //rotation noise related to translation
 #define ALPHA3 0.01 //translation noise
 #define ALPHA4 0.01 //translation noise related to rotation
 
@@ -798,7 +798,7 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-		// ROS_INFO("Angle is %f", std::abs(field_vector.z) * 180.0/ PI);
+		ROS_INFO("Angle is %f", angle * 180.0/ PI);
                 if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
                     ROS_ERROR("Plan failed");
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
