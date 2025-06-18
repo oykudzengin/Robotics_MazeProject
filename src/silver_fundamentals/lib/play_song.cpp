@@ -45,7 +45,8 @@ bool storeAndPlaySong(ros::NodeHandle& nh,
         ROS_ERROR("Failed to store song in slot %d", slot);
         return false;
     }
-    ros::Duration(0.2).sleep();  // allow driver to process
+    // TODO: Check if possibnle 
+    // ros::Duration(0.2).sleep();  // allow driver to process
 
     // Play the song
     create_fundamentals::PlaySong play_srv;
@@ -56,7 +57,7 @@ bool storeAndPlaySong(ros::NodeHandle& nh,
     }
 
     // Wait long enough for song to finish (≈ 2 measures)
-    ros::Duration(MEASURE_TIME * 2.01).sleep();
+    // ros::Duration(MEASURE_TIME * 2.01).sleep();
     return true;
 }
 
