@@ -65,7 +65,7 @@ class FeedbackDrive {
         void compute_hitbox(double width, double distance);
         bool window_intersects_box(const std::vector<double> &ranges, double min_angle, double max_angle) const;
 
-        geometry_msgs::Point position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left);
+        geometry_msgs::Point position_update(geometry_msgs::Point current_pos, double delta_right, double delta_left) const;
 };
 
 
