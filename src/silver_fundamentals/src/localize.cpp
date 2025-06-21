@@ -851,9 +851,14 @@ int main(int argc, char **argv) {
                 drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
+                
+                ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
+                         std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
+                                   (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);                
                 if (std::sqrt(
                         (current_position.x - goal.x) * (current_position.x - goal.x) + (
                             current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
+                    ROS_INFO("Reached waypoint [%d]: x=%.2f, y=%.2f, z=%.2f", current_waypoint, goal.x, goal.y, goal.z);
                     current_waypoint++;
                     if (waypoints.size() == current_waypoint) {
                         localize_state = LocalizeState::EXECUTED_PLAN_SUC;
