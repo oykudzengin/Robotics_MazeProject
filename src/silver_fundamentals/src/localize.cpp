@@ -45,10 +45,10 @@
 #define ALPHA4 0.01 //translation noise related to rotation
 
 // Noise parameters for execution mode (slightly increased)
-#define EXEC_ALPHA1 (ALPHA1 * 2)
-#define EXEC_ALPHA2 (ALPHA2 * 1.5)
-#define EXEC_ALPHA3 (ALPHA3 * 1.5)
-#define EXEC_ALPHA4 (ALPHA4 * 1.5)
+#define EXEC_ALPHA1 ALPHA1
+#define EXEC_ALPHA2 ALPHA2//(ALPHA2 * 2)// (ALPHA2 * 1.5)
+#define EXEC_ALPHA3 ALPHA3// (ALPHA3 * 1.5)
+#define EXEC_ALPHA4 ALPHA4//(ALPHA4 * 1.5)
 
 #define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
 #define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
@@ -63,7 +63,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 130
+#define LOCALIZE_COUNT_THRESHOLD 110
 #define UNLOCALIZE_COUNT_THRESHOLD 6
 #define CELL_SIZE_CM 80.0
 
@@ -803,7 +803,7 @@ int main(int argc, char **argv) {
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
                         const auto &p = shortest_path[i];
-                        ROS_WARN("Path point [%zu]: row=%.0f, col=%.0f, radius=%.2f",
+                        ROS_WARN("Path point [%zu]: row=%f, col=%f, radius=%f",
                                 i, p.x, p.y, p.z);
                     }
                     waypoints = shortest_path;
@@ -839,9 +839,10 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-		ROS_INFO("Angle is %f", angle * 180.0/ PI);
+		        ROS_INFO("Angle is %f", angle * 180.0/ PI);
                 if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
                     ROS_ERROR("Plan failed");
+                    ROS_ERROR("at waypoint [%d]: x=%.2f, y=%.2f, z=%.2f", current_waypoint, goal.x, goal.y, goal.z);
                     localize_state = LocalizeState::EXECUTED_PLAN_FAIL;
                     break;
                 }
@@ -873,8 +874,8 @@ int main(int argc, char **argv) {
                 pose_msg.row = pos[1];
                 pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
-                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         pose_msg.row, pose_msg.column, pose_msg.orientation);
+                // ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                //          pose_msg.row, pose_msg.column, pose_msg.orientation);
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {
