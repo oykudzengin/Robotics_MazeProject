@@ -52,6 +52,7 @@ bool moveToPositionCallback(
     status = static_cast<silver_fundamentals::PlanSuccessState>(
         get_srv.response.success_state);
     ros::Duration(0.1).sleep();  // avoid tight loop
+    ROS_INFO("Waiting for answer from localizsaiton ");
     } while (ros::ok() && status == silver_fundamentals::PlanSuccessState::NONE);
 
     // Interpret result

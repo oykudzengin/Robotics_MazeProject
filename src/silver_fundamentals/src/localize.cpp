@@ -44,6 +44,12 @@
 #define ALPHA3 0.01 //translation noise
 #define ALPHA4 0.01 //translation noise related to rotation
 
+// Noise parameters for execution mode (slightly increased)
+#define EXEC_ALPHA1 (ALPHA1 * 2)
+#define EXEC_ALPHA2 (ALPHA2 * 1.5)
+#define EXEC_ALPHA3 (ALPHA3 * 1.5)
+#define EXEC_ALPHA4 (ALPHA4 * 1.5)
+
 #define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
 #define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
 
@@ -57,7 +63,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 70
+#define LOCALIZE_COUNT_THRESHOLD 130
 #define UNLOCALIZE_COUNT_THRESHOLD 6
 #define CELL_SIZE_CM 80.0
 
@@ -206,9 +212,14 @@ double sample_normal(double std_dev) {
     return dist(gen);
 }
 
-void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
+void particle_odometry_update(const LikelihoodField &lhf,
+                              std::array<Particle, AMOUNT_OF_PARTICLES> &particles,
                               const double delta_right,
-                              const double delta_left) {
+                              const double delta_left,
+                              const double alpha1,
+                              const double alpha2,
+                              const double alpha3,
+                              const double alpha4) {
     const double delta_right_m = delta_right * WHEEL_RADIUS / 100;
     const double delta_left_m = delta_left * WHEEL_RADIUS / 100;
 
@@ -228,9 +239,9 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
     // printf("dtrans %f, drot %f, (y, x) (%f, %f), rot1 %f rot2 %f, dy dx dtheta become %f %f %f\n", delta_trans, delta_rot, local_dy, local_dx, delta_rot1, delta_rot2, delta_trans * std::cos(delta_rot1), delta_trans * std::sin(delta_rot1), delta_rot1 + delta_rot2);
 
     for (auto &p: particles) {
-        double var_rot1 = ALPHA1 * pow(delta_rot1, 2);
-        double var_trans = ALPHA3 * pow(delta_trans, 2);
-        double var_rot2 = ALPHA1 * pow(delta_rot2, 2);
+        double var_rot1 = alpha1 * pow(delta_rot1, 2);
+        double var_trans = alpha3 * pow(delta_trans, 2);
+        double var_rot2 = alpha1 * pow(delta_rot2, 2);
         /* if (delta_trans > 0 && delta_rot > 0 && std::abs(delta_rot/delta_trans) < ROT_OVER_TRANS_RATIO_THRESHOLD) {
             // ROS_WARN("rot over trans is %f", delta_rot/delta_trans);
         }*/
@@ -239,9 +250,9 @@ void particle_odometry_update(const LikelihoodField &lhf, std::array<Particle, A
         }*/
         // Add noise to the odometry values
 
-        var_trans += ALPHA4 * (pow(delta_rot1, 2) + pow(delta_rot2, 2));
-        var_rot1 += ALPHA2 * pow(delta_trans, 2);
-        var_rot2 += ALPHA2 * pow(delta_trans, 2);
+        var_trans += alpha4 * (pow(delta_rot1, 2) + pow(delta_rot2, 2));
+        var_rot1 += alpha2 * pow(delta_trans, 2);
+        var_rot2 += alpha2 * pow(delta_trans, 2);
 
         const double delta_rot1_hat = delta_rot1 + sample_normal(std::sqrt(var_rot1));
         const double delta_trans_hat = delta_trans + sample_normal(std::sqrt(var_trans));
@@ -783,11 +794,16 @@ int main(int argc, char **argv) {
                     //TODO: approx_current_pos should also return row,col
                     std::vector<geometry_msgs::Point> shortest_path =
                         lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
-                    ROS_INFO("Shortest Pth: ");
+                     // Remove the first element if the path is not empty
+                    if (!shortest_path.empty()) {
+                        shortest_path.erase(shortest_path.begin());
+                    }
+                    
+                    ROS_WARN("Shortest Path: ");
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
                         const auto &p = shortest_path[i];
-                        ROS_INFO("Path point [%zu]: row=%.0f, col=%.0f, radius=%.2f",
+                        ROS_WARN("Path point [%zu]: row=%.0f, col=%.0f, radius=%.2f",
                                 i, p.x, p.y, p.z);
                     }
                     waypoints = shortest_path;
@@ -806,10 +822,10 @@ int main(int argc, char **argv) {
             case LocalizeState::EXECUTING_PLAN: {
 
                 // Log all waypoints for debugging
-                for (size_t i = 0; i < waypoints.size(); ++i) {
-                    const auto &wp = waypoints[i];
-                    ROS_INFO("Waypoint[%zu]: x=%.2f, y=%.2f, z=%.2f", i, wp.x, wp.y, wp.z);
-                }
+                // for (size_t i = 0; i < waypoints.size(); ++i) {
+                //     const auto &wp = waypoints[i];
+                //     ROS_INFO("Waypoint[%zu]: x=%.2f, y=%.2f, z=%.2f", i, wp.x, wp.y, wp.z);
+                // }
 
                 while (!drive_data_client.call(encoder_srv) && ros::ok())
                     ROS_ERROR("encoder service call failed");
@@ -857,8 +873,8 @@ int main(int argc, char **argv) {
                 pose_msg.row = pos[1];
                 pose_msg.orientation = pos[2];
                 pose_pub.publish(pose_msg);
-                // ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
-                         // pose_msg.row, pose_msg.column, pose_msg.orientation);
+                ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
+                         pose_msg.row, pose_msg.column, pose_msg.orientation);
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_FAIL: {
@@ -927,7 +943,14 @@ int main(int argc, char **argv) {
 
 
         t0 = ros::Time::now();
-        particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta);
+        // Call odometry update with different noise parameters depending on state
+        if (localize_state == LocalizeState::EXECUTING_PLAN) {
+            particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta,
+                                     EXEC_ALPHA1, EXEC_ALPHA2, EXEC_ALPHA3, EXEC_ALPHA4);
+        } else {
+            particle_odometry_update(lhf, particles, right_encoder_delta, left_encoder_delta,
+                                     ALPHA1, ALPHA2, ALPHA3, ALPHA4);
+        }
         t1 = ros::Time::now();
         stats.odo_time += (t1 - t0).toSec();
 
