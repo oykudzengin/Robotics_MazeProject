@@ -802,9 +802,14 @@ int main(int argc, char **argv) {
                     ROS_WARN("Shortest Path: ");
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
-                        const auto &p = shortest_path[i];
+                        auto &p = shortest_path[i];
+                        // convert waypoints
+                        p.x = (p.x * 0.8 + 0.4) * (-1.0);
+                        p.y = (p.y * 0.8 + 0.4) * (-1.0);
+                        
                         ROS_WARN("Path point [%zu]: row=%f, col=%f, radius=%f",
-                                i, p.x, p.y, p.z);
+                                i,p.y , p.x, p.z);
+                            
                     }
                     waypoints = shortest_path;
 
@@ -833,8 +838,9 @@ int main(int argc, char **argv) {
                 current.x = current_position.x;
                 current.y = current_position.y;
                 current.z = current_position.theta;
-                goal.x = waypoints[current_waypoint].x;
-                goal.y = waypoints[current_waypoint].y;
+                // TODO: Switch x and y ?
+                goal.x = waypoints[current_waypoint].y;
+                goal.y = waypoints[current_waypoint].x;
                 goal.z = waypoints[current_waypoint].z;
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
