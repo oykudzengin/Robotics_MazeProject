@@ -784,7 +784,7 @@ int main(int argc, char **argv) {
                     std::vector<uint8_t> goal_point = comm_srv.response.goal; 
                     
                     //TODO: security check if goal point is empty (one goal point reached goal set to empty)
-                    if (goal_point.size() == 0) {
+                    if (goal_point.empty()) {
                         break;
                     }
                         
@@ -858,7 +858,7 @@ int main(int argc, char **argv) {
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
                 
-                ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
+                // ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
                          std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
                                    (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);                
                 if (std::sqrt(
@@ -901,7 +901,7 @@ int main(int argc, char **argv) {
                 comm_srv.request.success_state = static_cast<uint8_t>(
                     silver_fundamentals::PlanSuccessState::PLAN_FAILED);
                 comm_srv.request.goal_exists = true;
-                //TODO set last goal (waypoint9) point 
+                // TODO set last goal (waypoint9) point 
                 // current_waypoint
                 comm_srv.request.goal = std::vector<uint8_t>{ 1, 0 };
                 
@@ -920,15 +920,15 @@ int main(int argc, char **argv) {
                 comm_srv.request.success_state = static_cast<uint8_t>(
                     silver_fundamentals::PlanSuccessState::PLAN_DONE);
                 comm_srv.request.goal_exists = false;
-                //TODO set emtpy goal point (need to check for that)
-                comm_srv.request.goal = {};
-
+                // TODO set emtpy goal point (need to check for that)
+                comm_srv.request.goal.clear();
+ 
                 // Call the service
                 if (!comm_client.call(comm_srv)) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
                 // TODO:
-                localize_state = LocalizeState::LOCALISING;
+                localize_state = LocalizeState::WAIT_FOR_PLAN;
                 localize_count = 0;
                 unlocalize_count = 0;
                 current_waypoint = 0;
