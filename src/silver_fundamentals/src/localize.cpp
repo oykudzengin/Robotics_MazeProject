@@ -778,6 +778,9 @@ int main(int argc, char **argv) {
                 while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
+                ROS_INFO("status is: goal %s, goalpos %f %f, status %d", comm_srv.response.goal_exists?"YES":"NO", comm_srv.response.goal[0], comm_srv.response.goal[1], comm_srv.response.success_state);
+
+
                 if (comm_srv.response.goal_exists == true) {
                     std::vector<int> start_pos = approx_current_pos(current_position.x, current_position.y,
                                                                     current_position.theta);
@@ -786,6 +789,7 @@ int main(int argc, char **argv) {
                     bool goal_exists = comm_srv.response.goal_exists;
 
                     //TODO: security check if goal point is empty (one goal point reached goal set to empty)
+
                     if (goal_point.empty() || goal_exists == false) {
                         break;
                     }
@@ -804,13 +808,13 @@ int main(int argc, char **argv) {
                     ROS_WARN("Shortest Path: ");
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
-                        auto &p = shortest_path[i];
+                        auto &path_point = shortest_path[i];
                         // convert waypoints
-                        p.x = (p.x * 0.8 + 0.4) * (-1.0);
-                        p.y = (p.y * 0.8 + 0.4) * (-1.0);
+                        path_point.x = (path_point.x * 0.8 + 0.4) * (-1.0);
+                        path_point.y = (path_point.y * 0.8 + 0.4) * (-1.0);
 
                         ROS_WARN("Path point [%zu]: row=%f, col=%f, radius=%f",
-                                 i, p.y, p.x, p.z);
+                                 i, path_point.y, path_point.x, path_point.z);
                     }
                     waypoints = shortest_path;
 

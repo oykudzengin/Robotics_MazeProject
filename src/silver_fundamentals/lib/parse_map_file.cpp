@@ -383,11 +383,12 @@ std::vector<geometry_msgs::Point>
 LikelihoodField::getPath(int start_r, int start_c, int target_r, int target_c) const
 {
     using Cell = std::pair<int,int>;
-    Cell start{start_r, start_c}, target{target_r, target_c};
+    const Cell start{start_r, start_c};
+    const Cell target{target_r, target_c};
     std::vector<geometry_msgs::Point> result;
-    auto it_start = lookup_map_.find(start);
+    const auto it_start = lookup_map_.find(start);
     if (it_start == lookup_map_.end()) return result;
-    auto it_target = it_start->second.find(target);
+    const auto it_target = it_start->second.find(target);
     if (it_target == it_start->second.end()) return result;
     for (const Cell &cell : it_target->second) {
         geometry_msgs::Point p;
@@ -396,6 +397,7 @@ LikelihoodField::getPath(int start_r, int start_c, int target_r, int target_c) c
         p.z = 0.4;          // feste Radius-Angabe
         result.push_back(p);
     }
+    result.at(result.size() - 1).z = 0.25;
     return result;
 }
 
