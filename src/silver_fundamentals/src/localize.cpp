@@ -267,7 +267,9 @@ void particle_odometry_update(const LikelihoodField &lhf,
                                        delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat));
 
         if (dist > 0.1) {
-            ROS_WARN("Particle moved by %f, rot1 is %f, rot2 is %f, trans is %f, rot1_noise is %f, rot2_noise is %f, trans_noise is %f", dist, delta_rot1, delta_rot2, delta_trans, delta_rot1_hat, delta_rot2_hat, delta_trans);
+            ROS_WARN(
+                "Particle moved by %f, rot1 is %f, rot2 is %f, trans is %f, rot1_noise is %f, rot2_noise is %f, trans_noise is %f",
+                dist, delta_rot1, delta_rot2, delta_trans, delta_rot1_hat, delta_rot2_hat, delta_trans);
         }
 
         geometry_msgs::Point temp;
@@ -608,7 +610,7 @@ int main(int argc, char **argv) {
                 best_particle = p;
             }
         }
-	// ROS_INFO("max_weight is %f", max_weight);
+        // ROS_INFO("max_weight is %f", max_weight);
 
         current_position.x = averages.x;
         current_position.y = averages.y;
@@ -780,24 +782,25 @@ int main(int argc, char **argv) {
                     std::vector<int> start_pos = approx_current_pos(current_position.x, current_position.y,
                                                                     current_position.theta);
                     // Goal-Zelle aus letztem Waypoint ermitteln
-                    std::vector<uint8_t> goal_point = comm_srv.response.goal; 
-                    
+                    std::vector<uint8_t> goal_point = comm_srv.response.goal;
+                    bool goal_exists = comm_srv.response.goal_exists;
+
                     //TODO: security check if goal point is empty (one goal point reached goal set to empty)
-                    if (goal_point.empty()) {
+                    if (goal_point.empty() || goal_exists == false) {
                         break;
                     }
-                        
+
 
                     // shortest path from Lookup-Map
                     // yes start ahs col, row order and goal has row, col order 
                     //TODO: approx_current_pos should also return row,col
                     std::vector<geometry_msgs::Point> shortest_path =
-                        lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
-                     // Remove the first element if the path is not empty
+                            lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
+                    // Remove the first element if the path is not empty
                     if (!shortest_path.empty()) {
                         shortest_path.erase(shortest_path.begin());
                     }
-                    
+
                     ROS_WARN("Shortest Path: ");
                     // Log the shortest path points
                     for (size_t i = 0; i < shortest_path.size(); ++i) {
@@ -805,10 +808,9 @@ int main(int argc, char **argv) {
                         // convert waypoints
                         p.x = (p.x * 0.8 + 0.4) * (-1.0);
                         p.y = (p.y * 0.8 + 0.4) * (-1.0);
-                        
+
                         ROS_WARN("Path point [%zu]: row=%f, col=%f, radius=%f",
-                                i,p.y , p.x, p.z);
-                            
+                                 i, p.y, p.x, p.z);
                     }
                     waypoints = shortest_path;
 
@@ -817,14 +819,13 @@ int main(int argc, char **argv) {
                     comm_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
                     while (!comm_client.call(comm_srv) && ros::ok())
                         ROS_ERROR("localize: failed to call comm service for SET_DATA");
-                    
+
                     localize_state = LocalizeState::EXECUTING_PLAN;
                     current_waypoint = 0;
                 }
                 break;
             }
             case LocalizeState::EXECUTING_PLAN: {
-
                 // Log all waypoints for debugging
                 // for (size_t i = 0; i < waypoints.size(); ++i) {
                 //     const auto &wp = waypoints[i];
@@ -844,7 +845,7 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-		        //ROS_INFO("Angle is %f", angle * 180.0/ PI);
+                //ROS_INFO("Angle is %f", angle * 180.0/ PI);
                 if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
                     ROS_ERROR("Plan failed");
                     ROS_ERROR("at waypoint [%d]: x=%.2f, y=%.2f, z=%.2f", current_waypoint, goal.x, goal.y, goal.z);
@@ -856,10 +857,10 @@ int main(int argc, char **argv) {
                 drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
-                
+
                 ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
                          std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
-                                   (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);
+                             (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);
                 if (std::sqrt(
                         (current_position.x - goal.x) * (current_position.x - goal.x) + (
                             current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
@@ -867,7 +868,6 @@ int main(int argc, char **argv) {
                     current_waypoint++;
                     if (waypoints.size() == current_waypoint) {
                         localize_state = LocalizeState::EXECUTED_PLAN_SUC;
-
                     }
                 }
 
@@ -887,9 +887,9 @@ int main(int argc, char **argv) {
             case LocalizeState::EXECUTED_PLAN_FAIL: {
                 // play failed sound
 
-		drive_srv.request.left = 0;
-		drive_srv.request.right = 0;
-		drive_client.call(drive_srv);
+                drive_srv.request.left = 0;
+                drive_srv.request.right = 0;
+                drive_client.call(drive_srv);
                 silver_fundamentals::playSong4(n);
 
                 comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
@@ -899,7 +899,7 @@ int main(int argc, char **argv) {
                 // TODO set last goal (waypoint9) point 
                 // current_waypoint
                 // comm_srv.request.goal = std::vector<uint8_t>{ 0, 0 };
-                
+
 
                 // TODO Call the service
                 if (!comm_client.call(comm_srv)) {
@@ -907,7 +907,7 @@ int main(int argc, char **argv) {
                 }
 
                 localize_state = LocalizeState::LOCALISING;
-		        localize_count = 0;
+                localize_count = 0;
 
 
                 break;
@@ -919,13 +919,18 @@ int main(int argc, char **argv) {
                 comm_srv.request.goal_exists = false;
                 // TODO set emtpy goal point (need to check for that)
                 comm_srv.request.goal.clear();
- 
+
                 // Call the service
-                if (!comm_client.call(comm_srv)) {
+                while (!comm_client.call(comm_srv)) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
                 // TODO:
                 localize_state = LocalizeState::WAIT_FOR_PLAN;
+
+                drive_srv.request.left = 0;
+                drive_srv.request.right = 0;
+                drive_client.call(drive_srv);
+
                 localize_count = 0;
                 unlocalize_count = 0;
                 current_waypoint = 0;
