@@ -98,13 +98,13 @@ int main(int argc, char **argv)
 
             // wait for execution
             comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
-            while (ros::ok() && (!comm_client.call(comm_srv) || comm_srv.response.success_state == silver_fundamentals::PlanSuccessState::NONE)) {
+            while (ros::ok() && (!comm_client.call(comm_srv) || static_cast<silver_fundamentals::PlanSuccessState>(comm_srv.response.success_state) == silver_fundamentals::PlanSuccessState::NONE)) {
                 ROS_INFO("waiting for client to execute a plan...");
                 ros::Duration(0.1).sleep();
             }
 
             // check success and maybe redo
-            success = (comm_srv.response.success_state == silver_fundamentals::PlanSuccessState::PLAN_DONE);
+            success = (static_cast<silver_fundamentals::PlanSuccessState>(comm_srv.response.success_state) == silver_fundamentals::PlanSuccessState::PLAN_DONE);
         }
 
         // play song
