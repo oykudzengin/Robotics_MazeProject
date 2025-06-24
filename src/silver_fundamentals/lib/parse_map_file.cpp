@@ -397,7 +397,7 @@ LikelihoodField::getPath(int start_r, int start_c, int target_r, int target_c) c
         p.z = 0.4;          // feste Radius-Angabe
         result.push_back(p);
     }
-    result.at(result.size() - 1).z = 0.25;
+    result.at(result.size() - 1).z = 0.20;
     return result;
 }
 
