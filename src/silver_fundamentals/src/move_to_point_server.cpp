@@ -43,6 +43,9 @@ bool moveToPositionCallback(
 
     silver_fundamentals::PlanSuccessState status; // <— and the status variable
     // Poll until comm_node reports PLAN_DONE or PLAN_FAILED
+
+
+    get_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
     do {
     if (!comm_client.call(get_srv)) {
         ROS_ERROR("execute_plan_server: failed to call comm service for GET_DATA");
