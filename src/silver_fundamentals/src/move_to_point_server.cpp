@@ -19,7 +19,6 @@ bool moveToPositionCallback(
     silver_fundamentals::MoveToPosition::Response &res)
 {
     ROS_INFO("move_to_position called: row=%d, column=%d", req.row, req.column);
-    // TODO: insert your position handling logic here.
     res.success = true;
     ros::NodeHandle nh_comm;
     // Use a static client to avoid recreating each call
@@ -37,7 +36,7 @@ bool moveToPositionCallback(
     };
 
     // Call the service
-    if (!comm_client.call(get_srv)) {
+    while (!comm_client.call(get_srv)) {
     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
     }
     //return true;
@@ -60,13 +59,21 @@ bool moveToPositionCallback(
         // goal reached
         res.success = true;
         return true;
-    } else if (status == silver_fundamentals::PlanSuccessState::PLAN_FAILED) {
+    }
+    if (status == silver_fundamentals::PlanSuccessState::PLAN_FAILED) {
         // goal not reached
+        silver_fundamentals::Com get_srv;
+        get_srv.request.operation     = silver_fundamentals::Com::Request::SET_DATA;
+        get_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
+        get_srv.request.goal_exists   = false;
+        get_srv.request.goal = std::vector<uint8_t>{0, 0};
+        while (!comm_client.call(get_srv)) {
+            ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+        }
         res.success = false;
         return true;
-    } else {
-        return false;
     }
+    return false;
 }
 
 int main(int argc, char **argv)

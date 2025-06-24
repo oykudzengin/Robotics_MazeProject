@@ -137,7 +137,7 @@ target_link_libraries(pose_server ${catkin_LIBRARIES})
 add_dependencies(pose_server silver_fundamentals_generate_messages_cpp)
 
 ## move to point node
-add_executable(move_to_point lib/move_to_point_server.cpp)
+add_executable(move_to_point src/move_to_point_server.cpp)
 target_link_libraries(move_to_point ${catkin_LIBRARIES})
 add_dependencies(move_to_point silver_fundamentals_generate_messages_cpp)
 

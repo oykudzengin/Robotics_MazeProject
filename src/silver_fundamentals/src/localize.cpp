@@ -266,8 +266,8 @@ void particle_odometry_update(const LikelihoodField &lhf,
         const double dist = std::hypot(delta_trans_hat * std::sin(p.position.theta + delta_rot1_hat),
                                        delta_trans_hat * std::cos(p.position.theta + delta_rot1_hat));
 
-        if (dist > 0.05) {
-            // ROS_WARN("Particle moved by %f", dist);
+        if (dist > 0.1) {
+            ROS_WARN("Particle moved by %f, rot1 is %f, rot2 is %f, trans is %f, rot1_noise is %f, rot2_noise is %f, trans_noise is %f", dist, delta_rot1, delta_rot2, delta_trans, delta_rot1_hat, delta_rot2_hat, delta_trans);
         }
 
         geometry_msgs::Point temp;
@@ -285,6 +285,7 @@ void particle_odometry_update(const LikelihoodField &lhf,
             p.weight = -1;
     }
 }
+
 
 void resample(const LikelihoodField &lhf, std::array<Particle, AMOUNT_OF_PARTICLES> &particles, bool do_injections) {
     const double injection_probability = do_injections ? AMOUNT_RANDOM_INJECTIONS * PROBABILITY_RANDOM_INJECTIONS : 0.0;
@@ -568,7 +569,6 @@ int main(int argc, char **argv) {
 
     int localize_count = 0;
     int unlocalize_count = 0;
-    bool first_execution = false;
 
     // main loop
     while (ros::ok()) {
@@ -751,7 +751,8 @@ int main(int argc, char **argv) {
                     driver.reset_encoder_base_lines();
                     std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
                                                               current_position.theta);
-                    silver_fundamentals::playSong1(n);
+                    //TODO: put in again, only out for testing
+                    //silver_fundamentals::playSong1(n);
                     ROS_INFO("Published pose: row=%d, column=%d, orientation=%d",
                              pos[1], pos[0], pos[2]);
                 }
@@ -772,12 +773,10 @@ int main(int argc, char **argv) {
 
                 // wait for execute plan call
                 comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
-                bool goal_exists_flag = false;
                 while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
-                goal_exists_flag = comm_srv.response.goal_exists;
-                if (goal_exists_flag == true) {
+                if (comm_srv.response.goal_exists == true) {
                     std::vector<int> start_pos = approx_current_pos(current_position.x, current_position.y,
                                                                     current_position.theta);
                     // Goal-Zelle aus letztem Waypoint ermitteln
@@ -820,7 +819,7 @@ int main(int argc, char **argv) {
                         ROS_ERROR("localize: failed to call comm service for SET_DATA");
                     
                     localize_state = LocalizeState::EXECUTING_PLAN;
-                    first_execution = true;
+                    current_waypoint = 0;
                 }
                 break;
             }
@@ -858,9 +857,11 @@ int main(int argc, char **argv) {
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
                 
-                // ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
+                /*
+                ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
                          std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
-                                   (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);                
+                                   (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);
+                */
                 if (std::sqrt(
                         (current_position.x - goal.x) * (current_position.x - goal.x) + (
                             current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
@@ -868,12 +869,8 @@ int main(int argc, char **argv) {
                     current_waypoint++;
                     if (waypoints.size() == current_waypoint) {
                         localize_state = LocalizeState::EXECUTED_PLAN_SUC;
-                        current_waypoint = 0;
+
                     }
-                }
-                if (first_execution == true) {
-                    first_execution = false;
-                    ros::Duration(0.1).sleep();
                 }
 
                 std::vector<int> pos = approx_current_pos(current_position.x, current_position.y,
@@ -903,7 +900,7 @@ int main(int argc, char **argv) {
                 comm_srv.request.goal_exists = true;
                 // TODO set last goal (waypoint9) point 
                 // current_waypoint
-                comm_srv.request.goal = std::vector<uint8_t>{ 1, 0 };
+                // comm_srv.request.goal = std::vector<uint8_t>{ 0, 0 };
                 
 
                 // TODO Call the service
@@ -912,7 +909,9 @@ int main(int argc, char **argv) {
                 }
 
                 localize_state = LocalizeState::LOCALISING;
-		localize_count = 0;
+		        localize_count = 0;
+
+
                 break;
             }
             case LocalizeState::EXECUTED_PLAN_SUC: {
