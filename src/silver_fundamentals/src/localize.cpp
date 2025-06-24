@@ -778,7 +778,7 @@ int main(int argc, char **argv) {
                 while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
-                ROS_INFO("status is: goal %s, goalpos %f %f, status %d", comm_srv.response.goal_exists?"YES":"NO", comm_srv.response.goal[0], comm_srv.response.goal[1], comm_srv.response.success_state);
+                ROS_INFO("status is: goal %s, goalpos %d %d, status %d", comm_srv.response.goal_exists?"YES":"NO", comm_srv.response.goal[0], comm_srv.response.goal[1], comm_srv.response.success_state);
 
 
                 if (comm_srv.response.goal_exists == true) {
@@ -862,9 +862,11 @@ int main(int argc, char **argv) {
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
 
+                /*
                 ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
                          std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
                              (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);
+                             */
                 if (std::sqrt(
                         (current_position.x - goal.x) * (current_position.x - goal.x) + (
                             current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
@@ -928,7 +930,15 @@ int main(int argc, char **argv) {
                 while (!comm_client.call(comm_srv)) {
                     ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
                 }
-                // TODO:
+
+                comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+                while (!comm_client.call(comm_srv)) {
+                    ROS_ERROR("execute_plan_server: failed to call comm service for GET_DATA");
+                }
+
+
+                ROS_INFO("Executing plan success, goal %s", comm_srv.request.goal_exists?"YES":"NO");
+
                 localize_state = LocalizeState::WAIT_FOR_PLAN;
 
                 drive_srv.request.left = 0;
