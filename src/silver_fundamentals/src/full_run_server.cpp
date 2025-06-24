@@ -6,7 +6,7 @@
 #include <LocalizeCommunication.h>
 
 
-#include "playsong.h"
+#include <playsong.h>
 #include <fstream>
 #include <string>
 #include <regex>
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     goals.push_back({static_cast<uint8_t>(pickups[0].first), static_cast<uint8_t>(pickups[0].second)});
 
 
-    const ros::ServiceClient comm_client = nh.serviceClient<silver_fundamentals::Com>("comm");
+    ros::ServiceClient comm_client = nh.serviceClient<silver_fundamentals::Com>("comm");
     silver_fundamentals::Com comm_srv;
 
     for (const auto &goal: goals) {
