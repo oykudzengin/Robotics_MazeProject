@@ -141,6 +141,11 @@ add_executable(move_to_point src/move_to_point_server.cpp)
 target_link_libraries(move_to_point ${catkin_LIBRARIES})
 add_dependencies(move_to_point silver_fundamentals_generate_messages_cpp)
 
+
+add_executable(full_run src/full_run_server.cpp)
+target_link_libraries(full_run ${catkin_LIBRARIES})
+add_dependencies(full_run silver_fundamentals_generate_messages_cpp)
+
 # add_executable(play_song lib/play_song.cpp)
 # target_link_libraries(play_song ${catkin_LIBRARIES})
 # add_dependencies(play_song ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} create_fundamentals_generate_messages_cpp)

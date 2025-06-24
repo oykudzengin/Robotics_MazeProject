@@ -5,7 +5,51 @@
 #include <cstdint>
 #include <LocalizeCommunication.h>
 
+
 #include "playsong.h"
+#include <fstream>
+#include <string>
+#include <regex>
+#include <utility>
+#include <stdexcept>
+
+// Helper: parses a file containing coordinates in the form [[x1,y1], [x2,y2], ...]
+void parseCoordinates(const std::string& filename,
+                      std::vector<std::pair<int,int>>& coords)
+{
+    std::ifstream ifs(filename);
+    if (!ifs.is_open()) {
+        throw std::runtime_error("Cannot open file: " + filename);
+    }
+
+    std::string content((std::istreambuf_iterator<char>(ifs)),
+                        std::istreambuf_iterator<char>());
+
+    std::regex pairRegex(R"(\[\s*(-?\d+)\s*,\s*(-?\d+)\s*\])");
+    std::smatch match;
+    auto begin = content.cbegin();
+    auto end   = content.cend();
+
+    while (std::regex_search(begin, end, match, pairRegex)) {
+        int x = std::stoi(match[1].str());
+        int y = std::stoi(match[2].str());
+        coords.emplace_back(x, y);
+        begin = match.suffix().first;
+    }
+}
+
+// Main loader: fills gold_locations and pickups from their respective files
+void loadWaypoints(const std::string& goldFile,
+                   const std::string& pickupsFile,
+                   std::vector<std::pair<int,int>>& gold_locations,
+                   std::vector<std::pair<int,int>>& pickups)
+{
+    gold_locations.clear();
+    pickups.clear();
+
+    parseCoordinates(goldFile,    gold_locations);
+    parseCoordinates(pickupsFile, pickups);
+}
 
 // localaise communication to execute plan server 
 namespace silver_fundamentals {
@@ -21,8 +65,17 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "full_run_server");
     ros::NodeHandle nh;
 
-    // TODO: read in files and create vectors
+    // Read in files and create waypoint vectors
+    std::vector<std::pair<int,int>> gold_locations;
+    std::vector<std::pair<int,int>> pickups;
+    loadWaypoints("src/silver_fundamentals/maps/gold.txt", "src/silver_fundamentals/maps/pickups.txt", gold_locations, pickups);
+
+    // Combine gold and pickups into goals
     std::vector<std::vector<uint8_t>> goals;
+    for (const auto &p : gold_locations) {
+        goals.push_back({static_cast<uint8_t>(p.first), static_cast<uint8_t>(p.second)});
+    }
+    goals.push_back({static_cast<uint8_t>(pickups[0].first), static_cast<uint8_t>(pickups[0].second)});
 
 
     const ros::ServiceClient comm_client = nh.serviceClient<silver_fundamentals::Com>("comm");
