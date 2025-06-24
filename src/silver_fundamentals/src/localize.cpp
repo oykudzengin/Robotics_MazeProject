@@ -33,8 +33,8 @@
 
 #define SIGMA 12.0
 #define GAMMA 1.00
-#define AMOUNT_OF_RAYS 44
-#define AMOUNT_OF_PARTICLES 1200
+#define AMOUNT_OF_RAYS 40
+#define AMOUNT_OF_PARTICLES 1000
 #define AMOUNT_RANDOM_INJECTIONS 5
 #define PROBABILITY_RANDOM_INJECTIONS 0.0001
 #define MIN_PARTICLE_PROB 0.01
@@ -45,10 +45,10 @@
 #define ALPHA4 0.01 //translation noise related to rotation
 
 // Noise parameters for execution mode (slightly increased)
-#define EXEC_ALPHA1 0.1
-#define EXEC_ALPHA2 ALPHA2//(ALPHA2 * 2)// (ALPHA2 * 1.5)
-#define EXEC_ALPHA3 ALPHA3// (ALPHA3 * 1.5)
-#define EXEC_ALPHA4 ALPHA4//(ALPHA4 * 1.5)
+#define EXEC_ALPHA1 0.03
+#define EXEC_ALPHA2 0.015//(ALPHA2 * 2)// (ALPHA2 * 1.5)
+#define EXEC_ALPHA3 0.03// (ALPHA3 * 1.5)
+#define EXEC_ALPHA4 0.01//(ALPHA4 * 1.5)
 
 #define TRANS_OVER_ROT_RATIO_THRESHOLD 10.0
 #define ROT_OVER_TRANS_RATIO_THRESHOLD 10.0
@@ -63,7 +63,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 100
+#define LOCALIZE_COUNT_THRESHOLD 80
 #define UNLOCALIZE_COUNT_THRESHOLD 6
 #define CELL_SIZE_CM 80.0
 
@@ -523,7 +523,7 @@ int main(int argc, char **argv) {
     static ros::Publisher pose_pub =
             n.advertise<silver_fundamentals::Pose>("pose", 10);
 
-    auto rate = ros::Rate(12);
+    auto rate = ros::Rate(10);
     const std::string pkg_path = "src/silver_fundamentals";
     std::string mapfile = pkg_path + "/maps/map.txt";
 
