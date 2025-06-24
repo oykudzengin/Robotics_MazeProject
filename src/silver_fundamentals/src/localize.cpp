@@ -45,7 +45,7 @@
 #define ALPHA4 0.01 //translation noise related to rotation
 
 // Noise parameters for execution mode (slightly increased)
-#define EXEC_ALPHA1 ALPHA1
+#define EXEC_ALPHA1 0.1
 #define EXEC_ALPHA2 ALPHA2//(ALPHA2 * 2)// (ALPHA2 * 1.5)
 #define EXEC_ALPHA3 ALPHA3// (ALPHA3 * 1.5)
 #define EXEC_ALPHA4 ALPHA4//(ALPHA4 * 1.5)
@@ -63,7 +63,7 @@
 #define MINIMAL_WALL_DIST 2
 #define LOCALIZE_VAR_LOWER 0.1
 #define LOCALIZE_VAR_UPPER 0.20
-#define LOCALIZE_COUNT_THRESHOLD 110
+#define LOCALIZE_COUNT_THRESHOLD 80
 #define UNLOCALIZE_COUNT_THRESHOLD 6
 #define CELL_SIZE_CM 80.0
 
@@ -844,7 +844,7 @@ int main(int argc, char **argv) {
                 const geometry_msgs::Point field_vector = driver.get_potentials(
                     current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
                 double angle = std::atan2(field_vector.x, field_vector.y);
-		        ROS_INFO("Angle is %f", angle * 180.0/ PI);
+		        //ROS_INFO("Angle is %f", angle * 180.0/ PI);
                 if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
                     ROS_ERROR("Plan failed");
                     ROS_ERROR("at waypoint [%d]: x=%.2f, y=%.2f, z=%.2f", current_waypoint, goal.x, goal.y, goal.z);
@@ -857,11 +857,9 @@ int main(int argc, char **argv) {
                 drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
                 
-                /*
                 ROS_INFO("Checking waypoint reach: dist=%.3f, threshold=%.3f",
                          std::sqrt((current_position.x - goal.x) * (current_position.x - goal.x) +
                                    (current_position.y - goal.y) * (current_position.y - goal.y)), goal.z);
-                */
                 if (std::sqrt(
                         (current_position.x - goal.x) * (current_position.x - goal.x) + (
                             current_position.y - goal.y) * (current_position.y - goal.y)) <= goal.z) {
