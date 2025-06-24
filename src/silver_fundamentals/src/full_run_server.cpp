@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     // Read in files and create waypoint vectors
     std::vector<std::pair<int,int>> gold_locations;
     std::vector<std::pair<int,int>> pickups;
-    loadWaypoints("src/silver_fundamentals/maps/gold.txt", "src/silver_fundamentals/maps/pickups.txt", gold_locations, pickups);
+    loadWaypoints("src/silver_fundamentals/maps/gold.txt", "src/silver_fundamentals/maps/pickup.txt", gold_locations, pickups);
 
     // Combine gold and pickups into goals
     std::vector<std::vector<uint8_t>> goals;
