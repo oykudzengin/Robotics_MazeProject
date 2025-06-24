@@ -778,7 +778,7 @@ int main(int argc, char **argv) {
                 while (!comm_client.call(comm_srv) && ros::ok())
                     ROS_ERROR("localize: failed to call comm service for GET_DATA");
 
-                ROS_INFO("status is: goal %s, goalpos %d %d, status %d", comm_srv.response.goal_exists?"YES":"NO", comm_srv.response.goal[0], comm_srv.response.goal[1], comm_srv.response.success_state);
+                ROS_INFO("status is: goal %s, goalpos %d %d, status %d", comm_srv.response.goal_exists?"YES":"NO", comm_srv.response.goal_exists?comm_srv.response.goal[0]:12345, comm_srv.response.goal_exists?comm_srv.response.goal[1]:12345, comm_srv.response.success_state);
 
 
                 if (comm_srv.response.goal_exists == true) {
