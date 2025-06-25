@@ -58,6 +58,14 @@
 #define NO_EFFECTION_POT_FIELDS 0.35
 #define ROT_RATE 0.03
 #define BASE_SPEED 4.0
+#define WALL_THRESHOLD 1e2
+
+#define K_ATT_DRIVE 10.0
+#define K_REP_DRIVE 0.01
+#define NO_EFFECTION_POT_FIELDS_DRIVE 0.35
+#define ROT_RATE_DRIVE 0.03
+#define BASE_SPEED_DRIVE 4.0
+#define WALL_THRESHOLD_DRIVE 1e10
 
 #define LASER_OUT_OF_RANGE_DIST_VALUE 1.03
 #define MINIMAL_WALL_DIST 2
@@ -722,7 +730,7 @@ int main(int argc, char **argv) {
                 goal.z = 0;
                 t0 = ros::Time::now();
                 const geometry_msgs::Point field_vector = driver.get_potentials(
-                    current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                    current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS, WALL_THRESHOLD);
                 double angle = std::atan2(field_vector.x, field_vector.y);
                 double rotation_rate = angle * ROT_RATE * BASE_SPEED;
                 t1 = ros::Time::now();
@@ -847,7 +855,7 @@ int main(int argc, char **argv) {
                 goal.y = waypoints[current_waypoint].x;
                 goal.z = waypoints[current_waypoint].z;
                 const geometry_msgs::Point field_vector = driver.get_potentials(
-                    current, goal, K_ATT, K_REP, NO_EFFECTION_POT_FIELDS);
+                    current, goal, K_ATT_DRIVE, K_REP_DRIVE, NO_EFFECTION_POT_FIELDS_DRIVE, WALL_THRESHOLD_DRIVE);
                 double angle = std::atan2(field_vector.x, field_vector.y);
                 //ROS_INFO("Angle is %f", angle * 180.0/ PI);
                 if (std::abs(field_vector.z) * 180.0 / PI > 175.0) {
@@ -858,8 +866,8 @@ int main(int argc, char **argv) {
                 }
 
                 double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-                drive_srv.request.left = BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
-                drive_srv.request.right = BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
+                drive_srv.request.left = 2*BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
+                drive_srv.request.right = 2*BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
 
                 /*

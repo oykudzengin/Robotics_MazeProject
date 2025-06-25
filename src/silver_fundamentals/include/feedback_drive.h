@@ -21,7 +21,7 @@ class FeedbackDrive {
 
         int potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r, double rot_rate);
 
-        geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r);
+        geometry_msgs::Point get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal, double k_att, double k_rep, double r, double wall_threshold);
 
         // Async drive/turn
         bool drive_n_cm_async(double n);

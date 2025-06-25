@@ -313,7 +313,7 @@ geometry_msgs::Point FeedbackDrive::position_update(geometry_msgs::Point current
 
 
 geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_pos, geometry_msgs::Point goal,
-                                                   double k_att, double k_rep, double r) {
+                                                   double k_att, double k_rep, double r, double wall_threshold) {
     // init and call laser srv
     silver_fundamentals::LaserCartesian laser_srv;
     laser_srv.request.start = -120.0;
@@ -389,7 +389,8 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
 
     double angle_between = 0.0;
-    if (m_rep > 2e1 && m_att > 1e-6 && m_rep)
+    // 1e10
+    if (m_rep > wall_threshold && m_att > 1e-6 && m_rep)
         // angle_between = PI;
         angle_between = std::acos(std::max(-1.0, std::min(dot / (m_att * m_rep), 1.0)));
 
@@ -402,7 +403,7 @@ geometry_msgs::Point FeedbackDrive::get_potentials(geometry_msgs::Point current_
 
     return result;
 }
-
+// 1000, 0.01, 0.2, 0.08
 int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals, double k_att, double k_rep, double r,
                                          double rot_rate) {
     double min_turning_angle = 6.0 / 180.0 * PI;
@@ -432,7 +433,7 @@ int FeedbackDrive::potential_field_drive(std::vector<geometry_msgs::Point> goals
         auto &goal = goals[goal_idx];
         do {
             // get potential field forces
-            const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r);
+            const geometry_msgs::Point field_vector = get_potentials(current_pos, goal, k_att, k_rep, r, 1e10);
             double angle = std::atan2(field_vector.x, field_vector.y);
 
             // check exit condition
