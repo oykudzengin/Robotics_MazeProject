@@ -865,9 +865,9 @@ int main(int argc, char **argv) {
                     break;
                 }
 
-                double rotation_rate = angle * ROT_RATE * BASE_SPEED;
-                drive_srv.request.left = 2*BASE_SPEED - WHEEL_BASE / 2 * rotation_rate;
-                drive_srv.request.right = 2*BASE_SPEED + WHEEL_BASE / 2 * rotation_rate;
+                double rotation_rate = angle * ROT_RATE_DRIVE * BASE_SPEED_DRIVE;
+                drive_srv.request.left = 2*BASE_SPEED_DRIVE - WHEEL_BASE / 2 * rotation_rate;
+                drive_srv.request.right = 2*BASE_SPEED_DRIVE + WHEEL_BASE / 2 * rotation_rate;
                 drive_client.call(drive_srv);
 
                 /*
