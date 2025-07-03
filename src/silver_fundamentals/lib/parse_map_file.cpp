@@ -650,3 +650,37 @@ std::map<Cell, std::map<Cell, std::vector<Cell>>> buildLookupMapGrid(
 // parse_file_lowres(filename, lowres_map);
 // auto lookup = buildLookupMapGrid(lowres_map);
 // Now lookup[{r1,c1}][{r2,c2}] gives the shortest path.
+std::vector<std::tuple<geometry_msgs::Point>> get_wall_end_points() {
+    std::vector<std::tuple<geometry_msgs::Point>> res;
+    for (auto &wall: horizontal_walls) {
+        geometry_msgs::Point p_start;
+        geometry_msgs::Point p_end;
+
+        p_start.y = wall.c;
+        p_end.y = wall.c;
+
+        p_start.x = wall.start;
+        p_end.x = wall.end;
+
+        p_start.z = 0;
+        p_end.z = 0;
+
+        res.push_back(std::make_tuple(p_start, p_end));
+    }
+    for (auto &wall: vertical_walls) {
+        geometry_msgs::Point p_start;
+        geometry_msgs::Point p_end;
+
+        p_start.x = wall.c;
+        p_end.x = wall.c;
+
+        p_start.y = wall.start;
+        p_end.y = wall.end;
+
+        p_start.z = 0;
+        p_end.z = 0;
+
+        res.push_back(std::make_tuple(p_start, p_end));
+    }
+    return res;
+}

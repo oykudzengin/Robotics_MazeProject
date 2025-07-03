@@ -26,6 +26,7 @@ public:
     static bool parse_file_lowres(const std::string &filename, std::vector<std::vector<unsigned int> > &map);
     void build_wall_tables(const std::vector<std::vector<unsigned int>> &map);
     void build_lookup_map(const std::vector <std::vector<unsigned int>> &map);
+    std::vector<std::tuple<geometry_msgs::Point>> get_wall_end_points();
     /**
      * Liefert kürzesten Pfad als Liste von Points (x=row, y=col, z=Radius).
      */
