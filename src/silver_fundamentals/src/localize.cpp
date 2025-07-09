@@ -532,8 +532,9 @@ int main(int argc, char **argv) {
             n.advertise<silver_fundamentals::Pose>("pose", 10);
 
     auto rate = ros::Rate(10);
-    const std::string pkg_path = "src/silver_fundamentals";
-    std::string mapfile = pkg_path + "/maps/map.txt";
+    // const std::string pkg_path = "src/silver_fundamentals";
+    // std::string mapfile = pkg_path + "/maps/map.txt";
+    std::string mapfile = "/home/silver/silver_ws/src/silver_fundamentals/maps/map.txt";
 
     auto driver = FeedbackDrive(3.25, 26.5, 2.0);
     driver.reset_encoders();
