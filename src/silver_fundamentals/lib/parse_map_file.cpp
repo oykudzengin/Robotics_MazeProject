@@ -23,6 +23,8 @@
 
 // Alias for a grid cell (row, col)
 using Cell = std::pair<int, int>;
+// A “sub‑cell” point.  r = row coordinate (0 = top edge), c = column.
+using Point2D = std::pair<double,double>;
 
 // Cell wall bit definitions (must match LikelihoodField private enum)
 static constexpr unsigned int CW_TOP    = 1u << 0;
@@ -644,9 +646,148 @@ std::map<Cell, std::map<Cell, std::vector<Cell>>> buildLookupMapGrid(
     return lookup;
 }
 
-// Example usage (append after parsing low-res map):
-//
-// std::vector<std::vector<unsigned int>> lowres_map;
-// parse_file_lowres(filename, lowres_map);
-// auto lookup = buildLookupMapGrid(lowres_map);
-// Now lookup[{r1,c1}][{r2,c2}] gives the shortest path.
+
+// ============================================================================
+//  Extended graph with three point categories:
+//    1)  Cell centres             (r+0.5 , c+0.5)
+//    2)  Mid‑points of open edges (green) (see table inside loop)
+//    3)  “Loose” wall corners     (red)   endpoints that belong to exactly
+//                                     one unique wall segment
+//  The graph is returned as adjacency list:   Point2D  ->  vector<Point2D>
+// ============================================================================
+
+/* Helper to insert node & undirected edge */
+static inline void add_edge(std::map<Point2D,std::vector<Point2D>>& G,
+                            const Point2D& a,
+                            const Point2D& b)
+{
+    G[a].push_back(b);
+    G[b].push_back(a);
+}
+
+std::map<Point2D,std::vector<Point2D>>
+buildExtendedGraph(const std::vector<std::vector<unsigned int>>& map)
+{
+    std::map<Point2D,std::vector<Point2D>> graph;
+
+    const int rows = map.size();
+    const int cols = rows ? map[0].size() : 0;
+
+    // --- Pass 1:  cell centres + edge mid‑points (+ edges between them) ---
+    //
+    // For each cell we:
+    //   • always add its centre node
+    //   • for every OPEN side add the corresponding edge‑mid‑point node and
+    //     connect centre ↔ midpoint (cost = 0.5 cell)
+    //   • if two perpendicular sides are open, connect those two mid‑points
+    //     directly with a diagonal edge (≈0.707 cell) so that the path can
+    //     “cut the corner” inside the cell – identical to the Python version.
+    //
+    const double diag_w = std::sqrt(0.5*0.5 + 0.5*0.5);
+
+    auto midpoint = [](int r, int c, char side)->Point2D{
+        switch(side){
+            case 'T': return { static_cast<double>(r),     c + 0.5 };
+            case 'B': return { static_cast<double>(r) + 1, c + 0.5 };
+            case 'L': return { r + 0.5, static_cast<double>(c) };
+            case 'R': return { r + 0.5, static_cast<double>(c) + 1 };
+            default:  return {0,0};    // never reached
+        }
+    };
+
+    // Store every unique wall segment so we can detect “loose” corners later
+    using Seg = std::pair<Point2D,Point2D>;
+    std::set<Seg> unique_segments;
+
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            // ---- cell centre ----
+            Point2D centre{ r + 0.5, c + 0.5 };
+
+            // Make sure centre exists
+            graph[centre];
+
+            const unsigned m = map[r][c];
+            const bool openT = !(m & CW_TOP);
+            const bool openB = !(m & CW_BOTTOM);
+            const bool openL = !(m & CW_LEFT);
+            const bool openR = !(m & CW_RIGHT);
+
+            // edge midpoints
+            Point2D mt, mb, ml, mr;
+            if (openT) { mt = midpoint(r,c,'T'); add_edge(graph, centre, mt); }
+            if (openB) { mb = midpoint(r,c,'B'); add_edge(graph, centre, mb); }
+            if (openL) { ml = midpoint(r,c,'L'); add_edge(graph, centre, ml); }
+            if (openR) { mr = midpoint(r,c,'R'); add_edge(graph, centre, mr); }
+
+            // diagonals (only if both sides open)
+            if (openR && openB) add_edge(graph, mr, mb);
+            if (openR && openT) add_edge(graph, mr, mt);
+            if (openL && openB) add_edge(graph, ml, mb);
+            if (openL && openT) add_edge(graph, ml, mt);
+
+            // --- collect wall segments for corner detection ---
+            auto add_seg = [&](const Point2D& p1, const Point2D& p2){
+                unique_segments.insert( p1 < p2 ? Seg{p1,p2} : Seg{p2,p1} );
+            };
+            if (m & CW_TOP)    add_seg( {r, c},           {r,   c+1} );
+            if (m & CW_BOTTOM) add_seg( {r+1, c},         {r+1, c+1} );
+            if (m & CW_LEFT)   add_seg( {r,   c},         {r+1, c}   );
+            if (m & CW_RIGHT)  add_seg( {r,   c+1},       {r+1, c+1} );
+        }
+    }
+
+    // --- Pass 2:  find wall‑end “corner” points and add them as isolated nodes ---
+    std::map<Point2D,int> endpoint_counts;
+    for (const auto& s : unique_segments) {
+        endpoint_counts[s.first]  += 1;
+        endpoint_counts[s.second] += 1;
+    }
+    for (const auto& kv : endpoint_counts) {
+        if (kv.second == 1) {
+            graph[kv.first];          // ensures an empty neighbour list
+        }
+    }
+
+    return graph;
+}
+
+// ---------------------------------------------------------------------------
+// Breadth‑first search on the extended graph (unweighted).
+// ---------------------------------------------------------------------------
+static std::map<Point2D,std::vector<Point2D>>
+bfsAllPaths(const std::map<Point2D,std::vector<Point2D>>& graph,
+            const Point2D& start)
+{
+    std::map<Point2D,std::vector<Point2D>> paths;
+    std::queue<Point2D> q;
+    paths[start] = { start };
+    q.push(start);
+
+    while (!q.empty()) {
+        Point2D cur = q.front(); q.pop();
+        for (const Point2D& nb : graph.at(cur)) {
+            if (paths.find(nb) == paths.end()) {
+                auto newPath = paths[cur];
+                newPath.push_back(nb);
+                paths[nb] = std::move(newPath);
+                q.push(nb);
+            }
+        }
+    }
+    return paths;
+}
+
+// ---------------------------------------------------------------------------
+// Lookup‑table  ( start‑Point2D  →  ( target‑Point2D → path‑vector<Point2D> ) )
+// ---------------------------------------------------------------------------
+std::map<Point2D,std::map<Point2D,std::vector<Point2D>>>
+buildLookupMapCoord(const std::vector<std::vector<unsigned int>>& map)
+{
+    auto graph = buildExtendedGraph(map);
+    std::map<Point2D,std::map<Point2D,std::vector<Point2D>>> lookup;
+    for (const auto& kv : graph) {
+        lookup[kv.first] = bfsAllPaths(graph, kv.first);
+    }
+    return lookup;
+}
