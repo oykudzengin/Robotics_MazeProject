@@ -30,6 +30,11 @@ public:
      * Liefert kürzesten Pfad als Liste von Points (x=row, y=col, z=Radius).
      */
     std::vector<geometry_msgs::Point> getPath(int start_r, int start_c, int target_r, int target_c) const;
+    /** Return the shortest grid path *and* its Euclidean length (grid units). */
+    std::pair<std::vector<geometry_msgs::Point>, double>
+    getPathWithDistance(int start_r, int start_c,
+                        int target_r, int target_c) const;
+    
     double get_field_value(const geometry_msgs::Point &global_space_point) const;
     double get_prob_field_value(const geometry_msgs::Point &global_space_point) const;
 

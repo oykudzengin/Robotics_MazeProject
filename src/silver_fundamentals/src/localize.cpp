@@ -808,6 +808,9 @@ int main(int argc, char **argv) {
                     //TODO: approx_current_pos should also return row,col
                     std::vector<geometry_msgs::Point> shortest_path =
                             lhf.getPath(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
+                    auto [waypoints, length] = lhf.getPathWithDistance(start_pos[1], start_pos[0], goal_point[0], goal_point[1]);
+                    ROS_INFO_STREAM("Path length = " << length << " grid units, "
+                << waypoints.size() << " segments");
                     // Remove the first element if the path is not empty
                     if (!shortest_path.empty()) {
                         shortest_path.erase(shortest_path.begin());

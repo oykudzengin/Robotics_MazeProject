@@ -20,6 +20,8 @@
 #include <map>
 #include <vector>
 #include <utility>
+#include <utility>
+#include <cmath>   // std::hypot
 
 // Alias for a grid cell (row, col)
 using Cell = std::pair<int, int>;
@@ -401,6 +403,26 @@ LikelihoodField::getPath(int start_r, int start_c, int target_r, int target_c) c
     }
     result.at(result.size() - 1).z = 0.20;
     return result;
+}
+
+// ---------------------------------------------------------------------------
+// Return shortest grid-path plus total Euclidean length
+// ---------------------------------------------------------------------------
+std::pair<std::vector<geometry_msgs::Point>, double>
+LikelihoodField::getPathWithDistance(int start_r, int start_c,
+                                     int target_r, int target_c) const
+{
+    // Re-use the standard path finder
+    std::vector<geometry_msgs::Point> path =
+        getPath(start_r, start_c, target_r, target_c);
+
+    double total = 0.0;
+    for (std::size_t i = 1; i < path.size(); ++i) {
+        const double dx = path[i].x - path[i - 1].x;   // Δrow
+        const double dy = path[i].y - path[i - 1].y;   // Δcol
+        total += std::hypot(dx, dy);                   // Euclidean step
+    }
+    return { std::move(path), total };
 }
 
 void LikelihoodField::build_wall_tables(const std::vector<std::vector<unsigned int>> &map) {
