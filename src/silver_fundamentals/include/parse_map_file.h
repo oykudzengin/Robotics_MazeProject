@@ -73,4 +73,17 @@ private:
     ros::Publisher highres_pub;
 
 };
+
+using Point2D = std::pair<double, double>;
+
+// Your Dijkstra result struct
+struct DijkstraResult {
+    std::map<Point2D, double> distances; // shortest distances from start
+    std::map<Point2D, Point2D> previous; //for path reconstruction
+};
+
+std::map<Point2D, std::vector<std::pair<Point2D, double>>> buildExtended_wGraph(const std::vector<std::vector<unsigned int>>& map);
+DijkstraResult dijkstra(const std::map<Point2D, std::vector<std::pair<Point2D, double>>>& wgraph, const Point2D& start);
+std::vector<Point2D> reconstruct_path(const Point2D& target, const std::map<Point2D, Point2D>& previous);
+
 #endif //ROBITICSFUNDAMENTALSSILVER_PARSE_MAP_FILE_H

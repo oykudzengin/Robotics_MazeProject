@@ -43,6 +43,7 @@ static const Dir DIRS_LOWRES[] = {
     { CW_RIGHT,    0,  1 },
 };
 
+
 // Forward declaration for lookup map builder
 std::map<Cell, std::map<Cell, std::vector<Cell>>> buildLookupMapGrid(const std::vector<std::vector<unsigned int>>& map);
 
@@ -687,10 +688,175 @@ static inline void add_edge(std::map<Point2D,std::vector<Point2D>>& G,
     G[b].push_back(a);
 }
 
-std::map<Point2D,std::vector<Point2D>>
+//weight of the edges
+double compute_edge_weight(const Point2D& a, const Point2D& b) {
+    double dx = a.first - b.first;
+    double dy = a.second - b.second;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+//inserting weighted edges (undirected)
+static inline void add_weighted_edge(std::map<Point2D, std::vector<std::pair<Point2D, double>>>& G,
+                                     const Point2D& a,
+                                     const Point2D& b,
+                                     double weight)                             
+{
+    G[a].emplace_back(b, weight);
+    G[b].emplace_back(a, weight);
+}
+
+//weighted extended graph
+std::map<Point2D, std::vector<std::pair<Point2D, double>>>
+buildExtended_wGraph(const std::vector<std::vector<unsigned int>>& map)
+{
+    std::map<Point2D, std::vector<std::pair<Point2D, double>>> wgraph;
+
+    const int rows = map.size();
+    const int cols = rows ? map[0].size() : 0;
+
+    // --- Pass 1:  cell centres + edge mid‑points (+ edges between them) ---
+    //
+    // For each cell we:
+    //   • always add its centre node
+    //   • for every OPEN side add the corresponding edge‑mid‑point node and
+    //     connect centre ↔ midpoint (cost = 0.5 cell)
+    //   • if two perpendicular sides are open, connect those two mid‑points
+    //     directly with a diagonal edge (≈0.707 cell) so that the path can
+    //     “cut the corner” inside the cell – identical to the Python version.
+    //
+    const double diag_w = std::sqrt(0.5*0.5 + 0.5*0.5);
+
+    auto midpoint = [](int r, int c, char side)->Point2D{
+        switch(side){
+            case 'T': return { static_cast<double>(r),     c + 0.5 };
+            case 'B': return { static_cast<double>(r) + 1, c + 0.5 };
+            case 'L': return { r + 0.5, static_cast<double>(c) };
+            case 'R': return { r + 0.5, static_cast<double>(c) + 1 };
+            default:  return {0,0};    // never reached
+        }
+    };
+
+    // Store every unique wall segment so we can detect “loose” corners later
+    using Seg = std::pair<Point2D,Point2D>;
+    std::set<Seg> unique_segments;
+
+    for (int r = 0; r < rows; ++r) {
+        for (int c = 0; c < cols; ++c) {
+            // ---- cell centre ----
+            Point2D centre{ r + 0.5, c + 0.5 };
+
+            // Make sure centre exists
+            wgraph[centre];
+
+            const unsigned m = map[r][c];
+            const bool openT = !(m & CW_TOP);
+            const bool openB = !(m & CW_BOTTOM);
+            const bool openL = !(m & CW_LEFT);
+            const bool openR = !(m & CW_RIGHT);
+
+            // edge midpoints
+            Point2D mt, mb, ml, mr;
+            if (openT) { mt = midpoint(r,c,'T'); add_weighted_edge(wgraph, centre, mt, compute_edge_weight(centre, mt)); }
+            if (openB) { mb = midpoint(r,c,'B'); add_weighted_edge(wgraph, centre, mb, compute_edge_weight(centre, mb)); }
+            if (openL) { ml = midpoint(r,c,'L'); add_weighted_edge(wgraph, centre, ml, compute_edge_weight(centre, ml)); }
+            if (openR) { mr = midpoint(r,c,'R'); add_weighted_edge(wgraph, centre, mr, compute_edge_weight(centre, mr)); }
+
+            // diagonals (only if both sides open)
+            if (openR && openB) add_weighted_edge(wgraph, mr, mb, compute_edge_weight(mr, mb));
+            if (openR && openT) add_weighted_edge(wgraph, mr, mt, compute_edge_weight(mr, mt));
+            if (openL && openB) add_weighted_edge(wgraph, ml, mb, compute_edge_weight(ml, mb));
+            if (openL && openT) add_weighted_edge(wgraph, ml, mt, compute_edge_weight(ml, mt));
+
+            // --- collect wall segments for corner detection ---
+            auto add_seg = [&](const Point2D& p1, const Point2D& p2){
+                unique_segments.insert( p1 < p2 ? Seg{p1,p2} : Seg{p2,p1} );
+            };
+            if (m & CW_TOP)    add_seg( {r, c},           {r,   c+1} );
+            if (m & CW_BOTTOM) add_seg( {r+1, c},         {r+1, c+1} );
+            if (m & CW_LEFT)   add_seg( {r,   c},         {r+1, c}   );
+            if (m & CW_RIGHT)  add_seg( {r,   c+1},       {r+1, c+1} );
+        }
+    }
+
+    // --- Pass 2:  find wall‑end “corner” points and add them as isolated nodes ---
+    std::map<Point2D,int> endpoint_counts;
+    for (const auto& s : unique_segments) {
+        endpoint_counts[s.first]  += 1;
+        endpoint_counts[s.second] += 1;
+    }
+    for (const auto& kv : endpoint_counts) {
+        if (kv.second == 1) {
+            wgraph[kv.first];          // ensures an empty neighbour list
+        }
+    }
+
+    return wgraph;
+}
+
+//dijkstra algo for computing shortest paths in the extended graph
+DijkstraResult dijkstra(const std::map<Point2D, std::vector<std::pair<Point2D, double>>>& wgraph,
+                        const Point2D& start)
+{
+    DijkstraResult result;
+    auto& dist = result.distances;
+    auto& prev = result.previous;
+
+    using QueueElement = std::pair<double, Point2D>;  // (distance, node)
+    std::priority_queue<QueueElement, std::vector<QueueElement>, std::greater<>> pq;  
+
+    //initialize all distances to infinity
+    for (const auto& node : wgraph) {
+        dist[node.first] = std::numeric_limits<double>::infinity();
+    }
+    
+    dist[start] = 0.0;  // distance to start is zero
+    pq.emplace(0.0, start);  // push start node with distance 0
+
+    while (!pq.empty()) {
+        auto [current_dist, u] = pq.top();
+        pq.pop();
+
+        if (current_dist > dist[u]) continue;  // already visited with better path
+
+        for (const auto& [v, weight] : wgraph.at(u)) {
+            double alt = dist[u] + weight;
+            if (alt < dist[v]) {
+                dist[v] = alt;
+                prev[v] = u;
+                pq.emplace(alt, v);
+            }
+        }
+    }
+    return result;
+}
+
+//reconstructing paths
+std::vector<Point2D> reconstruct_path(
+    const Point2D& target,
+    const std::map<Point2D, Point2D>& previous)
+{
+    std::vector<Point2D> path;
+    Point2D current = target;
+
+    while (previous.count(current)) {
+        path.push_back(current);
+        current = previous.at(current);
+    }
+
+    path.push_back(current);  // add source
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
+
+
+
+
+
+std::map<Point2D, std::vector<Point2D>>
 buildExtendedGraph(const std::vector<std::vector<unsigned int>>& map)
 {
-    std::map<Point2D,std::vector<Point2D>> graph;
+    std::map<Point2D, std::vector<Point2D>> graph;
 
     const int rows = map.size();
     const int cols = rows ? map[0].size() : 0;
