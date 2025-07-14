@@ -72,10 +72,14 @@ int main(int argc, char **argv)
 
     // Combine gold and pickups into goals
     std::vector<std::vector<uint8_t>> goals;
+    std::vector<std::vector<uint8_t>> pickup_points;
     for (const auto &p : gold_locations) {
         goals.push_back({static_cast<uint8_t>(p.first), static_cast<uint8_t>(p.second)});
     }
-    goals.push_back({static_cast<uint8_t>(pickups[0].first), static_cast<uint8_t>(pickups[0].second)});
+    for (const auto &p : pickups) {
+        pickup_points.push_back({static_cast<uint8_t>(p.first),static_cast<uint8_t>(p.second)});
+    }
+    //goals.push_back({static_cast<uint8_t>(pickups[0].first), static_cast<uint8_t>(pickups[0].second)});
 
 
     ros::ServiceClient comm_client = nh.serviceClient<silver_fundamentals::Com>("comm");
@@ -110,9 +114,37 @@ int main(int argc, char **argv)
         // play song
         silver_fundamentals::playSong3(nh);
         ros::Duration(5).sleep();
-
     }
 
+    bool success = false;
+     int current_pickup = 0;
+    // do this as long as we (might) fail
+    while (!success) {
+        // set request
+        comm_srv.request.operation = silver_fundamentals::Com::Request::SET_DATA;
+        comm_srv.request.success_state = static_cast<uint8_t>(silver_fundamentals::PlanSuccessState::NONE);
+        comm_srv.request.goal_exists   = true;
+        comm_srv.request.goal = pickup_points[current_pickup];
+
+        //send request
+        while (!comm_client.call(comm_srv))
+            ROS_ERROR("execute_plan_server: failed to call comm service for SET_DATA");
+
+        // wait for execution
+        comm_srv.request.operation = silver_fundamentals::Com::Request::GET_DATA;
+        while (ros::ok() && (!comm_client.call(comm_srv) || static_cast<silver_fundamentals::PlanSuccessState>(comm_srv.response.success_state) == silver_fundamentals::PlanSuccessState::NONE)) {
+            ROS_INFO("waiting for client to execute a plan...");
+            ros::Duration(0.1).sleep();
+        }
+
+        // check success and maybe redo
+        success = (static_cast<silver_fundamentals::PlanSuccessState>(comm_srv.response.success_state) == silver_fundamentals::PlanSuccessState::PLAN_DONE);
+        current_pickup = (current_pickup + 1) % pickup_points.size();
+    }
+
+    // play song
+    silver_fundamentals::playSong3(nh);
+    ros::Duration(5).sleep();
 
     return 0;
 }
