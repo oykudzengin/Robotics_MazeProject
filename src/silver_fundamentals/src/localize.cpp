@@ -811,6 +811,16 @@ int main(int argc, char **argv) {
                     // Remove the first element if the path is not empty
                     if (!shortest_path.empty()) {
                         shortest_path.erase(shortest_path.begin());
+                    } else {
+                        ROS_ERROR("Assume unreachable, skipping");
+                        localize_state = LocalizeState::EXECUTED_PLAN_SUC;
+                        break;
+                    }
+
+                    if (shortest_path.empty()) {
+                        ROS_ERROR("No Path, skipping");
+                        localize_state = LocalizeState::EXECUTED_PLAN_SUC;
+                        break;
                     }
 
                     ROS_WARN("Shortest Path: ");
